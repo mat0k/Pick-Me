@@ -1,16 +1,30 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.google.secrets)
 }
 
+
 android {
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("C:\\Users\\user\\keystore.jks")
+            storePassword = "mohammad"
+            keyAlias = "key0"
+            keyPassword = "mohammad"
+        }
+    }
+
     namespace = "com.example.pickme"
     compileSdk = 34
+
+
 
     defaultConfig {
         applicationId = "com.example.pickme"
         minSdk = 26
         targetSdk = 34
+        compileSdk= 34
         versionCode = 1
         versionName = "1.0"
 
@@ -18,6 +32,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+
+
+
     }
 
     buildTypes {
@@ -30,6 +48,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
@@ -47,7 +66,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+
+
 }
+
 
 dependencies {
 
@@ -59,6 +82,18 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+
+    implementation (libs.maps.compose)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+
+    implementation(libs.compose.material.dialogs.datetime)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    implementation(libs.maps.platform)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -66,4 +101,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
+    implementation("com.google.firebase:firebase-auth")
+
 }
+
