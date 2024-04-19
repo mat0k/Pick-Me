@@ -195,6 +195,7 @@ fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel) 
 @Composable
 fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
+    val context= LocalContext.current
     var tripTitle by remember { mutableStateOf("") }
 
     var startingTitle = tripViewModel.tripStartTitle.value
@@ -385,8 +386,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     Button(
                         onClick = {
                             startingTitle = "Starting point"
-                            destinationTitle= "Destination"
-                            isButtonClicked1= false
+                            destinationTitle = "Destination"
+                            isButtonClicked1 = false
                         },
                         modifier = Modifier
                             .size(40.dp)
@@ -478,8 +479,23 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {                                     //confirmation
+            Button(onClick = {
+                Toast.makeText(context, "Confirmation",Toast.LENGTH_SHORT).show()
+            }) {
+                Text(
+                    text ="Confirmation"
+                )
+            }
+        }
 
     }
+
+
 
 
 
