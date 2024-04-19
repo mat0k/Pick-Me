@@ -29,6 +29,23 @@
 
 
         <activity
+            android:name=".view.ui.driver.DriverView"
+            android:exported="false"
+            android:label="DriverView"
+            android:theme="@style/Theme.PickMe" />
+        <activity
+            android:name=".view.ui.passenger.PassengerView"
+            android:exported="false"
+            android:label="@string/title_activity_passenger_view"
+            android:theme="@style/Theme.PickMe" />
+        <activity
+            android:name=".view.ui.login.LoginView"
+            android:exported="false"
+            android:label="@string/title_activity_login_view"
+            android:theme="@style/Theme.PickMe" />
+
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"

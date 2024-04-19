@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">Pick Me</string>
+    <string name="app_name">Pick Me Up</string>
+    <string name="title_activity_login_view">LoginView</string>
+    <string name="login">Login</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="register">Register</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="last_name">Last Name</string>
+    <string name="first_name">First Name</string>
+    <string name="title_activity_passenger_view">PassengerView</string>
+    <string name="API_KEY">AIzaSyBvaPbilorOvvHD0KV9GoZUlserI1E1khU</string>
+
+
 </resources>

@@ -1,4 +1,4 @@
-package com.example.pickme.ui.theme
+package com.example.pickme.ui.passenger.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

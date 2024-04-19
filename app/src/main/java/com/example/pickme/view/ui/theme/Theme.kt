@@ -1,4 +1,4 @@
-package com.example.pickme.ui.theme
+package com.example.pickme.ui.passenger.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -38,11 +38,11 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PickMeTheme(
+fun PickMeUpTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
