@@ -195,7 +195,7 @@ fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel) 
 @Composable
 fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
-    val context= LocalContext.current
+    val context = LocalContext.current
     var tripTitle by remember { mutableStateOf("") }
 
     var startingTitle = tripViewModel.tripStartTitle.value
@@ -210,7 +210,6 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         )
     }
     var isButtonClicked2 by remember { mutableStateOf(false) }
-
 
     var pickedDate by remember {
         mutableStateOf(LocalDate.now())
@@ -236,6 +235,17 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
 
+    var enableConfirmation1 by remember {
+        mutableStateOf(false)
+    }
+
+    var enableConfirmation2 by remember {
+        mutableStateOf(false)
+    }
+
+    if (startingTitle != "Starting point") {
+        enableConfirmation1 = true
+    }
 
     Column(
         modifier = Modifier
@@ -305,7 +315,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 80.dp, max = 180.dp), // row of two field and location button
+                .heightIn(min = 50.dp, max = 180.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center,
 
             ) {
@@ -388,6 +398,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                             startingTitle = "Starting point"
                             destinationTitle = "Destination"
                             isButtonClicked1 = false
+                            enableConfirmation1= false
                         },
                         modifier = Modifier
                             .size(40.dp)
@@ -484,11 +495,25 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {                                     //confirmation
-            Button(onClick = {
-                Toast.makeText(context, "Confirmation",Toast.LENGTH_SHORT).show()
-            }) {
+            Button(
+                modifier = Modifier
+                    .size(width = 220.dp, height = 50.dp),
+                shape = RoundedCornerShape(15.dp),
+                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle!="" && seats!=0,
+                onClick = {
+                    val title = tripTitle
+                    val tripSeats = seats
+                    val starting = startingTitle
+                    val end = destinationTitle
+                    val startingLatLng = tripViewModel.tripStartLatLng.value
+                    val destinationLatLng = tripViewModel.tripDestLatLng.value
+                    val tripDistance = tripViewModel.distance.value
+
+                    Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
+                }) {
                 Text(
-                    text ="Confirmation"
+                    text = "Confirmation",
+                    fontSize = 20.sp
                 )
             }
         }
@@ -539,6 +564,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             timeRange = if (pickedDate == today) currentTime.plusMinutes(5)..LocalTime.MAX else LocalTime.MIDNIGHT..LocalTime.MAX,
         ) {
             pickedTime = it
+            enableConfirmation2 = true
             isButtonClicked2 = true
             val dateAndTimeField = "$formattedDate, $formattedTime"
             tripViewModel.setDateAndTime(dateAndTimeField)
