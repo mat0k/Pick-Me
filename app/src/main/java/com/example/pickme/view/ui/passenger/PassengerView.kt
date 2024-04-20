@@ -228,6 +228,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
     val showDialog = remember { mutableStateOf(false) }
 
+    val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
+    val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
+
 
     if (pickUpTitleTest.isNotEmpty()) {
         pickUpTitle = pickUpTitleTest
@@ -260,7 +263,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         ) {
             Text(
                 text = "Request new Pick UP",
-                fontSize = 28.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
                 modifier = Modifier.padding(start = 10.dp, top = 16.dp)
@@ -275,7 +278,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         ) {
             Text(
                 text = "Location:",
-                fontSize = 24.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
                 modifier = Modifier.padding(top = 16.dp)
@@ -284,7 +287,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 135.dp, max = 180.dp), // row of two field and location button
+                .heightIn(min = 135.dp, max = 200.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center
         ) {
             Box(
@@ -292,7 +295,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
             ) {
 
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(12.dp)
                 ) {
                     Box(                        // pick up location box
                         modifier = Modifier
@@ -313,7 +316,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         ) {
                             Text(
                                 text = pickUpTitle,
-                                fontSize = 18.sp,
+                                fontSize = 16.sp,
                                 color = Color.Black
                             )
                         }
@@ -337,7 +340,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         ) {
                             Text(
                                 text = targetTitle,
-                                fontSize = 18.sp,
+                                fontSize = 16.sp,
                                 color = Color.Black
                             )
                         }
@@ -373,15 +376,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 10.dp),
+                .padding(start = 10.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.Start
         ) {
             Text(
                 text = "Schedule:",
-                fontSize = 24.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
-                modifier = Modifier.padding(top = 16.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
 
@@ -389,7 +392,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp),
+                .height(80.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             Box(
@@ -401,7 +404,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 ) {
                     Box(                        // pick up location box
                         modifier = Modifier
-                            .padding(start = 4.dp, end = 12.dp, top = 15.dp)
+                            .padding(start = 4.dp, end = 14.dp, top = 12.dp)
                             .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                             .border(
                                 width = 1.dp,
@@ -419,7 +422,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             val dateAndTimeField = "$formattedDate, $formattedTime"
                             Text(
                                 text = dateAndTimeField,                  // date & time text
-                                fontSize = 18.sp,
+                                fontSize = 16.sp,
                                 color = Color.Black
                             )
                         }
@@ -500,6 +503,110 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
             }
         }
         // pick ups HISTORY
+
+        val databaseHelper=  LocalPickUpDbHelper(context)
+        LaunchedEffect(Unit) {
+            localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
+        ) {
+            items(localPickUpList.reversed()) { localPickUp ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp),
+
+                    ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = localPickUp.dateAndTime,
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                fontSize = 17.sp,
+                                color = Color.Black,
+                            )
+                            Text(
+                                text = localPickUp.pickUpTitle,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontSize = 14.sp,
+                                color = Color.Black,
+                            )
+                            Text(
+                                text = localPickUp.targetTitle,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontSize = 14.sp,
+                                color = Color.Black,
+                            )
+                        }
+                        Column {
+                            IconButton(
+                                onClick = { showDeleteConfirm.value = localPickUp }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = com.example.pickme.R.drawable.delete_icon),
+                                    contentDescription = "Delete"
+                                )
+                            }
+                            /*   IconButton(
+                                   onClick = {
+                                       databaseHelper.deleteLocalPickUp(localPickUp.id)
+
+                                   }
+                               ) {
+                                   Icon(
+                                       painter = painterResource(id = com.example.pickmeup.R.drawable.preview_icon),
+                                       contentDescription = "Preview"
+                                   )
+                               } */
+                        }
+                    }
+
+                    val itemToDelete = showDeleteConfirm.value
+                    if (itemToDelete != null) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteConfirm.value = null },
+                            title = { Text("Confirm Delete") },
+                            text = { Text("Are you sure you want to delete this item?") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        databaseHelper.deleteLocalPickUp(itemToDelete.id)
+                                        localPickUpList.remove(itemToDelete)
+                                        showDeleteConfirm.value = null
+                                    }
+                                ) {
+                                    Text("Yes")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = { showDeleteConfirm.value = null }
+                                ) {
+                                    Text("No")
+                                }
+                            }
+                        )
+                    }
+                }
+
+            }
+        }
 
 
     }
@@ -895,9 +1002,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
         }
     }
-
-
-
 }
 
 
@@ -911,110 +1015,17 @@ fun ProfileScreen(navController: NavHostController) {
 @Composable
 fun SearchScreen(navController: NavHostController) {
 
-    val context = LocalContext.current
-    LocalPickUpListScreen(LocalPickUpDbHelper(context))
-}
+   Column (
+       modifier= Modifier
+           .fillMaxSize(),
+       horizontalAlignment = Alignment.CenterHorizontally,
+       verticalArrangement = Arrangement.Center
+   ){
+       Text(
+           text = "serach screen",
+           fontSize = 20.sp
+       )
 
-
-@Composable
-fun LocalPickUpListScreen(databaseHelper: LocalPickUpDbHelper) {
-    val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
-    val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
-
-    LaunchedEffect(Unit) {
-        localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        items(localPickUpList.reversed()) { localPickUp ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-
-                ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                        .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = localPickUp.dateAndTime,
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = Color.Black,
-                        )
-                        Text(
-                            text = localPickUp.pickUpTitle,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Black,
-                        )
-                        Text(
-                            text = localPickUp.targetTitle,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Black,
-                        )
-                    }
-                    Column {
-                        IconButton(
-                            onClick = { showDeleteConfirm.value = localPickUp }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = com.example.pickme.R.drawable.delete_icon),
-                                contentDescription = "Delete"
-                            )
-                        }
-                        /*   IconButton(
-                               onClick = {
-                                   databaseHelper.deleteLocalPickUp(localPickUp.id)
-
-                               }
-                           ) {
-                               Icon(
-                                   painter = painterResource(id = com.example.pickmeup.R.drawable.preview_icon),
-                                   contentDescription = "Preview"
-                               )
-                           } */
-                    }
-                }
-
-                val itemToDelete = showDeleteConfirm.value
-                if (itemToDelete != null) {
-                    AlertDialog(
-                        onDismissRequest = { showDeleteConfirm.value = null },
-                        title = { Text("Confirm Delete") },
-                        text = { Text("Are you sure you want to delete this item?") },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    databaseHelper.deleteLocalPickUp(itemToDelete.id)
-                                    localPickUpList.remove(itemToDelete)
-                                    showDeleteConfirm.value = null
-                                }
-                            ) {
-                                Text("Yes")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = { showDeleteConfirm.value = null }
-                            ) {
-                                Text("No")
-                            }
-                        }
-                    )
-                }
-            }
-
-        }
-    }
+   }
 }
 
