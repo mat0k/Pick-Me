@@ -379,7 +379,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             painter = painterResource(id = R.drawable.location),
-                            contentDescription = "Calendar Icon",
+                            contentDescription = "location Icon",
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -460,9 +460,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                                painter = painterResource(id = R.drawable.calendar),
-                                contentDescription = "Calendar Icon",
-                                modifier = Modifier.size(24.dp)
+                            painter = painterResource(id = R.drawable.calendar),
+                            contentDescription = "Calendar Icon",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -515,7 +515,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         }
         // pick ups HISTORY
 
-        val databaseHelper=  LocalPickUpDbHelper(context)
+        val databaseHelper = LocalPickUpDbHelper(context)
         LaunchedEffect(Unit) {
             localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
         }
@@ -952,18 +952,18 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 pickUpTitle =
                                     passengerClass.reverseGeocode(pickUpLatLng, context).toString()
                                 pickUpMarkerState = true
-                                if (targetTitle == "Where to?"){
-                                    mainButtonState = "Set Target location"}
-                                else{
-                                    mainButtonState =  "Confirm pick up"
+                                if (targetTitle == "Where to?") {
+                                    mainButtonState = "Set Target location"
+                                } else {
+                                    mainButtonState = "Confirm pick up"
                                     distanceAlpha = 1f
                                     distance =
                                         passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                                 }
                             }
-                        else{
+                        else {
                             passengerClass.ShowWifiProblemDialog(context)
-                            Toast.makeText(context,"No Network",Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "No Network", Toast.LENGTH_SHORT).show()
                         }
                     } else if (mainButtonState == "Set Target location") {
                         targetLatLng = LatLng(
@@ -1110,11 +1110,11 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 modifier = Modifier.padding(start = 10.dp, top = 16.dp)
             )
         }
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 180.dp), // row of two field and location button
+                .heightIn(min = 50.dp, max = 140.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center,
 
             ) {
@@ -1185,11 +1185,11 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     }
                 }
-                Box(                    //add button box
+                Box(                    //clear button box
                     modifier = Modifier
                         .weight(0.15f)
                         .fillMaxSize()
-                        .heightIn(max = 130.dp),
+                        .heightIn(max = 80.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Button(
@@ -1197,7 +1197,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             startingTitle = "Starting point"
                             destinationTitle = "Destination"
                             isButtonClicked1 = false
-                            enableConfirmation1= false
+                            enableConfirmation1 = false
                         },
                         modifier = Modifier
                             .size(40.dp)
@@ -1244,35 +1244,70 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .heightIn(max= 50.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
 
             ) {
             if (isButtonClicked2) { // calender
-                Box(                        // pick up location box
-                    modifier = Modifier
-                        .padding(start = 4.dp, end = 12.dp, top = 15.dp)
-                        .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                        .border(
-                            width = 1.dp,
-                            color = Color.Black,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp)
+                Box(
+                    modifier = Modifier.weight(0.85f)
                 ) {
-                    // row for pick up location and cancel button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(                        // pick up location box
+                        modifier = Modifier
+                            .padding(start = 4.dp, end = 12.dp, top = 15.dp)
+                            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(8.dp)
                     ) {
-                        val dateAndTimeField = "$formattedDate, $formattedTime"
-                        Text(
-                            text = dateAndTimeField,                  // date & time text
-                            fontSize = 18.sp,
-                            color = Color.Black
-                        )
+                        // row for pick up location and cancel button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val dateAndTimeField = "$formattedDate, $formattedTime"
+                            Text(
+                                text = dateAndTimeField,                  // date & time text
+                                fontSize = 18.sp,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+                Box(                    //clear button box
+                    modifier = Modifier
+                        .weight(0.15f)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = {
+                            enableConfirmation2 = false
+                            isButtonClicked2 = false
+                            isButtonClicked1 = false
+                            enableConfirmation1 = false
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "edit icon",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
 
@@ -1302,7 +1337,83 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
         ///////////////////////////////////////////////////////////////////////////////////////////////
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
 
+            ) {
+
+            var searchRadius by remember { mutableStateOf(1) } // default radius is 1 km
+            var isDriverVerified by remember { mutableStateOf(false) }
+            var minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
+            var minAvailableSeats by remember { mutableStateOf(1) } // default minimum available seats is 1
+
+            Column {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text("Search Radius: $searchRadius km")
+                    Slider(
+                        modifier = Modifier
+                            .width(200.dp),
+                        value = searchRadius.toFloat(),
+                        onValueChange = { searchRadius = it.toInt() },
+                        valueRange = 1f..5f, // allow radius from 1 km to 10 km
+                        steps = 5,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Checkbox(
+                        checked = isDriverVerified,
+                        onCheckedChange = { isDriverVerified = it },
+                    )
+                    Text("Only show trips from verified drivers")
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text("Minimum Driver Rating: $minDriverRating")
+                    Slider(
+                        modifier = Modifier
+                            .width(200.dp),
+                        value = minDriverRating.toFloat(),
+                        onValueChange = { minDriverRating = it.toInt() },
+                        valueRange = 0f..5f, // allow rating from 0 to 5
+                        steps = 5,
+                    )
+                    }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text("Minimum Available Seats: $minAvailableSeats")
+                    Slider(
+                        modifier = Modifier
+                            .width(200.dp),
+                        value = minAvailableSeats.toFloat(),
+                        onValueChange = { minAvailableSeats = it.toInt() },
+                        valueRange = 1f..5f, // allow available seats from 1 to 5
+                        steps = 5,
+                    )
+                }
+            }
+        }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
@@ -1312,7 +1423,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         ) {                                     //confirmation
             Button(
                 modifier = Modifier
-                    .size(width = 220.dp, height = 50.dp),
+                    .size(width = 200.dp, height = 45.dp),
                 shape = RoundedCornerShape(15.dp),
                 enabled = enableConfirmation1 && enableConfirmation2,
                 onClick = {
@@ -1324,8 +1435,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                     Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
                 }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.search3),
+                    contentDescription = "search Icon",
+                    modifier = Modifier.size(24.dp).padding(start= 5.dp)
+                )
                 Text(
-                    text = "Confirmation",
+                    modifier= Modifier.padding(start= 15.dp),
+                    text = "Search",
                     fontSize = 20.sp
                 )
             }
