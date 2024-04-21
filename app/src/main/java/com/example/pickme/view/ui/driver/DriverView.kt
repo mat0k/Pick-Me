@@ -428,7 +428,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         navController.navigate("mapView")
                     }
                 ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.location),
+                        contentDescription = "Calendar Icon",
+                        modifier = Modifier.size(24.dp)
+                    )
                     Text(
+                        modifier = Modifier
+                            .padding(start = 6.dp),
                         text = "Set location",
                         fontSize = 20.sp
                     )
@@ -482,7 +489,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         dateDialogState.show()
                     }
                 ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.calendar),
+                        contentDescription = "Calendar Icon",
+                        modifier = Modifier.size(24.dp)
+                    )
                     Text(
+                        modifier = Modifier
+                            .padding(start = 10.dp),
                         text = "Set Date",
                         fontSize = 20.sp
                     )
