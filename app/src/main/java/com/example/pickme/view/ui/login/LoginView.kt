@@ -259,7 +259,7 @@ fun RegisterScreen(navController: NavController) {
         }
         Button(
             onClick = {
-                      if(viewModel.role.value == 0) {
+                      if(viewModel.role.intValue == 0) {
                           viewModel.register()
                       }
             },
