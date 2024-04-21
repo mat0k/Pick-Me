@@ -1,9 +1,12 @@
 package com.example.pickme.view.ui.login
 
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +28,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -161,7 +166,15 @@ fun LoginScreen(navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavController) {
-    val viewModel = viewModel<RegisterViewModel>()
+    val context = LocalContext.current
+    val viewModel:RegisterViewModel = viewModel(factory = RegisterViewModelFactory(context))
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.updateProfilePicture(it)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -209,6 +222,13 @@ fun RegisterScreen(navController: NavController) {
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            pickImageLauncher.launch("image/*")
+        }) {
+            Text("Add profile picture")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
         Row {
             FilterChip(selected = viewModel.role.intValue == 0,
                 onClick = { viewModel.updateRole(0) },
@@ -239,9 +259,10 @@ fun RegisterScreen(navController: NavController) {
         }
         Button(
             onClick = {
-                navController.navigate("phone")
+                      if(viewModel.role.value == 0) {
+                          viewModel.register()
+                      }
             },
-            enabled = viewModel.inputsFilled()
         ) {
             Text(stringResource(R.string.register))
         }

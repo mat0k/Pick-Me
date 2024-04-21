@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.view.ui.driver.DriverView
+import com.example.pickme.view.ui.login.LoginView
 import com.example.pickme.view.ui.passenger.PassengerView
 
 
@@ -39,6 +40,18 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
+                        Button(onClick = {
+                            val intent = Intent(applicationContext, LoginView::class.java)
+                            startActivity(intent)
+                            finish()
+                        }) {
+                            Text(
+                                text = "Login Screen",
+                                fontSize = 25.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.padding(10.dp))
 
                         Button(onClick = {
                             val intent = Intent(applicationContext, PassengerView::class.java)

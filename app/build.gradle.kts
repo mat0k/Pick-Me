@@ -8,7 +8,7 @@ plugins {
 android {
     signingConfigs {
         getByName("debug") {
-            storeFile = file("C:\\Users\\user\\keystore.jks")
+            storeFile = file("E:\\Backup\\keystore.jks")
             storePassword = "mohammad"
             keyAlias = "key0"
             keyPassword = "mohammad"
@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.play.services.location)
 
     implementation(libs.compose.material.dialogs.datetime)
+    implementation(libs.volley)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
