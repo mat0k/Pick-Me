@@ -10,6 +10,7 @@ class TripViewModel : ViewModel() {
 
     val tripTitle: MutableState<String> = mutableStateOf("")
 
+    val seats: MutableState<Int> = mutableStateOf(0)
     val tripStartTitle: MutableState<String> = mutableStateOf("Starting point")
     val tripDestTitle: MutableState<String> = mutableStateOf("Destination")
 

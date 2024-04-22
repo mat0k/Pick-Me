@@ -43,6 +43,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -198,13 +199,13 @@ fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel) 
 fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
     val context = LocalContext.current
-    var tripTitle by remember { mutableStateOf("") }
+    var tripTitle by remember { mutableStateOf(tripViewModel.tripTitle.value) }
 
     var startingTitle = tripViewModel.tripStartTitle.value
 
     var destinationTitle = tripViewModel.tripDestTitle.value
 
-    var seats by remember { mutableStateOf(0) }
+    var seats by remember { mutableIntStateOf(tripViewModel.seats.value) }
 
     var isButtonClicked1 by remember {
         mutableStateOf(
@@ -317,7 +318,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 180.dp), // row of two field and location button
+                .heightIn(min = 50.dp, max = 160.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center,
 
             ) {
@@ -388,11 +389,11 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     }
                 }
-                Box(                    //add button box
+                Box(                    //cancel button box
                     modifier = Modifier
                         .weight(0.15f)
                         .fillMaxSize()
-                        .heightIn(max = 130.dp),
+                        .heightIn(max = 120.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Button(
@@ -427,6 +428,12 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         .size(width = 220.dp, height = 50.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
+                        if(tripTitle.isNotEmpty()){
+                               tripViewModel.setTripTitle(tripTitle)
+                        }
+                        if(seats!=0){
+                            tripViewModel.setTripTitle(tripTitle)
+                        }
                         navController.navigate("mapView")
                     }
                 ) {
@@ -449,35 +456,72 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .heightIn(max = 50.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
 
+
             ) {
             if (isButtonClicked2) { // calender
-                Box(                        // pick up location box
-                    modifier = Modifier
-                        .padding(start = 4.dp, end = 12.dp, top = 15.dp)
-                        .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                        .border(
-                            width = 1.dp,
-                            color = Color.Black,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp)
+                Box(
+                    modifier = Modifier.weight(0.85f)
                 ) {
-                    // row for pick up location and cancel button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(                        // pick up location box
+                        modifier = Modifier
+                            .padding(start = 4.dp, end = 12.dp, top = 15.dp)
+                            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(8.dp)
                     ) {
-                        val dateAndTimeField = "$formattedDate, $formattedTime"
-                        Text(
-                            text = dateAndTimeField,                  // date & time text
-                            fontSize = 18.sp,
-                            color = Color.Black
-                        )
+                        // row for pick up location and cancel button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val dateAndTimeField = "$formattedDate, $formattedTime"
+                            Text(
+                                text = dateAndTimeField,                  // date & time text
+                                fontSize = 18.sp,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+                Box(                    //cancel button box
+                    modifier = Modifier
+                        .weight(0.15f)
+                        .fillMaxSize()
+                        .heightIn(max = 80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = {
+                            pickedDate = LocalDate.now()
+                            pickedTime = LocalTime.now()
+                            isButtonClicked2 = false
+                            enableConfirmation2 = false
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(4.dp)), // Adjust the corner radius here
+                        contentPadding = PaddingValues(0.dp), // Remove the default padding
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "edit icon",
+                                modifier = Modifier.size(20.dp) // Adjust the icon size
+                            )
+                        }
                     }
                 }
 
@@ -548,12 +592,19 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
+                            tripViewModel.tripTitle.value= ""
+                            tripTitle= ""
+                            tripViewModel.seats.value= 0
+                            seats= 0
+                            isButtonClicked1= false
+                            isButtonClicked2= false
+                            enableConfirmation1= false
+                            enableConfirmation2= false
                         }
                         .addOnFailureListener {
                             Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
                         }
 
-                    Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
                 }) {
                 Text(
                     text = "Confirmation",
