@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.google.secrets)
+    id("com.google.gms.google-services")
+
 }
 
 
@@ -24,7 +26,7 @@ android {
         applicationId = "com.example.pickme"
         minSdk = 26
         targetSdk = 34
-        compileSdk= 34
+        compileSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -32,8 +34,6 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-
-
 
 
     }
@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.play.services.location)
 
     implementation(libs.compose.material.dialogs.datetime)
+    implementation(libs.firebase.database)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
@@ -102,7 +103,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
+    implementation(platform(libs.firebase.bom))
+
     implementation("com.google.firebase:firebase-auth")
 
 }

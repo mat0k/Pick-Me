@@ -71,6 +71,8 @@ import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.Firebase
+import com.google.firebase.database.database
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -504,6 +506,10 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         }
 
+
+        val database= Firebase.database
+        var myRef=database.getReference("Trips")
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -521,7 +527,31 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val end = destinationTitle
                     val startingLatLng = tripViewModel.tripStartLatLng.value
                     val destinationLatLng = tripViewModel.tripDestLatLng.value
+                    val date= formattedDate
+                    val time= formattedTime
                     val tripDistance = tripViewModel.distance.value
+
+                    // Create a new trip object
+                    val trip = mapOf(
+                        "title" to title,
+                        "seats" to tripSeats,
+                        "starting" to starting,
+                        "end" to end,
+                        "startingLatLng" to startingLatLng,
+                        "destinationLatLng" to destinationLatLng,
+                        "date" to date,
+                        "time" to time,
+                        "tripDistance" to tripDistance
+                    )
+
+                    // Add the trip to the database
+                    myRef.push().setValue(trip)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
+                        }
 
                     Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
                 }) {

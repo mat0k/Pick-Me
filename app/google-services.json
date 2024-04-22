@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "885523028621",
+    "project_id": "pick-me-9af8f",
+    "storage_bucket": "pick-me-9af8f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885523028621:android:d983f169e8e3357c5720c4",
+        "android_client_info": {
+          "package_name": "com.example.pickme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_YqUPi1QWyd4XECG7QHwUUwpDSs9FqfQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

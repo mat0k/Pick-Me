@@ -26,11 +26,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Home
@@ -50,7 +47,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -67,7 +63,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -81,13 +76,17 @@ import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
-import com.example.pickme.view.ui.driver.SetTrips
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.ValueEventListener
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -1018,10 +1017,46 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
-    Text("profile")
-
+    DisplayTrips()
 }
 
+@Composable
+fun DisplayTrips() {
+    val context = LocalContext.current
+    val tripList = remember { mutableStateListOf<Map<String, Any>>() }
+
+    LaunchedEffect(Unit) {
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("Trips")
+
+        val postListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                tripList.clear()
+                for (postSnapshot in dataSnapshot.children) {
+                    val trip = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                    if (trip != null) {
+                        tripList.add(trip)
+                    }
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        myRef.addValueEventListener(postListener)
+    }
+
+    LazyColumn {
+        items(tripList) { trip ->
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Time: ${trip["tripDistance"]}", style = MaterialTheme.typography.headlineMedium)
+                Text(text = "Starting: ${trip["starting"]}", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "End: ${trip["end"]}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
 
 @Composable
 fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel) {
@@ -1090,6 +1125,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     if (startingTitle != "Starting point") {
         enableConfirmation1 = true
     }
+    val passengerViewModel: PassengerViewModel= PassengerViewModel()
 
     Column(
         modifier = Modifier
@@ -1245,7 +1281,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max= 50.dp),
+                .heightIn(max = 50.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
 
@@ -1438,7 +1474,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 Icon(
                     painter = painterResource(id = R.drawable.search3),
                     contentDescription = "search Icon",
-                    modifier = Modifier.size(24.dp).padding(start= 5.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(start = 5.dp)
                 )
                 Text(
                     modifier= Modifier.padding(start= 15.dp),
@@ -1446,6 +1484,57 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontSize = 20.sp
                 )
             }
+        }
+
+        if (passengerViewModel.isNetworkAvailable(context)) {
+
+            // retrieving Trips
+            val tripList = remember { mutableStateListOf<Map<String, Any>>() }
+
+            LaunchedEffect(Unit) {
+                val database = FirebaseDatabase.getInstance()
+                val myRef = database.getReference("Trips")
+
+                val postListener = object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        tripList.clear()
+                        for (postSnapshot in dataSnapshot.children) {
+                            val trip = postSnapshot.getValue(object :
+                                GenericTypeIndicator<Map<String, Any>>() {})
+                            if (trip != null) {
+                                tripList.add(trip)
+                            }
+                        }
+                    }
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                myRef.addValueEventListener(postListener)
+            }
+
+            LazyColumn {
+                items(tripList) { trip ->
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "${trip["date"]} At ${trip["time"]}",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text(
+                            text = "Starting: ${trip["starting"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "End: ${trip["end"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
+        else{
+            passengerViewModel.ShowWifiProblemDialog(context)
         }
 
     }
