@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +27,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -37,6 +35,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -47,8 +46,10 @@ import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 
 
 class LoginView : ComponentActivity() {
+    private lateinit var registerViewModel: RegisterViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        registerViewModel = ViewModelProvider(this, RegisterViewModelFactory(this)).get(RegisterViewModel::class.java)
         setContent {
             PickMeUpTheme {
                 // A surface container using the 'background' color from the theme
@@ -62,10 +63,12 @@ class LoginView : ComponentActivity() {
                             LoginScreen(navController)
                         }
                         composable("register") {
-                            RegisterScreen(navController)
+                            val context = LocalContext.current
+                            RegisterScreen(navController, registerViewModel)
                         }
                         composable("phone") {
-                            PhoneNumber(navController, this@LoginView)
+                            val context = LocalContext.current
+                            OTP(navController, registerViewModel, this@LoginView)
                         }
                     }
                 }
@@ -75,7 +78,6 @@ class LoginView : ComponentActivity() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
     val viewModel = viewModel<LoginViewModel>()
@@ -87,7 +89,7 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(com.example.pickme.R.string.login),
+            text = stringResource(R.string.login),
             fontSize = 36.sp,
         )
 
@@ -163,11 +165,9 @@ fun LoginScreen(navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
     val context = LocalContext.current
-    val viewModel:RegisterViewModel = viewModel(factory = RegisterViewModelFactory(context))
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -204,6 +204,13 @@ fun RegisterScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
+            value = viewModel.phoneNumber.value,
+            onValueChange = { viewModel.updatePhoneNumber(it) },
+            placeholder = { Text("Phone Number") }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
             value = viewModel.password.value,
             onValueChange = { viewModel.updatePassword(it) },
             placeholder = { Text(text = stringResource(R.string.password)) },
@@ -218,15 +225,10 @@ fun RegisterScreen(navController: NavController) {
             placeholder = { Text("Confirm Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError = viewModel.passwordsMatch()
+            isError = !viewModel.passwordsMatch()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            pickImageLauncher.launch("image/*")
-        }) {
-            Text("Add profile picture")
-        }
+
 
         Spacer(modifier = Modifier.height(16.dp))
         Row {
@@ -245,7 +247,7 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.width(8.dp))
             FilterChip(selected = viewModel.role.intValue == 1,
-                onClick = {viewModel.updateRole(1)},
+                onClick = { viewModel.updateRole(1) },
                 label = { Text("Driver") },
                 leadingIcon = {
                     if (viewModel.role.intValue == 1) {
@@ -257,41 +259,48 @@ fun RegisterScreen(navController: NavController) {
                 }
             )
         }
-        Button(
-            onClick = {
-                      if(viewModel.role.intValue == 0) {
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Row {
+            Button(onClick = {
+                pickImageLauncher.launch("image/*")
+            }) {
+                Text("Add profile picture")
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = {
+//                    navController.navigate("phone")
                           viewModel.register()
-                      }
-            },
-        ) {
-            Text(stringResource(R.string.register))
+                },
+                enabled = viewModel.inputsFilled()
+            ) {
+                Text(stringResource(R.string.register))
+            }
         }
     }
 }
 
 @Composable
-fun PhoneNumber(navController: NavController, activity: ComponentActivity) {
+fun OTP(
+    navController: NavController,
+    registerViewModel: RegisterViewModel,
+    activity: ComponentActivity
+) {
     val viewModel = viewModel<OTPViewModel>()
-    val registerViewModel = viewModel<RegisterViewModel>()
+    viewModel.authenticate(registerViewModel.phoneNumber.value, activity)
     Column(
         modifier = Modifier
             .padding(50.dp)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Enter phone number", fontSize = 32.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = viewModel.phoneNumber.value,
-            onValueChange = { viewModel.updatePhoneNumber(it) },
-            placeholder = { Text("Phone Number") }
+        Text(
+            text = "Enter 6-digit code",
+            fontSize = 36.sp
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { viewModel.authenticate(activity) }) {
-            Text("Send OTP")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         OutlinedTextField(
             value = viewModel.otp.value,
             onValueChange = { viewModel.updateOTP(it) },
@@ -299,8 +308,14 @@ fun PhoneNumber(navController: NavController, activity: ComponentActivity) {
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { viewModel.verifyOTP() }) {
-            Text("Verify OTP")
+        Button(
+            onClick = {
+                viewModel.verifyOTP()
+                navController.navigate("login")
+            },
+            enabled = viewModel.otp.value.length == 6
+        ) {
+            Text("Verify")
         }
     }
 }
@@ -311,13 +326,5 @@ fun PhoneNumber(navController: NavController, activity: ComponentActivity) {
 fun LoginPreview() {
     PickMeUpTheme {
         LoginScreen(rememberNavController())
-    }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun RegisterPreview() {
-    PickMeUpTheme {
-        RegisterScreen(rememberNavController())
     }
 }

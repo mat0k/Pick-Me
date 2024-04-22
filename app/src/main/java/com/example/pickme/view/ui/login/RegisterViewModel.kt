@@ -23,6 +23,12 @@ class RegisterViewModelFactory(private val context: Context) : ViewModelProvider
 
 class RegisterViewModel(private val context: Context) : ViewModel() {
 
+    var phoneNumber = mutableStateOf("")
+        private set
+
+    var emergencyNumber = mutableStateOf("")
+        private set
+
     private val registerRepository = RegisterRepository(context)
 
     var firstName = mutableStateOf("")
@@ -31,7 +37,7 @@ class RegisterViewModel(private val context: Context) : ViewModel() {
     var lastName = mutableStateOf("")
         private set
 
-    var photo: Uri? = null
+    var photo = mutableStateOf(Uri.EMPTY)
         private set
 
     var password = mutableStateOf("")
@@ -55,6 +61,14 @@ class RegisterViewModel(private val context: Context) : ViewModel() {
         password.value = newPassword
     }
 
+    fun updatePhoneNumber(newPhoneNumber: String) {
+        phoneNumber.value = newPhoneNumber
+    }
+
+    fun updateEmergencyNumber(newEmergencyNumber: String) {
+        emergencyNumber.value = newEmergencyNumber
+    }
+
     fun updateConfirmPassword(newConfirmPassword: String) {
         confirmPassword.value = newConfirmPassword
     }
@@ -69,11 +83,17 @@ class RegisterViewModel(private val context: Context) : ViewModel() {
     }
 
     fun inputsFilled(): Boolean {
-        return firstName.value.isNotEmpty() && lastName.value.isNotEmpty() && password.value.isNotEmpty() && confirmPassword.value.isNotEmpty() && passwordsMatch() && photo != null
+        return firstName.value.isNotEmpty()
+                && lastName.value.isNotEmpty()
+                && phoneNumber.value.isNotEmpty()
+                && password.value.isNotEmpty()
+                && confirmPassword.value.isNotEmpty()
+                && passwordsMatch()
+                && photo.value != null
     }
 
     fun updateProfilePicture(it: Uri) {
-        photo = it
+        photo.value = it
     }
 
     fun register() {
@@ -82,9 +102,9 @@ class RegisterViewModel(private val context: Context) : ViewModel() {
             firstName.value,
             lastName.value,
             password.value,
-            "1234567890",
-            photo.toString(),
-            "0987654321"
+            phoneNumber.value,
+            photo.value.toString(),
+            emergencyNumber.value
         )
         registerRepository.addPassenger(newPassenger)
 

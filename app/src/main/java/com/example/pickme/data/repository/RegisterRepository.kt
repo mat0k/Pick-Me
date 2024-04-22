@@ -2,7 +2,6 @@ package com.example.pickme.data.repository
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
@@ -19,7 +18,7 @@ class RegisterRepository(private val context: Context) {
 
         val stringRequest = object : StringRequest(
             Method.POST, url,
-            Response.Listener<String> { response ->
+            Response.Listener { response ->
                 Log.e("RESPONSE", response)
             },
             Response.ErrorListener { error ->
