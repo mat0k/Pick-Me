@@ -225,7 +225,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
     val formattedTime by remember {
         derivedStateOf {
             DateTimeFormatter
-                .ofPattern("hh:mm")
+                .ofPattern("hh:mm a")
                 .format(pickedTime)
         }
     }
@@ -1106,7 +1106,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     val formattedTime by remember {
         derivedStateOf {
             DateTimeFormatter
-                .ofPattern("hh:mm")
+                .ofPattern("hh:mm a")
                 .format(pickedTime)
         }
     }
