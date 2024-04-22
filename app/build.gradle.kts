@@ -1,16 +1,15 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
-    alias(libs.plugins.google.secrets)
     id("com.google.gms.google-services")
-
+    alias(libs.plugins.google.secrets)
 }
 
 
 android {
     signingConfigs {
         getByName("debug") {
-            storeFile = file("C:\\Users\\user\\keystore.jks")
+            storeFile = file("E:\\Backup\\keystore.jks")
             storePassword = "mohammad"
             keyAlias = "key0"
             keyPassword = "mohammad"
@@ -26,7 +25,7 @@ android {
         applicationId = "com.example.pickme"
         minSdk = 26
         targetSdk = 34
-        compileSdk = 34
+        compileSdk= 34
         versionCode = 1
         versionName = "1.0"
 
@@ -34,6 +33,8 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+
 
 
     }
@@ -90,7 +91,6 @@ dependencies {
     implementation(libs.play.services.location)
 
     implementation(libs.compose.material.dialogs.datetime)
-    implementation(libs.firebase.database)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
