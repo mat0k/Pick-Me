@@ -593,7 +593,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val time= formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
-                    val rate = 2
+                    val rate = 4
 
                     // Create a new trip object
                     val trip = mapOf(
@@ -614,13 +614,13 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                            tripViewModel.tripTitle.value= ""
-                            tripTitle= ""
-                            tripViewModel.seats.value= 0
-                            seats= 0
-                            isButtonClicked1= false
+                        //    tripViewModel.tripTitle.value= ""
+                        //    tripTitle= ""
+                        //    tripViewModel.seats.value= 0
+                        //    seats= 0
+                          //  isButtonClicked1= false
                             isButtonClicked2= false
-                            enableConfirmation1= false
+                         //   enableConfirmation1= false
                             enableConfirmation2= false
                         }
                         .addOnFailureListener {

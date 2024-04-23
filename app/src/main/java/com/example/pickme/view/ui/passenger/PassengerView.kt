@@ -101,6 +101,7 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 
 data class BottomNavigationItem(
@@ -1018,6 +1019,90 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     Text(text = "profile page")
+    showAllTrips()
+}
+
+@Composable
+fun showAllTrips() {
+    val context = LocalContext.current
+    val passengerViewModel: PassengerViewModel = PassengerViewModel()
+
+    if (passengerViewModel.isNetworkAvailable(context)) {
+        // retrieving Trips
+        val tripList = remember { mutableStateListOf<Map<String, Any>>() }
+
+        LaunchedEffect(Unit) {
+            val database = FirebaseDatabase.getInstance()
+            val myRef = database.getReference("Trips")
+
+            val postListener = object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val allTrips = mutableListOf<Map<String, Any>>()
+                    tripList.clear()
+                    for (postSnapshot in dataSnapshot.children) {
+                        val trip = postSnapshot.getValue(object :
+                            GenericTypeIndicator<Map<String, Any>>() {})
+                        if (trip != null) {
+                            allTrips.add(trip)
+                        }
+                    }
+                    // Update the displayed list
+                    tripList.clear()
+                    tripList.addAll(allTrips)
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            myRef.addValueEventListener(postListener)
+        }
+        Column(
+            modifier= Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = {
+                deleteOldTrips()
+            }) {
+                Text(text = "Delete old trips")
+            }
+            LazyColumn {
+                items(tripList) { trip ->
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "${trip["date"]} At ${trip["time"]}",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text(
+                            text = "Starting: ${trip["starting"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "End: ${trip["end"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Rating: ${trip["rate"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Seats: ${trip["seats"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+        }
+    } else {
+        passengerViewModel.ShowWifiProblemDialog(context)
+    }
 }
 
 @Composable
@@ -1101,7 +1186,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .padding(top = 2.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -1516,6 +1602,18 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 text = "End: ${trip["end"]}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            Text(
+                                text = "Rating: ${trip["rate"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "Seats: ${trip["seats"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
                 }
@@ -1580,7 +1678,7 @@ fun filterTrips(trips: List<Map<String, Any>>, isDriverVerified: Boolean, format
     return trips.filter { trip ->
         val tripDate = trip["date"] as? String ?: ""
         val driverVerified = trip["verified"] as? Boolean ?: false
-        val driverRating = trip["rate"] as? Int ?: 0
+        val driverRating = trip["rate"]?.toString()?.toIntOrNull() ?: 0
 
         // Check all conditions
         (driverVerified == isDriverVerified)
@@ -1923,4 +2021,33 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
 
         }
     }
+}
+
+
+fun deleteOldTrips() {
+    val database = FirebaseDatabase.getInstance()
+    val myRef = database.getReference("Trips")
+
+    val postListener = object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            for (postSnapshot in dataSnapshot.children) {
+                val trip = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                if (trip != null) {
+                    val tripDateStr = trip["date"] as? String ?: ""
+                    val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH)
+                    val tripDate = LocalDate.parse(tripDateStr, formatter)
+
+                    if (tripDate.isBefore(LocalDate.now())) {
+                        // This trip is before the current date, delete it
+                        postSnapshot.ref.removeValue()
+                    }
+                }
+            }
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            // Handle possible errors.
+        }
+    }
+    myRef.addListenerForSingleValueEvent(postListener)
 }
