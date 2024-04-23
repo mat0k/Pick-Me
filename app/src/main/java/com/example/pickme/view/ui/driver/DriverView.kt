@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -549,7 +550,24 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
+        var isDriverVerified by remember {
+            mutableStateOf(false)
+        }
+        Row(                     //verified driver      will be removed late
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
 
+
+            ) {
+
+                Text(text = "Driver Verified")
+                Checkbox(
+                    checked = isDriverVerified,
+                    onCheckedChange = { isDriverVerified = it }
+                )
+        }
 
         val database= Firebase.database
         var myRef=database.getReference("Trips")
@@ -574,6 +592,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val date= formattedDate
                     val time= formattedTime
                     val tripDistance = tripViewModel.distance.value
+                    val verified = isDriverVerified
+                    val rate = 4
 
                     // Create a new trip object
                     val trip = mapOf(
@@ -585,20 +605,22 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "destinationLatLng" to destinationLatLng,
                         "date" to date,
                         "time" to time,
-                        "tripDistance" to tripDistance
+                        "tripDistance" to tripDistance,
+                        "verified" to verified,
+                        "rate" to rate
                     )
 
                     // Add the trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                            tripViewModel.tripTitle.value= ""
-                            tripTitle= ""
-                            tripViewModel.seats.value= 0
-                            seats= 0
-                            isButtonClicked1= false
+                        //    tripViewModel.tripTitle.value= ""
+                        //    tripTitle= ""
+                        //    tripViewModel.seats.value= 0
+                        //    seats= 0
+                          //  isButtonClicked1= false
                             isButtonClicked2= false
-                            enableConfirmation1= false
+                         //   enableConfirmation1= false
                             enableConfirmation2= false
                         }
                         .addOnFailureListener {
@@ -614,11 +636,6 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         }
 
     }
-
-
-
-
-
 
     MaterialDialog(
         dialogState = dateDialogState,
