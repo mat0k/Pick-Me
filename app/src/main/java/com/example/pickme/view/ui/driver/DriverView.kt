@@ -108,7 +108,7 @@ class DriverView : ComponentActivity() {
                     BottomNavigationItem("home", Icons.Filled.Home, Icons.Outlined.Home),
                     BottomNavigationItem("profile", Icons.Filled.Person, Icons.Outlined.Person)
                 )
-                var selectedItemIndex by remember { mutableStateOf(items.indexOfFirst { it.title == "home" }) }
+                var selectedItemIndex by remember { mutableIntStateOf(items.indexOfFirst { it.title == "home" }) }
                 val navController = rememberNavController()
 
                 Surface(

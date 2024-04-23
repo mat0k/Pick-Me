@@ -1,74 +1,65 @@
-package com.example.pickme.view.ui.login
-
 import android.app.Activity
-import android.util.Log
-import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 
 class OTPViewModel : ViewModel() {
-    var otp = mutableStateOf("")
-        private set
-    private var auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
+    private lateinit var storedVerificationId: String
+    private lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    init {
-        setupCallbacks()
-    }
+    var otp = MutableLiveData<String>()
 
-    fun updateOTP(newOTP: String){
-        otp.value = newOTP
-    }
+    fun authenticate(phoneNumber: String, activity: Activity) {
+        val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
-    private fun setupCallbacks() {
-        callbacks = object: PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
                 signInWithPhoneAuthCredential(credential)
             }
 
-            override fun onVerificationFailed(p0: FirebaseException) {
+            override fun onVerificationFailed(e: FirebaseException) {
+                // This callback is invoked in an invalid request for verification is made,
+                // for instance if the the phone number format is not valid.
             }
 
-            override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
-
+            override fun onCodeSent(
+                verificationId: String,
+                token: PhoneAuthProvider.ForceResendingToken
+            ) {
+                storedVerificationId = verificationId
+                resendToken = token
             }
         }
-    }
 
-    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    val user = task.result?.user
-                    // ...
-                    //logcat message success
-                    Log.e("SUCCESS", "Sign in success")
-                } else {
-                    // Sign in failed, display a message and update the UI
-                    // ...
-                }
-            }
-
-    }
-
-    fun authenticate(phoneNumber: String, activity: Activity) {
-        val options = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber(phoneNumber)
-            .setTimeout(60L, java.util.concurrent.TimeUnit.SECONDS)
-            .setActivity(activity)
-            .setCallbacks(callbacks)
-            .build()
-        PhoneAuthProvider.verifyPhoneNumber(options)
+        PhoneAuthProvider.getInstance().verifyPhoneNumber(
+            phoneNumber, // Phone number to verify
+            60, // Timeout duration
+            TimeUnit.SECONDS, // Unit of timeout
+            activity, // Activity (for callback binding)
+            callbacks) // OnVerificationStateChangedCallbacks
     }
 
     fun verifyOTP() {
-        val credential = PhoneAuthProvider.getCredential(otp.value, "")
+        val credential = PhoneAuthProvider.getCredential(storedVerificationId, otp.value!!)
         signInWithPhoneAuthCredential(credential)
+    }
+
+    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+        viewModelScope.launch {
+            try {
+                val authResult = auth.signInWithCredential(credential).await()
+                // You can access the user via authResult.user
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
     }
 
 }

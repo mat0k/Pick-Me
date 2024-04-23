@@ -21,8 +21,12 @@ import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.view.ui.driver.DriverView
 import com.example.pickme.view.ui.login.LoginView
 import com.example.pickme.view.ui.passenger.PassengerView
+import com.google.firebase.database.FirebaseDatabase
 
-
+data class DriverLicense(
+    val driverLicense: String = "",
+    val licensePlate: String = ""
+)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

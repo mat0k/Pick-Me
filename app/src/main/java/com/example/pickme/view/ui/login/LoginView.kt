@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.login
 
-
+import OTPViewModel
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -44,12 +46,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pickme.R
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 
-
 class LoginView : ComponentActivity() {
     private lateinit var registerViewModel: RegisterViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        registerViewModel = ViewModelProvider(this, RegisterViewModelFactory(this)).get(RegisterViewModel::class.java)
+        registerViewModel = ViewModelProvider(this, RegisterViewModelFactory(this))[RegisterViewModel::class.java]
         setContent {
             PickMeUpTheme {
                 // A surface container using the 'background' color from the theme
@@ -70,10 +71,14 @@ class LoginView : ComponentActivity() {
                             val context = LocalContext.current
                             OTP(navController, registerViewModel, this@LoginView)
                         }
+                        composable("driver") {
+                            DriverInfo(navController, registerViewModel)
+                        }
                     }
                 }
             }
         }
+
     }
 
 }
@@ -160,7 +165,7 @@ fun LoginScreen(navController: NavController) {
                 enabled = viewModel.inputsFilled()
             ) {
                 Text(stringResource(R.string.login))
-            }
+             }
         }
     }
 }
@@ -271,8 +276,11 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 
             Button(
                 onClick = {
-//                    navController.navigate("phone")
-                          viewModel.register()
+                          if (viewModel.role.value == 0) {
+                              viewModel.registerPassenger()
+                          } else {
+                              navController.navigate("driver")
+                          }
                 },
                 enabled = viewModel.inputsFilled()
             ) {
@@ -283,13 +291,16 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 }
 
 @Composable
-fun OTP(
-    navController: NavController,
-    registerViewModel: RegisterViewModel,
-    activity: ComponentActivity
-) {
-    val viewModel = viewModel<OTPViewModel>()
-    viewModel.authenticate(registerViewModel.phoneNumber.value, activity)
+fun DriverInfo(navController: NavController, registerViewModel: RegisterViewModel) {
+    val viewModel = viewModel<DriverViewModel>()
+    val context = LocalContext.current
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.updateCarPhoto(it)
+        }
+    }
     Column(
         modifier = Modifier
             .padding(50.dp)
@@ -297,29 +308,86 @@ fun OTP(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Enter 6-digit code",
+            text = "Enter your information",
+            fontSize = 36.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = viewModel.car_plate.value,
+            onValueChange = {
+                viewModel.updateCarPlate(it)
+            },
+            placeholder = { Text("Car Plate") }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                pickImageLauncher.launch("image/*")
+            }
+        ) {
+            Text("Add car photo")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = viewModel.driver_license.value,
+            onValueChange = {
+                viewModel.updateDriverLicense(it)
+            },
+            placeholder = { Text("Driver License") }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                registerViewModel.registerDriver( viewModel.car_plate.value, viewModel.car_photo.value.toString(), viewModel.driver_license.value)
+                navController.navigate("login")
+            },
+            enabled = viewModel.car_plate.value.isNotEmpty() && viewModel.driver_license.value.isNotEmpty()
+        ) {
+            Text("Register")
+        }
+    }
+
+}
+
+@Composable
+fun OTP(
+    navController: NavController,
+    registerViewModel: RegisterViewModel,
+    activity: ComponentActivity
+) {
+    val otpViewModel = viewModel<OTPViewModel>()
+    otpViewModel.authenticate(registerViewModel.phoneNumber.value, activity)
+    Column(
+        modifier = Modifier
+            .padding(50.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Enter the 6-digit code we sent to ${registerViewModel.phoneNumber.value}",
             fontSize = 36.sp
         )
         Spacer(modifier = Modifier.height(32.dp))
-        OutlinedTextField(
-            value = viewModel.otp.value,
-            onValueChange = { viewModel.updateOTP(it) },
-            placeholder = { Text("OTP") }
-        )
+        otpViewModel.otp.value?.let { code ->
+            OutlinedTextField(
+                value = code,
+                onValueChange = { otpViewModel.otp.value = it },
+                placeholder = { Text("OTP") }
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                viewModel.verifyOTP()
+                otpViewModel.verifyOTP()
                 navController.navigate("login")
             },
-            enabled = viewModel.otp.value.length == 6
+            enabled = otpViewModel.otp.value?.length == 6
         ) {
             Text("Verify")
         }
     }
 }
-
 
 @Composable
 @Preview(showBackground = true)

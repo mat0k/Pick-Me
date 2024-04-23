@@ -6,8 +6,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.pickme.data.repository.AuthRepository
 
 class LoginViewModel : ViewModel() {
+    val authRepository = AuthRepository()
     var phoneNumber by mutableStateOf("")
         private set
     var password by mutableStateOf("")
@@ -19,7 +21,7 @@ class LoginViewModel : ViewModel() {
 
     fun login() {
         if(role == 0) {
-            // login as passenger
+            authRepository.loginAsPassenger(phoneNumber, password)
         } else {
             // login as driver
         }
