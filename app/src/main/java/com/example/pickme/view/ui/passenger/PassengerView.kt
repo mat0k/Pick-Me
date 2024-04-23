@@ -1782,10 +1782,11 @@ fun filterTrips(
         val minutesDiff = ChronoUnit.MINUTES.between(inputTime, tripTime).toInt()
 
         // Get the starting location of the trip
-        val tripStartLatLngStr = trip["startingLatLng"] as? String ?: ""
-        val tripStartLatLngParts = tripStartLatLngStr.split(",")
-        val tripStartLatLng = LatLng(tripStartLatLngParts[0].toDouble(), tripStartLatLngParts[1].toDouble())
-
+        val tripStartLatLngMap = trip["startingLatLng"] as? Map<String, Double> ?: emptyMap()
+        val tripStartLatLng = LatLng(
+            tripStartLatLngMap["latitude"] ?: 0.0,
+            tripStartLatLngMap["longitude"] ?: 0.0
+        )
         // Calculate the distance between the start location and the trip's starting location
         val distance = passViewModel.calculateDistance(startLatLng, tripStartLatLng)
 
