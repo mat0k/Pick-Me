@@ -1017,45 +1017,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
-    DisplayTrips()
-}
-
-@Composable
-fun DisplayTrips() {
-    val context = LocalContext.current
-    val tripList = remember { mutableStateListOf<Map<String, Any>>() }
-
-    LaunchedEffect(Unit) {
-        val database = FirebaseDatabase.getInstance()
-        val myRef = database.getReference("Trips")
-
-        val postListener = object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                tripList.clear()
-                for (postSnapshot in dataSnapshot.children) {
-                    val trip = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
-                    if (trip != null) {
-                        tripList.add(trip)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT).show()
-            }
-        }
-        myRef.addValueEventListener(postListener)
-    }
-
-    LazyColumn {
-        items(tripList) { trip ->
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Time: ${trip["tripDistance"]}", style = MaterialTheme.typography.headlineMedium)
-                Text(text = "Starting: ${trip["starting"]}", style = MaterialTheme.typography.bodyMedium)
-                Text(text = "End: ${trip["end"]}", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
+    Text(text = "profile page")
 }
 
 @Composable
@@ -1125,7 +1087,16 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     if (startingTitle != "Starting point") {
         enableConfirmation1 = true
     }
-    val passengerViewModel: PassengerViewModel= PassengerViewModel()
+    val passengerViewModel: PassengerViewModel = PassengerViewModel()
+
+    var searchRadius by remember { mutableStateOf(1) } // default radius is 1 km
+    var isDriverVerified by remember { mutableStateOf(false) }
+    var minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
+    var minAvailableSeats by remember { mutableStateOf(1) } // default minimum available seats is 1
+
+    var showSearch by remember {
+        mutableStateOf(false)
+    }
 
     Column(
         modifier = Modifier
@@ -1381,10 +1352,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
             ) {
 
-            var searchRadius by remember { mutableStateOf(1) } // default radius is 1 km
-            var isDriverVerified by remember { mutableStateOf(false) }
-            var minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
-            var minAvailableSeats by remember { mutableStateOf(1) } // default minimum available seats is 1
 
             Column {
 
@@ -1431,7 +1398,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         valueRange = 0f..5f, // allow rating from 0 to 5
                         steps = 5,
                     )
-                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -1468,8 +1435,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     val startingLatLng = tripViewModel.tripStartLatLng.value
                     val destinationLatLng = tripViewModel.tripDestLatLng.value
                     val tripDistance = tripViewModel.distance.value
+                    val date = formattedDate
+                    val time = formattedTime
+                    val searchRad = searchRadius
+                    val isVerified = isDriverVerified
+                    val minRat = minDriverRating
+                    val minSeats = minAvailableSeats
 
-                    Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
+                    showSearch = true
                 }) {
                 Icon(
                     painter = painterResource(id = R.drawable.search3),
@@ -1479,69 +1452,79 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         .padding(start = 5.dp)
                 )
                 Text(
-                    modifier= Modifier.padding(start= 15.dp),
+                    modifier = Modifier.padding(start = 15.dp),
                     text = "Search",
                     fontSize = 20.sp
                 )
             }
         }
+        ///////////////////////////////////////////////////////////////////////////////////////////////
 
         if (passengerViewModel.isNetworkAvailable(context)) {
+            if (showSearch) {
+                // retrieving Trips
+                val tripList = remember { mutableStateListOf<Map<String, Any>>() }
 
-            // retrieving Trips
-            val tripList = remember { mutableStateListOf<Map<String, Any>>() }
+                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating) {
+                    val database = FirebaseDatabase.getInstance()
+                    val myRef = database.getReference("Trips")
 
-            LaunchedEffect(Unit) {
-                val database = FirebaseDatabase.getInstance()
-                val myRef = database.getReference("Trips")
-
-                val postListener = object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        tripList.clear()
-                        for (postSnapshot in dataSnapshot.children) {
-                            val trip = postSnapshot.getValue(object :
-                                GenericTypeIndicator<Map<String, Any>>() {})
-                            if (trip != null) {
-                                tripList.add(trip)
+                    val postListener = object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            val allTrips = mutableListOf<Map<String, Any>>()
+                            tripList.clear()
+                            for (postSnapshot in dataSnapshot.children) {
+                                val trip = postSnapshot.getValue(object :
+                                    GenericTypeIndicator<Map<String, Any>>() {})
+                                if (trip != null) {
+                                    allTrips.add(trip)
+                                }
                             }
+                            // Filter the trips
+                            val filteredTrips =
+                                filterTrips(
+                                    allTrips,
+                                    isDriverVerified,
+                                    formattedDate,
+                                    minDriverRating
+                                )
+                            // Update the displayed list
+                            tripList.clear()
+                            tripList.addAll(filteredTrips)
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
-
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT).show()
-                    }
+                    myRef.addValueEventListener(postListener)
                 }
-                myRef.addValueEventListener(postListener)
-            }
 
-            LazyColumn {
-                items(tripList) { trip ->
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "${trip["date"]} At ${trip["time"]}",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Text(
-                            text = "Starting: ${trip["starting"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "End: ${trip["end"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                LazyColumn {
+                    items(tripList) { trip ->
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "${trip["date"]} At ${trip["time"]}",
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                            Text(
+                                text = "Starting: ${trip["starting"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "End: ${trip["end"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
             }
-        }
-        else{
+        } else {
             passengerViewModel.ShowWifiProblemDialog(context)
         }
 
     }
-
-
-
-
 
 
     MaterialDialog(
@@ -1592,6 +1575,20 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
 }
 
+
+fun filterTrips(trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int): List<Map<String, Any>> {
+    return trips.filter { trip ->
+        val tripDate = trip["date"] as? String ?: ""
+        val driverVerified = trip["verified"] as? Boolean ?: false
+        val driverRating = trip["rate"] as? Int ?: 0
+
+        // Check all conditions
+        (driverVerified == isDriverVerified)
+                && (tripDate == formattedDate)
+                && (driverRating >= minRating)
+
+    }
+}
 
 @Composable
 fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
