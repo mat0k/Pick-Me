@@ -13,4 +13,4 @@ data class LocalPickUp(
     val distance: Double,
 
     val dateAndTime: String
-    )
+)

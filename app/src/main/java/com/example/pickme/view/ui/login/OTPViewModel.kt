@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.launch
@@ -43,7 +47,8 @@ class OTPViewModel : ViewModel() {
             60, // Timeout duration
             TimeUnit.SECONDS, // Unit of timeout
             activity, // Activity (for callback binding)
-            callbacks) // OnVerificationStateChangedCallbacks
+            callbacks
+        ) // OnVerificationStateChangedCallbacks
     }
 
     fun verifyOTP() {
@@ -58,8 +63,28 @@ class OTPViewModel : ViewModel() {
                 // You can access the user via authResult.user
             } catch (e: Exception) {
                 // Handle error
+                when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> {
+                        // Invalid verification code entered.
+                    }
+
+                    is FirebaseAuthInvalidUserException -> {
+                        // The corresponding user record does not exist.
+                    }
+
+                    is FirebaseAuthUserCollisionException -> {
+                        // There already exists an account with the email address asserted by the credential.
+                    }
+
+                    is FirebaseAuthRecentLoginRequiredException -> {
+                        // The user's last sign-in time does not meet the security threshold. Use reauthenticateWithCredential to resolve.
+                    }
+
+                    else -> {
+                        // Some other error occurred.
+                    }
+                }
             }
         }
     }
-
 }
