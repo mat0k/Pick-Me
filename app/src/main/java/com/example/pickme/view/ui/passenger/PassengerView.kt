@@ -2,6 +2,7 @@ package com.example.pickme.view.ui.passenger
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -37,6 +39,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +55,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -101,6 +106,7 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 
@@ -1059,7 +1065,7 @@ fun showAllTrips() {
             myRef.addValueEventListener(postListener)
         }
         Column(
-            modifier= Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -1179,15 +1185,15 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     var minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
     var minAvailableSeats by remember { mutableStateOf(1) } // default minimum available seats is 1
 
-    var showSearch by remember {
-        mutableStateOf(false)
-    }
+    var showSearch by remember { mutableStateOf(false) }
+
+    var timeRange by remember { mutableIntStateOf(0) } // Default time range is 0 hour
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .padding(top = 2.dp),
+            .padding(top = 2.dp)
+            .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -1200,7 +1206,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
-                modifier = Modifier.padding(start = 10.dp, top = 16.dp)
+                modifier = Modifier.padding(start = 10.dp, top = 0.dp)
             )
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1340,9 +1346,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 .fillMaxWidth()
                 .heightIn(max = 50.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.Center,         // date and time adder
 
-            ) {
+        ) {
             if (isButtonClicked2) { // calender
                 Box(
                     modifier = Modifier.weight(0.85f)
@@ -1437,69 +1443,146 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             horizontalArrangement = Arrangement.Center,
 
             ) {
+            var expanded by remember { mutableStateOf(false) }
 
 
-            Column {
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Text("Search Radius: $searchRadius km")
-                    Slider(
+            if (expanded) {
+                Column {
+
+                    Row(
+                        // verified check box
                         modifier = Modifier
-                            .width(200.dp),
-                        value = searchRadius.toFloat(),
-                        onValueChange = { searchRadius = it.toInt() },
-                        valueRange = 1f..5f, // allow radius from 1 km to 10 km
-                        steps = 5,
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Checkbox(
-                        checked = isDriverVerified,
-                        onCheckedChange = { isDriverVerified = it },
-                    )
-                    Text("Only show trips from verified drivers")
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Text("Minimum Driver Rating: $minDriverRating")
-                    Slider(
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Checkbox(
+                            checked = isDriverVerified,
+                            onCheckedChange = { isDriverVerified = it },
+                        )
+                        Text("Only show trips from verified drivers")
+                    }
+                    Row(
+                        // search radius
                         modifier = Modifier
-                            .width(200.dp),
-                        value = minDriverRating.toFloat(),
-                        onValueChange = { minDriverRating = it.toInt() },
-                        valueRange = 0f..5f, // allow rating from 0 to 5
-                        steps = 5,
-                    )
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(text = if (searchRadius == 6) "Search Radius: any" else "Search Radius: $searchRadius km")
+                        Slider(
+                            modifier = Modifier
+                                .width(200.dp),
+                            value = searchRadius.toFloat(),
+                            onValueChange = { searchRadius = it.toInt() },
+                            valueRange = 1f..6f, // allow radius from 1 km to 10 km
+                            steps = 5,
+                        )
+                    }
+                    Row(
+                        // time range
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(text = if (timeRange == 0) "Search Time interval: any" else "Search Time interval: $timeRange ${if (timeRange > 1) "hours" else "hour"}")
+                        Slider(
+                            modifier = Modifier
+                                .width(200.dp),
+                            value = timeRange.toFloat(),
+                            onValueChange = { timeRange = it.toInt() },
+                            valueRange = 0f..3f, // Time range from 0 to 3 hours
+                            steps = 3,
+                        )
+                    }
+                    Row(
+                        // minimum rating
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text("Minimum Driver Rating: $minDriverRating")
+                        Slider(
+                            modifier = Modifier
+                                .width(200.dp),
+                            value = minDriverRating.toFloat(),
+                            onValueChange = { minDriverRating = it.toInt() },
+                            valueRange = 0f..5f, // allow rating from 0 to 5
+                            steps = 5,
+                        )
+                    }
+                    Row(
+                        // minimum available seats slider
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text("Minimum Available Seats: $minAvailableSeats")
+                        Slider(
+                            modifier = Modifier
+                                .width(200.dp),
+                            value = minAvailableSeats.toFloat(),
+                            onValueChange = { minAvailableSeats = it.toInt() },
+                            valueRange = 1f..5f, // allow available seats from 1 to 5
+                            steps = 5,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Button(
+                            modifier = Modifier
+                                .size(width = 180.dp, height = 45.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = { expanded = false })
+                        {
+                            Icon(
+                                painter = painterResource(id = R.drawable.collapse),
+                                contentDescription = "collapse Icon",
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .padding(end = 6.dp)
+                            )
+                            Text(
+                                text = "Search filter",
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
                 }
+
+            } else {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    Text("Minimum Available Seats: $minAvailableSeats")
-                    Slider(
+                    Button(
                         modifier = Modifier
-                            .width(200.dp),
-                        value = minAvailableSeats.toFloat(),
-                        onValueChange = { minAvailableSeats = it.toInt() },
-                        valueRange = 1f..5f, // allow available seats from 1 to 5
-                        steps = 5,
-                    )
+                            .size(width = 180.dp, height = 45.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = { expanded = true })
+                    {
+                        Icon(
+                            painter = painterResource(id = R.drawable.expand),
+                            contentDescription = "expand Icon",
+                            modifier = Modifier
+                                .size(26.dp)
+                                .padding(end = 6.dp)
+                        )
+                        Text(
+                            text = "Search filter",
+                            fontSize = 15.sp
+                        )
+                    }
                 }
             }
         }
@@ -1551,7 +1634,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 // retrieving Trips
                 val tripList = remember { mutableStateListOf<Map<String, Any>>() }
 
-                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating) {
+                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating, minAvailableSeats, formattedDate, timeRange, tripViewModel) {
                     val database = FirebaseDatabase.getInstance()
                     val myRef = database.getReference("Trips")
 
@@ -1572,7 +1655,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                     allTrips,
                                     isDriverVerified,
                                     formattedDate,
-                                    minDriverRating
+                                    minDriverRating,
+                                    minAvailableSeats,
+                                    searchRadius,
+                                    formattedTime,
+                                    timeRange,
+                                    tripViewModel
                                 )
                             // Update the displayed list
                             tripList.clear()
@@ -1674,17 +1762,47 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 }
 
 
-fun filterTrips(trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int): List<Map<String, Any>> {
+
+fun filterTrips(
+    trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int, seats: Int, searchRadius: Int, time: String ,timeRange: Int, tripViewModel: TripViewModel
+): List<Map<String, Any>> {
+    // Convert the input time string to a LocalTime object
+    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
+    val inputTime = LocalTime.parse(time, formatter)
+    val startLatLng= tripViewModel.tripStartLatLng.value
+    //val targetLatLng= tripViewModel.tripDestLatLng.value
+    val passViewModel= PassengerViewModel()
+
     return trips.filter { trip ->
         val tripDate = trip["date"] as? String ?: ""
         val driverVerified = trip["verified"] as? Boolean ?: false
         val driverRating = trip["rate"]?.toString()?.toIntOrNull() ?: 0
+        val tripSeats = trip["seats"]?.toString()?.toIntOrNull() ?: 1
+
+        // Convert the trip time string to a LocalTime object
+        val tripTimeStr = trip["time"] as? String ?: ""
+        val tripTime = LocalTime.parse(tripTimeStr, formatter)
+
+        // Calculate the difference in minutes between the input time and the trip time
+        val minutesDiff = ChronoUnit.MINUTES.between(inputTime, tripTime).toInt()
+
+        // Get the starting location of the trip
+        val tripStartLatLngMap = trip["startingLatLng"] as? Map<String, Double> ?: emptyMap()
+        val tripStartLatLng = LatLng(
+            tripStartLatLngMap["latitude"] ?: 0.0,
+            tripStartLatLngMap["longitude"] ?: 0.0
+        )
+        // Calculate the distance between the start location and the trip's starting location
+        val distance = passViewModel.calculateDistance(startLatLng, tripStartLatLng)
+
 
         // Check all conditions
         (driverVerified == isDriverVerified)
                 && (tripDate == formattedDate)
                 && (driverRating >= minRating)
-
+                && (tripSeats >= seats)
+                && (timeRange == 0 || (minutesDiff in -timeRange*60..timeRange*60)) // Convert timeRange from hours to minutes
+                && (timeRange == 0 || distance <= searchRadius)
     }
 }
 
@@ -2031,7 +2149,8 @@ fun deleteOldTrips() {
     val postListener = object : ValueEventListener {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
             for (postSnapshot in dataSnapshot.children) {
-                val trip = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                val trip =
+                    postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
                 if (trip != null) {
                     val tripDateStr = trip["date"] as? String ?: ""
                     val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH)
