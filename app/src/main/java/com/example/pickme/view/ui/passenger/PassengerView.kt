@@ -2,6 +2,7 @@ package com.example.pickme.view.ui.passenger
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -1469,13 +1470,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
-                        Text("Search Radius: $searchRadius km")
+                        Text(text = if (searchRadius == 6) "Search Radius: any" else "Search Radius: $searchRadius km")
                         Slider(
                             modifier = Modifier
                                 .width(200.dp),
                             value = searchRadius.toFloat(),
                             onValueChange = { searchRadius = it.toInt() },
-                            valueRange = 1f..5f, // allow radius from 1 km to 10 km
+                            valueRange = 1f..6f, // allow radius from 1 km to 10 km
                             steps = 5,
                         )
                     }
@@ -1545,7 +1546,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             Icon(
                                 painter = painterResource(id = R.drawable.collapse),
                                 contentDescription = "collapse Icon",
-                                modifier = Modifier.size(26.dp).padding(end = 6.dp)
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .padding(end = 6.dp)
                             )
                             Text(
                                 text = "Search filter",
@@ -1571,7 +1574,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         Icon(
                             painter = painterResource(id = R.drawable.expand),
                             contentDescription = "expand Icon",
-                            modifier = Modifier.size(26.dp).padding(end = 6.dp)
+                            modifier = Modifier
+                                .size(26.dp)
+                                .padding(end = 6.dp)
                         )
                         Text(
                             text = "Search filter",
@@ -1791,15 +1796,13 @@ fun filterTrips(
         val distance = passViewModel.calculateDistance(startLatLng, tripStartLatLng)
 
 
-
         // Check all conditions
         (driverVerified == isDriverVerified)
                 && (tripDate == formattedDate)
                 && (driverRating >= minRating)
                 && (tripSeats >= seats)
                 && (timeRange == 0 || (minutesDiff in -timeRange*60..timeRange*60)) // Convert timeRange from hours to minutes
-                && (distance <= searchRadius)
-
+                && (timeRange == 0 || distance <= searchRadius)
     }
 }
 
