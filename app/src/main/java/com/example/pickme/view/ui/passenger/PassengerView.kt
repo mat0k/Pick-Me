@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.passenger
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -72,6 +73,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
@@ -1021,6 +1023,14 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val firstName = sharedPref.getString("name", "First Name")
     Text(text = "$firstName")
+    Button(onClick = {
+        sharedPref.edit().clear().apply()
+        Intent(context, MainActivity::class.java).also {
+            context.startActivity(it)
+        }
+    }) {
+        Text(text = "Log out")
+    }
     showAllTrips()
 }
 
@@ -1061,7 +1071,7 @@ fun showAllTrips() {
             myRef.addValueEventListener(postListener)
         }
         Column(
-            modifier= Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -1676,7 +1686,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 }
 
 
-fun filterTrips(trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int): List<Map<String, Any>> {
+fun filterTrips(
+    trips: List<Map<String, Any>>,
+    isDriverVerified: Boolean,
+    formattedDate: String,
+    minRating: Int
+): List<Map<String, Any>> {
     return trips.filter { trip ->
         val tripDate = trip["date"] as? String ?: ""
         val driverVerified = trip["verified"] as? Boolean ?: false
@@ -2033,7 +2048,8 @@ fun deleteOldTrips() {
     val postListener = object : ValueEventListener {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
             for (postSnapshot in dataSnapshot.children) {
-                val trip = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                val trip =
+                    postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
                 if (trip != null) {
                     val tripDateStr = trip["date"] as? String ?: ""
                     val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH)

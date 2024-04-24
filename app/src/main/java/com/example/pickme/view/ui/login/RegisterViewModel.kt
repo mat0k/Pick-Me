@@ -112,7 +112,6 @@ class RegisterViewModel : ViewModel() {
 
         authRepository.addPassenger(newPassenger)
 
-
     }
 
     fun registerDriver(carPlate: String, carPhoto: String, driverLicense: String) {
