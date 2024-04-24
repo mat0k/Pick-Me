@@ -24,12 +24,12 @@ class LoginViewModelFactory(private val sharedPref: SharedPreferences) : ViewMod
 }
 
 class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
-    val authRepository = AuthRepository()
+    private val authRepository = AuthRepository()
     var phoneNumber by mutableStateOf("")
         private set
     var password by mutableStateOf("")
     var role by mutableIntStateOf(0)
-val loginResult = MutableStateFlow<Boolean?>(null)
+    val loginResult = MutableStateFlow<Boolean?>(null)
     fun inputsFilled(): Boolean {
         return phoneNumber.isNotEmpty() && password.isNotEmpty()
     }

@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.passenger
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -77,6 +78,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
@@ -172,7 +174,7 @@ class PassengerView : ComponentActivity() {
                                     HomeScreen(navController, this@PassengerView, pickUpViewModel)
                                 }
                                 composable("profile") {
-                                    ProfileScreen(navController)
+                                    ProfileScreen(navController, this@PassengerView)
                                 }
                             }
                         }
@@ -1023,8 +1025,18 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
-    Text(text = "profile page")
+fun ProfileScreen(navController: NavHostController, context: Context) {
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val firstName = sharedPref.getString("name", "First Name")
+    Text(text = "$firstName")
+    Button(onClick = {
+        sharedPref.edit().clear().apply()
+        Intent(context, MainActivity::class.java).also {
+            context.startActivity(it)
+        }
+    }) {
+        Text(text = "Log out")
+    }
     showAllTrips()
 }
 

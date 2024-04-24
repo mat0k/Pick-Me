@@ -54,8 +54,7 @@ class LoginView : ComponentActivity() {
     private lateinit var registerViewModel: RegisterViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        registerViewModel =
-            ViewModelProvider(this, RegisterViewModelFactory(this))[RegisterViewModel::class.java]
+        registerViewModel = ViewModelProvider(this, RegisterViewModelFactory())[RegisterViewModel::class.java]
         setContent {
             PickMeUpTheme {
                 // A surface container using the 'background' color from the theme
@@ -331,7 +330,7 @@ fun DriverInfo(navController: NavController, registerViewModel: RegisterViewMode
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
-            value = viewModel.car_plate.value,
+            value = viewModel.carPlate.value,
             onValueChange = {
                 viewModel.updateCarPlate(it)
             },
@@ -347,7 +346,7 @@ fun DriverInfo(navController: NavController, registerViewModel: RegisterViewMode
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
-            value = viewModel.driver_license.value,
+            value = viewModel.driverLicense.value,
             onValueChange = {
                 viewModel.updateDriverLicense(it)
             },
@@ -357,13 +356,13 @@ fun DriverInfo(navController: NavController, registerViewModel: RegisterViewMode
         Button(
             onClick = {
                 registerViewModel.registerDriver(
-                    viewModel.car_plate.value,
-                    viewModel.car_photo.value.toString(),
-                    viewModel.driver_license.value
+                    viewModel.carPlate.value,
+                    viewModel.carPhoto.value.toString(),
+                    viewModel.driverLicense.value
                 )
                 navController.navigate("login")
             },
-            enabled = viewModel.car_plate.value.isNotEmpty() && viewModel.driver_license.value.isNotEmpty()
+            enabled = viewModel.carPlate.value.isNotEmpty() && viewModel.driverLicense.value.isNotEmpty()
         ) {
             Text("Register")
         }
