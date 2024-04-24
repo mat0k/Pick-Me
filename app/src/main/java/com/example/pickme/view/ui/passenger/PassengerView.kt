@@ -1634,7 +1634,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 // retrieving Trips
                 val tripList = remember { mutableStateListOf<Map<String, Any>>() }
 
-                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating, minAvailableSeats, formattedDate, timeRange, tripViewModel) {
+                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating, minAvailableSeats,searchRadius, formattedDate, timeRange, tripViewModel) {
                     val database = FirebaseDatabase.getInstance()
                     val myRef = database.getReference("Trips")
 
@@ -1794,7 +1794,7 @@ fun filterTrips(
         )
         // Calculate the distance between the start location and the trip's starting location
         val distance = passViewModel.calculateDistance(startLatLng, tripStartLatLng)
-
+      //  Log.i("xxxx","--- starting lat lng: $startLatLng, trip start lat lng: $tripStartLatLng, distance: $distance, and search radius: $searchRadius so display should be ${(searchRadius == 6 || distance <= searchRadius)}")
 
         // Check all conditions
         (driverVerified == isDriverVerified)
@@ -1802,7 +1802,7 @@ fun filterTrips(
                 && (driverRating >= minRating)
                 && (tripSeats >= seats)
                 && (timeRange == 0 || (minutesDiff in -timeRange*60..timeRange*60)) // Convert timeRange from hours to minutes
-                && (timeRange == 0 || distance <= searchRadius)
+                && (searchRadius == 6 || distance <= searchRadius)
     }
 }
 
@@ -2120,7 +2120,7 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         tripViewModel.setPickUpLatLng(pickUpLatLng)
                         tripViewModel.setTargetLatLng(targetLatLng)
-
+                        Log.i("xxxx","pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}")
                         tripViewModel.setDistance(distance)
                         navController.navigate("searchTrips")
 
