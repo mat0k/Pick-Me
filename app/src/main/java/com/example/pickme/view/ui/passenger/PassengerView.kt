@@ -1028,16 +1028,42 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 fun ProfileScreen(navController: NavHostController, context: Context) {
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val firstName = sharedPref.getString("name", "First Name")
-    Text(text = "$firstName")
-    Button(onClick = {
-        sharedPref.edit().clear().apply()
-        Intent(context, MainActivity::class.java).also {
-            context.startActivity(it)
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(6f)
+                .fillMaxWidth()
+        ) {
+            showAllTrips()
         }
-    }) {
-        Text(text = "Log out")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "$firstName")
+                Button(onClick = {
+                    sharedPref.edit().clear().apply()
+                    Intent(context, MainActivity::class.java).also {
+                        context.startActivity(it)
+                    }
+                }) {
+                    Text(text = "Log out")
+                }
+            }
+        }
     }
-    showAllTrips()
 }
 
 @Composable
@@ -1646,7 +1672,16 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 // retrieving Trips
                 val tripList = remember { mutableStateListOf<Map<String, Any>>() }
 
-                LaunchedEffect(isDriverVerified, formattedDate, minDriverRating, minAvailableSeats,searchRadius, formattedDate, timeRange, tripViewModel) {
+                LaunchedEffect(
+                    isDriverVerified,
+                    formattedDate,
+                    minDriverRating,
+                    minAvailableSeats,
+                    searchRadius,
+                    formattedDate,
+                    timeRange,
+                    tripViewModel
+                ) {
                     val database = FirebaseDatabase.getInstance()
                     val myRef = database.getReference("Trips")
 
@@ -1663,7 +1698,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             }
                             // Filter the trips
                             val filteredTrips =
-                                filterTrips(
+                                passengerViewModel.filterTrips(
                                     allTrips,
                                     isDriverVerified,
                                     formattedDate,
@@ -1771,51 +1806,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         }
     }
 
-}
-
-
-
-fun filterTrips(
-    trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int, seats: Int, searchRadius: Int, time: String ,timeRange: Int, tripViewModel: TripViewModel
-): List<Map<String, Any>> {
-    // Convert the input time string to a LocalTime object
-    val formatter = DateTimeFormatter.ofPattern("hh:mm a")
-    val inputTime = LocalTime.parse(time, formatter)
-    val startLatLng= tripViewModel.tripStartLatLng.value
-    //val targetLatLng= tripViewModel.tripDestLatLng.value
-    val passViewModel= PassengerViewModel()
-
-    return trips.filter { trip ->
-        val tripDate = trip["date"] as? String ?: ""
-        val driverVerified = trip["verified"] as? Boolean ?: false
-        val driverRating = trip["rate"]?.toString()?.toIntOrNull() ?: 0
-        val tripSeats = trip["seats"]?.toString()?.toIntOrNull() ?: 1
-
-        // Convert the trip time string to a LocalTime object
-        val tripTimeStr = trip["time"] as? String ?: ""
-        val tripTime = LocalTime.parse(tripTimeStr, formatter)
-
-        // Calculate the difference in minutes between the input time and the trip time
-        val minutesDiff = ChronoUnit.MINUTES.between(inputTime, tripTime).toInt()
-
-        // Get the starting location of the trip
-        val tripStartLatLngMap = trip["startingLatLng"] as? Map<String, Double> ?: emptyMap()
-        val tripStartLatLng = LatLng(
-            tripStartLatLngMap["latitude"] ?: 0.0,
-            tripStartLatLngMap["longitude"] ?: 0.0
-        )
-        // Calculate the distance between the start location and the trip's starting location
-        val distance = passViewModel.calculateDistance(startLatLng, tripStartLatLng)
-      //  Log.i("xxxx","--- starting lat lng: $startLatLng, trip start lat lng: $tripStartLatLng, distance: $distance, and search radius: $searchRadius so display should be ${(searchRadius == 6 || distance <= searchRadius)}")
-
-        // Check all conditions
-        (driverVerified == isDriverVerified)
-                && (tripDate == formattedDate)
-                && (driverRating >= minRating)
-                && (tripSeats >= seats)
-                && (timeRange == 0 || (minutesDiff in -timeRange*60..timeRange*60)) // Convert timeRange from hours to minutes
-                && (searchRadius == 6 || distance <= searchRadius)
-    }
 }
 
 @Composable
@@ -2132,7 +2122,10 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         tripViewModel.setPickUpLatLng(pickUpLatLng)
                         tripViewModel.setTargetLatLng(targetLatLng)
-                        Log.i("xxxx","pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}")
+                        Log.i(
+                            "xxxx",
+                            "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
+                        )
                         tripViewModel.setDistance(distance)
                         navController.navigate("searchTrips")
 
