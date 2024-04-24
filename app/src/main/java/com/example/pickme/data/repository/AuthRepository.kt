@@ -1,6 +1,5 @@
 package com.example.pickme.data.repository
 
-import android.net.Uri
 import android.util.Log
 import com.example.pickme.data.model.Driver
 import com.example.pickme.data.model.Passenger
@@ -8,7 +7,6 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
-import com.google.firebase.storage.FirebaseStorage
 
 
 class AuthRepository {
@@ -33,28 +31,40 @@ class AuthRepository {
         myRef.push().setValue(passengerObject)
     }
 
-    fun loginAsPassenger(phone: String, password: String) {
+    suspend fun loginAsPassenger(phone: String, password: String): Passenger? {
+        Log.d("AuthRepository", "loginAsPassenger: $phone $password")
         val myRef = database.getReference("Passengers")
-        myRef.get().addOnSuccessListener {
-            for (data in it.children) {
-                val passenger = data.getValue(Passenger::class.java)
-                if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
-                    Log.d("Login", "Login successful")
-                }
+        var loggedInPassenger: Passenger? = null
+
+        val data = myRef.get().await()
+        for (dataSnapshot in data.children) {
+            val passenger = dataSnapshot.getValue(Passenger::class.java)
+            if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
+                loggedInPassenger = passenger
+                Log.d("AuthRepository", "loginAsPassenger: $loggedInPassenger")
+                break
             }
         }
+
+        return loggedInPassenger
     }
 
-    fun loginAsDriver(phone: String, password: String) {
+    suspend fun loginAsDriver(phone: String, password: String): Driver? {
+        Log.d("AuthRepository", "loginAsDriver: $phone $password")
         val myRef = database.getReference("Drivers")
-        myRef.get().addOnSuccessListener {
-            for (data in it.children) {
-                val driver = data.getValue(Driver::class.java)
-                if (driver?.phone == phone && driver.password == hashPassword(password)) {
-                    //get all the data from the driver object
-                }
+        var loggedInDriver: Driver? = null
+
+        val data = myRef.get().await()
+        for (dataSnapshot in data.children) {
+            val driver = dataSnapshot.getValue(Driver::class.java)
+            if (driver?.phone == phone && driver.password == hashPassword(password)) {
+                loggedInDriver = driver
+                Log.d("AuthRepository", "loginAsDriver: $loggedInDriver")
+                break
             }
         }
+
+        return loggedInDriver
     }
 
     private suspend fun checkDriverLicenseAndCarPlate(license: String, carPlate: String): Boolean {
@@ -74,6 +84,7 @@ class AuthRepository {
 
         return exists
     }
+
     suspend fun addDriver(driver: Driver) {
         val myRef = database.getReference("Drivers")
         val driverObject = mapOf(

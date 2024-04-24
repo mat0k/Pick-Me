@@ -1,7 +1,9 @@
 package com.example.pickme.view.ui.login
 
 import OTPViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,6 +30,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -36,21 +40,22 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.R
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
+import com.example.pickme.view.ui.driver.DriverView
+import com.example.pickme.view.ui.passenger.PassengerView
 
 class LoginView : ComponentActivity() {
     private lateinit var registerViewModel: RegisterViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        registerViewModel = ViewModelProvider(this, RegisterViewModelFactory(this))[RegisterViewModel::class.java]
+        registerViewModel =
+            ViewModelProvider(this, RegisterViewModelFactory(this))[RegisterViewModel::class.java]
         setContent {
             PickMeUpTheme {
                 // A surface container using the 'background' color from the theme
@@ -64,11 +69,9 @@ class LoginView : ComponentActivity() {
                             LoginScreen(navController)
                         }
                         composable("register") {
-                            val context = LocalContext.current
                             RegisterScreen(navController, registerViewModel)
                         }
                         composable("phone") {
-                            val context = LocalContext.current
                             OTP(navController, registerViewModel, this@LoginView)
                         }
                         composable("driver") {
@@ -85,8 +88,23 @@ class LoginView : ComponentActivity() {
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val viewModel = viewModel<LoginViewModel>()
-
+    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val viewModelFactory = remember { LoginViewModelFactory(sharedPref) }
+    val viewModel = viewModel<LoginViewModel>(factory = viewModelFactory)
+    val context = LocalContext.current // Capture the context here
+    LaunchedEffect(key1 = true) {
+        viewModel.loginResult.collect { loginResult ->
+            if (loginResult == true) {
+                val intent = when (viewModel.getUserRole()) {
+                    0 -> Intent(context, PassengerView::class.java)
+                    else -> Intent(context, DriverView::class.java)
+                }
+                context.startActivity(intent)
+            } else {
+                // Handle login failure
+            }
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -165,14 +183,15 @@ fun LoginScreen(navController: NavController) {
                 enabled = viewModel.inputsFilled()
             ) {
                 Text(stringResource(R.string.login))
-             }
+            }
         }
     }
+
+
 }
 
 @Composable
 fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
-    val context = LocalContext.current
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -276,11 +295,11 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 
             Button(
                 onClick = {
-                          if (viewModel.role.value == 0) {
-                              viewModel.registerPassenger()
-                          } else {
-                              navController.navigate("driver")
-                          }
+                    if (viewModel.role.intValue == 0) {
+                        viewModel.registerPassenger()
+                    } else {
+                        navController.navigate("driver")
+                    }
                 },
                 enabled = viewModel.inputsFilled()
             ) {
@@ -293,7 +312,6 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 @Composable
 fun DriverInfo(navController: NavController, registerViewModel: RegisterViewModel) {
     val viewModel = viewModel<DriverViewModel>()
-    val context = LocalContext.current
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -338,7 +356,11 @@ fun DriverInfo(navController: NavController, registerViewModel: RegisterViewMode
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                registerViewModel.registerDriver( viewModel.car_plate.value, viewModel.car_photo.value.toString(), viewModel.driver_license.value)
+                registerViewModel.registerDriver(
+                    viewModel.car_plate.value,
+                    viewModel.car_photo.value.toString(),
+                    viewModel.driver_license.value
+                )
                 navController.navigate("login")
             },
             enabled = viewModel.car_plate.value.isNotEmpty() && viewModel.driver_license.value.isNotEmpty()

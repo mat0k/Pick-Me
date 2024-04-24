@@ -12,7 +12,6 @@ lifecycleViewmodelCompose = "2.7.0"
 navigationCompose = "2.7.7"
 playServicesMaps = "18.2.0"
 playServicesLocation = "21.2.0"
-firebaseDatabase = "20.3.1"
 googleServices = "4.4.1"
 volley = "1.2.1"
 firebaseDatabaseKtx = "20.3.1"
@@ -46,7 +45,6 @@ maps-platform = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin
 
 firebase-bom = "com.google.firebase:firebase-bom:32.8.1"
 
-firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
 firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
