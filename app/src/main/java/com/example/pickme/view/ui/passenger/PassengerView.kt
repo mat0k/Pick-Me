@@ -166,7 +166,7 @@ class PassengerView : ComponentActivity() {
                                     HomeScreen(navController, this@PassengerView, pickUpViewModel)
                                 }
                                 composable("profile") {
-                                    ProfileScreen(navController)
+                                    ProfileScreen(navController, this@PassengerView)
                                 }
                             }
                         }
@@ -1017,8 +1017,10 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
-    Text(text = "profile page")
+fun ProfileScreen(navController: NavHostController, context: Context) {
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val firstName = sharedPref.getString("name", "First Name")
+    Text(text = "$firstName")
     showAllTrips()
 }
 

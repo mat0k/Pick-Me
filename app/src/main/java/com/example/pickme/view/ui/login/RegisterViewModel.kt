@@ -1,11 +1,7 @@
 package com.example.pickme.view.ui.login
 
 
-import  android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,18 +14,18 @@ import com.example.pickme.data.repository.AuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class RegisterViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class RegisterViewModelFactory : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RegisterViewModel(context) as T
+            return RegisterViewModel() as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
 
-class RegisterViewModel(private val context: Context) : ViewModel() {
+class RegisterViewModel : ViewModel() {
 
     var phoneNumber = mutableStateOf("")
         private set
@@ -45,8 +41,7 @@ class RegisterViewModel(private val context: Context) : ViewModel() {
     var lastName = mutableStateOf("")
         private set
 
-    var photo: MutableState<Uri?> = mutableStateOf(Uri.EMPTY)
-        private set
+    private var photo: MutableState<Uri?> = mutableStateOf(Uri.EMPTY)
 
     var password = mutableStateOf("")
         private set
