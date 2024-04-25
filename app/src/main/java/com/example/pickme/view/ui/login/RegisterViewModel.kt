@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.login
 
 
+import OTPViewModel
 import android.net.Uri
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
@@ -85,6 +86,28 @@ class RegisterViewModel : ViewModel() {
         return password.value == confirmPassword.value
     }
 
+    var carPlate = mutableStateOf("")
+        private set
+
+    var driverLicense = mutableStateOf("")
+        private set
+
+    var carPhoto: MutableState<Uri?> = mutableStateOf(Uri.EMPTY)
+        private set
+
+    fun updateCarPlate(newCarPlate: String) {
+        carPlate.value = newCarPlate
+    }
+
+    fun updateDriverLicense(newDriverLicense: String) {
+        driverLicense.value = newDriverLicense
+    }
+
+    fun updateCarPhoto(newCarPhoto: Uri) {
+        carPhoto.value = newCarPhoto
+    }
+
+
     fun inputsFilled(): Boolean {
         return firstName.value.isNotEmpty()
                 && lastName.value.isNotEmpty()
@@ -109,27 +132,30 @@ class RegisterViewModel : ViewModel() {
             photo.value.toString(),
             emergencyNumber.value
         )
-
         authRepository.addPassenger(newPassenger)
-
     }
 
-    fun registerDriver(carPlate: String, carPhoto: String, driverLicense: String) {
+    fun registerDriver() {
         val newDriver = Driver(
-            firstName.value,
-            lastName.value,
-            password.value,
-            phoneNumber.value,
-            carPlate,
-            carPhoto,
-            photo.value.toString(),
-            driverLicense,
-            false
+            firstName = firstName.value,
+            lastName = lastName.value,
+            password = password.value,
+            phone = phoneNumber.value,
+            carPlate = carPlate.value,
+            carPhoto = carPhoto.value.toString(),
+            driverPhoto = photo.value.toString(),
+            driverLicense = driverLicense.value,
+            verified = false
         )
         viewModelScope.launch(Dispatchers.IO) {
             authRepository.addDriver(newDriver)
         }
 
+    }
+
+    fun register() {
+        if(role.intValue == 0) registerPassenger()
+        else registerDriver()
     }
 }
 

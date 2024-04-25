@@ -1,5 +1,5 @@
 import android.app.Activity
-import androidx.lifecycle.MutableLiveData
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.FirebaseException
@@ -19,13 +19,13 @@ class OTPViewModel : ViewModel() {
     private lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    var otp = MutableLiveData<String>()
-
-    fun authenticate(phoneNumber: String, activity: Activity) {
+    var otp = mutableStateOf("")
+    var otpError = mutableStateOf("")
+    fun authenticate(phoneNumber: String, activity: Activity, onVerified: (Boolean) -> Unit) {
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                signInWithPhoneAuthCredential(credential)
+                signInWithPhoneAuthCredential(credential, onVerified)
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
@@ -51,21 +51,26 @@ class OTPViewModel : ViewModel() {
         ) // OnVerificationStateChangedCallbacks
     }
 
-    fun verifyOTP() {
-        val credential = PhoneAuthProvider.getCredential(storedVerificationId, otp.value!!)
-        signInWithPhoneAuthCredential(credential)
+    fun verifyOTP(onVerified: (Boolean) -> Unit) {
+    val credential = PhoneAuthProvider.getCredential(storedVerificationId, otp.value)
+    signInWithPhoneAuthCredential(credential) { result ->
+        if (result) {
+            onVerified(true)
+        } else {
+            otpError.value = "Incorrect OTP. Please try again."
+        }
     }
+}
 
-    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
-                val authResult = auth.signInWithCredential(credential).await()
-                // You can access the user via authResult.user
+                onResult(true)
             } catch (e: Exception) {
                 // Handle error
                 when (e) {
                     is FirebaseAuthInvalidCredentialsException -> {
-                        // Invalid verification code entered.
+                        onResult(false)
                     }
 
                     is FirebaseAuthInvalidUserException -> {
@@ -87,4 +92,26 @@ class OTPViewModel : ViewModel() {
             }
         }
     }
+
+    fun resendOTP(phoneNumber: String, activity: Activity) {
+    val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+        // ... existing callbacks ...
+        override fun onVerificationCompleted(p0: PhoneAuthCredential) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onVerificationFailed(p0: FirebaseException) {
+            TODO("Not yet implemented")
+        }
+    }
+
+    PhoneAuthProvider.getInstance().verifyPhoneNumber(
+        phoneNumber, // Phone number to verify
+        60, // Timeout duration
+        TimeUnit.SECONDS, // Unit of timeout
+        activity, // Activity (for callback binding)
+        callbacks, // OnVerificationStateChangedCallbacks
+        resendToken // Resend token from previous attempt
+    )
+}
 }
