@@ -2,6 +2,7 @@ package com.example.pickme.view.ui.passenger
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -27,8 +28,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -39,14 +42,18 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -71,9 +78,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -82,9 +91,12 @@ import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
+import com.example.pickme.data.model.Passenger
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
+import com.example.pickme.viewModel.ProfileViewModel
+import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -1024,46 +1036,117 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-    val firstName = sharedPref.getString("name", "First Name")
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(6f)
-                .fillMaxWidth()
-        ) {
-            showAllTrips()
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = "$firstName")
-                Button(onClick = {
-                    sharedPref.edit().clear().apply()
-                    Intent(context, MainActivity::class.java).also {
-                        context.startActivity(it)
+    val sharedPreferences: SharedPreferences =
+        context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val viewModelFactory = remember {
+        ProfileViewModelFactory(context)
+    }
+    val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
+    var isEditing by remember { mutableStateOf(false) }
+    var valuesChanged by remember { mutableStateOf(false) }
+    var loggingOut by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Profile") },
+                actions = {
+                    IconButton(onClick = {
+                        isEditing = true
+                    }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
                     }
-                }) {
-                    Text(text = "Log out")
+                }
+            )
+        }
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .padding(pad)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedTextField(
+                value = viewModel.name.value,
+                onValueChange = {
+                    if (isEditing) viewModel.name.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Name") },
+                enabled = isEditing
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = viewModel.surname.value,
+                onValueChange = {
+                    if (isEditing) viewModel.surname.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Surname") },
+                enabled = isEditing
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = viewModel.phone.value,
+                onValueChange = {
+                    if (isEditing) viewModel.phone.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Phone") },
+                enabled = isEditing
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            if (isEditing) {
+                Row {
+                    Button(
+                        onClick = {
+                            isEditing = false
+                            saving = true
+                            viewModel.saveProfileData()
+                            saving = false
+                        }, enabled = valuesChanged
+                    ) {
+                        Text("Save")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            isEditing = false
+                            viewModel.loadProfileData()
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+                if (saving) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Button(
+                    onClick = {
+                        viewModel.sharedPref.edit().clear().apply()
+                        Intent(context, MainActivity::class.java).also {
+                            context.startActivity(it)
+                        }
+                        loggingOut = true
+                    },
+                    enabled = !loggingOut
+                ) {
+                    Text("Log out")
+                }
+                if(loggingOut) {
+                    CircularProgressIndicator()
                 }
             }
         }
     }
+
 }
 
 @Composable

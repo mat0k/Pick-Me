@@ -94,6 +94,7 @@ dependencies {
     implementation(libs.volley)
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.storage)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
@@ -109,7 +110,5 @@ dependencies {
     implementation(platform(libs.firebase.bom))
 
     implementation("com.google.firebase:firebase-auth")
-    implementation ("androidx.datastore:datastore-preferences:1.1.0")
-
 }
 

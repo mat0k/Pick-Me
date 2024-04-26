@@ -1,9 +1,11 @@
 package com.example.pickme.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.example.pickme.data.model.Driver
 import com.example.pickme.data.model.Passenger
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -27,34 +29,34 @@ class AuthRepository {
                 return Result.failure(Exception("A passenger account with this phone number already exists."))
             }
         }
+//        var photoUrl = ""
+//        passenger.photo?.let{
+//            photoUrl = uploadImageToFirebase(it)
+//        }
         val passengerObject = mapOf(
             "id" to myRef.push().key,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to hashPassword(passenger.password),
             "phone" to passenger.phone,
-            "photo" to passenger.photo,
+//            "photoUrl" to photoUrl.toString(),
             "emergencyNumber" to passenger.emergencyNumber
         )
         myRef.push().setValue(passengerObject)
         return Result.success(Unit)
     }
 
-    suspend fun loginAsPassenger(phone: String, password: String): Passenger? {
+    suspend fun loginAsPassenger(phone: String, password: String): Result<Passenger> {
         Log.d("AuthRepository", "loginAsPassenger: $phone $password")
         val myRef = database.getReference("Passengers")
-        var loggedInPassenger: Passenger? = null
         val data = myRef.get().await()
         for (dataSnapshot in data.children) {
             val passenger = dataSnapshot.getValue(Passenger::class.java)
             if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
-                loggedInPassenger = passenger.copy(id = dataSnapshot.key ?: "")
-                Log.d("AuthRepository", "loginAsPassenger: $loggedInPassenger")
-                break
+                return Result.success(passenger.copy(id = dataSnapshot.key ?: ""))
             }
         }
-
-        return loggedInPassenger
+        return Result.failure(Exception("Invalid phone number or password"))
     }
 
     suspend fun loginAsDriver(phone: String, password: String): Driver? {
@@ -118,4 +120,32 @@ class AuthRepository {
         return Result.success(Unit)
     }
 
+    suspend fun updatePassenger(passenger: Passenger): Result<Unit> {
+        val myRef = database.getReference("Passengers").child(passenger.id)
+        val passengerObject = mapOf(
+            "id" to passenger.id,
+            "name" to passenger.name,
+            "surname" to passenger.surname,
+            "password" to passenger.password,
+            "phone" to passenger.phone,
+            "photoUrl" to passenger.photoUrl,
+            "emergencyNumber" to passenger.emergencyNumber
+        )
+        myRef.setValue(passengerObject).await()
+        return Result.success(Unit)
+    }
+
+    private suspend fun uploadImageToFirebase(image: Uri): String {
+        val storage = FirebaseStorage.getInstance()
+        val storageRef = storage.getReference("images")
+        val uploadTask = storageRef.putFile(image)
+        val taskSnapshot = uploadTask.await() // This requires the kotlinx-coroutines-play-services library
+        return taskSnapshot.metadata?.reference?.downloadUrl?.await().toString()
+    }
+
+    suspend fun getImage(imageUrl: String): Uri {
+        val storage = FirebaseStorage.getInstance()
+        val storageRef = storage.getReferenceFromUrl(imageUrl)
+        return storageRef.downloadUrl.await()
+    }
 }

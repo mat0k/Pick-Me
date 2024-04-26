@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -22,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -31,7 +33,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -88,10 +94,12 @@ class LoginView : ComponentActivity() {
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val context = LocalContext.current // Capture the context here
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val viewModelFactory = remember { LoginViewModelFactory(sharedPref) }
     val viewModel = viewModel<LoginViewModel>(factory = viewModelFactory)
-    val context = LocalContext.current // Capture the context here
+    var loggingIn by remember { mutableStateOf(false) }
+
     LaunchedEffect(key1 = true) {
         viewModel.loginResult.collect { loginResult ->
             if (loginResult == true) {
@@ -100,16 +108,17 @@ fun LoginScreen(navController: NavController) {
                     else -> Intent(context, DriverView::class.java)
                 }
                 context.startActivity(intent)
-            } else {
-                // Handle login failure
+            } else if(loginResult == false) {
+                Toast.makeText(context, "Invalid phone number or password", Toast.LENGTH_SHORT).show()
+                loggingIn = false
             }
         }
     }
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(50.dp),
-        verticalArrangement = Arrangement.Center
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = stringResource(R.string.login),
@@ -120,14 +129,15 @@ fun LoginScreen(navController: NavController) {
         OutlinedTextField(
             value = viewModel.phoneNumber,
             onValueChange = { viewModel.updatePhoneNumber(it) },
-            placeholder = { Text(text = stringResource(R.string.phone_number)) }
+            label = { Text(text = stringResource(R.string.phone_number)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = viewModel.password,
             onValueChange = { viewModel.updatePassword(it) },
-            placeholder = { Text(text = stringResource(R.string.password)) },
+            label = { Text(text = stringResource(R.string.password)) },
             visualTransformation = PasswordVisualTransformation()
         )
 
@@ -176,18 +186,20 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.width(16.dp))
             Button(
                 onClick = {
-                    if (viewModel.inputsFilled()) {
-                        viewModel.login()
-                    }
+                    loggingIn = true
+                    viewModel.login()
                 },
-                enabled = viewModel.inputsFilled()
+                enabled = viewModel.inputsFilled() && !loggingIn
             ) {
                 Text(stringResource(R.string.login))
             }
+            Spacer(modifier = Modifier.width(20.dp))
+            if (loggingIn) {
+                CircularProgressIndicator()
+            }
         }
+
     }
-
-
 }
 
 @Composable
@@ -199,6 +211,7 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
             viewModel.updateProfilePicture(it)
         }
     }
+    var registerButtonPressed by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -304,15 +317,19 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 
             Button(
                 onClick = {
+                    registerButtonPressed = true
                     if (viewModel.role.intValue == 0) {
                         navController.navigate("otp")
                     } else {
                         navController.navigate("driver")
                     }
                 },
-                enabled = viewModel.inputsFilled()
+                enabled = viewModel.inputsFilled() && !registerButtonPressed
             ) {
                 Text(stringResource(R.string.register))
+            }
+            if (registerButtonPressed) {
+                CircularProgressIndicator()
             }
         }
     }
@@ -364,7 +381,7 @@ fun DriverInfo(navController: NavController, viewModel: RegisterViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                      navController.navigate("otp")
+                navController.navigate("otp")
             },
             enabled = viewModel.carPlate.value.isNotEmpty() && viewModel.driverLicense.value.isNotEmpty() && viewModel.carPhoto.value != null
         ) {
@@ -381,9 +398,11 @@ fun OTP(
     activity: ComponentActivity
 ) {
     val otpViewModel = viewModel<OTPViewModel>()
+    var loading by remember { mutableStateOf(true) }
     LaunchedEffect(key1 = true) {
         otpViewModel.authenticate("+961 ${registerViewModel.phoneNumber.value}", activity) {
         }
+        loading = false
     }
     Column(
         modifier = Modifier
