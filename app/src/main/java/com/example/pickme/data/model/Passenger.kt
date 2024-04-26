@@ -1,7 +1,7 @@
 package com.example.pickme.data.model
 
  data class Passenger(
-    val id: Int = 0,
+    val id: String = "",
     val name: String = "",
     val surname: String = "",
     val password: String = "",

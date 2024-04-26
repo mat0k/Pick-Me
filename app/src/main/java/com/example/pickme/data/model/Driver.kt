@@ -1,6 +1,7 @@
 package com.example.pickme.data.model
 
 data class Driver(
+    var id: String = "",
     var firstName: String = "",
     var lastName: String = "",
     var phone: String = "",

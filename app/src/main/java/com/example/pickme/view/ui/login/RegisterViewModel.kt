@@ -1,8 +1,8 @@
 package com.example.pickme.view.ui.login
 
-
-import OTPViewModel
+import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -112,6 +112,7 @@ class RegisterViewModel : ViewModel() {
         return firstName.value.isNotEmpty()
                 && lastName.value.isNotEmpty()
                 && phoneNumber.value.isNotEmpty()
+                && emergencyNumber.value.isNotEmpty()
                 && password.value.isNotEmpty()
                 && confirmPassword.value.isNotEmpty()
                 && passwordsMatch()
@@ -122,9 +123,9 @@ class RegisterViewModel : ViewModel() {
         photo.value = it
     }
 
-    fun registerPassenger() {
+    private fun registerPassenger(context: Context) {
         val newPassenger = Passenger(
-            0,
+            "",
             firstName.value,
             lastName.value,
             password.value,
@@ -132,30 +133,35 @@ class RegisterViewModel : ViewModel() {
             photo.value.toString(),
             emergencyNumber.value
         )
-        authRepository.addPassenger(newPassenger)
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = authRepository.addPassenger(newPassenger)
+            if (result.isFailure) {
+                val message = result.exceptionOrNull()?.message ?: "An error occurred"
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    fun registerDriver() {
+    private fun registerDriver(context: Context) {
         val newDriver = Driver(
-            firstName = firstName.value,
-            lastName = lastName.value,
-            password = password.value,
-            phone = phoneNumber.value,
-            carPlate = carPlate.value,
-            carPhoto = carPhoto.value.toString(),
-            driverPhoto = photo.value.toString(),
-            driverLicense = driverLicense.value,
-            verified = false
+            // ... existing code ...
         )
         viewModelScope.launch(Dispatchers.IO) {
-            authRepository.addDriver(newDriver)
+            val result = authRepository.addDriver(newDriver)
+            if (result.isFailure) {
+                val message = result.exceptionOrNull()?.message ?: "An error occurred"
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                }
+            }
         }
-
     }
 
-    fun register() {
-        if(role.intValue == 0) registerPassenger()
-        else registerDriver()
+    fun register(context: Context) {
+        if(role.intValue == 0) {
+            registerPassenger(context)
+        }
+        else registerDriver(context)
     }
 }
 

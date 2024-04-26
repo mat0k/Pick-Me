@@ -40,6 +40,7 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
                 val passenger = authRepository.loginAsPassenger(phoneNumber, password)
                 if (passenger != null) {
                     with(sharedPref.edit()) {
+                        putString("id", passenger.id)
                         putString("name", passenger.name)
                         putString("surname", passenger.surname)
                         putString("phone", passenger.phone)
@@ -55,6 +56,7 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
                 val driver = authRepository.loginAsDriver(phoneNumber, password)
                 if (driver != null) {
                     with(sharedPref.edit()) {
+                        putString("id", driver.id)
                         putString("name", driver.firstName)
                         putString("surname", driver.lastName)
                         putString("phone", driver.phone)

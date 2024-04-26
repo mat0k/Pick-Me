@@ -236,6 +236,14 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
+            value = viewModel.emergencyNumber.value,
+            onValueChange = { viewModel.updateEmergencyNumber(it) },
+            placeholder = { Text("Emergency Number") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
             value = viewModel.password.value,
             onValueChange = { viewModel.updatePassword(it) },
             placeholder = { Text(text = stringResource(R.string.password)) },
@@ -409,7 +417,7 @@ fun OTP(
             onClick = {
                 otpViewModel.verifyOTP { verificationSuccessful ->
                     if (verificationSuccessful) {
-                        registerViewModel.register()
+                        registerViewModel.register(activity)
                         navController.navigate("login")
                     }
                 }

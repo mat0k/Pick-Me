@@ -18,9 +18,17 @@ class AuthRepository {
         return BigInteger(1, hashedBytes).toString(16).padStart(32, '0')
     }
 
-    fun addPassenger(passenger: Passenger) {
+    suspend fun addPassenger(passenger: Passenger): Result<Unit> {
         val myRef = database.getReference("Passengers")
+        val data = myRef.get().await()
+        for (dataSnapshot in data.children) {
+            val existingPassenger = dataSnapshot.getValue(Passenger::class.java)
+            if (existingPassenger?.phone == passenger.phone) {
+                return Result.failure(Exception("A passenger account with this phone number already exists."))
+            }
+        }
         val passengerObject = mapOf(
+            "id" to myRef.push().key,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to hashPassword(passenger.password),
@@ -29,18 +37,18 @@ class AuthRepository {
             "emergencyNumber" to passenger.emergencyNumber
         )
         myRef.push().setValue(passengerObject)
+        return Result.success(Unit)
     }
 
     suspend fun loginAsPassenger(phone: String, password: String): Passenger? {
         Log.d("AuthRepository", "loginAsPassenger: $phone $password")
         val myRef = database.getReference("Passengers")
         var loggedInPassenger: Passenger? = null
-
         val data = myRef.get().await()
         for (dataSnapshot in data.children) {
             val passenger = dataSnapshot.getValue(Passenger::class.java)
             if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
-                loggedInPassenger = passenger
+                loggedInPassenger = passenger.copy(id = dataSnapshot.key ?: "")
                 Log.d("AuthRepository", "loginAsPassenger: $loggedInPassenger")
                 break
             }
@@ -58,7 +66,7 @@ class AuthRepository {
         for (dataSnapshot in data.children) {
             val driver = dataSnapshot.getValue(Driver::class.java)
             if (driver?.phone == phone && driver.password == hashPassword(password)) {
-                loggedInDriver = driver
+                loggedInDriver = driver.copy(id = dataSnapshot.key ?: "")
                 Log.d("AuthRepository", "loginAsDriver: $loggedInDriver")
                 break
             }
@@ -85,9 +93,17 @@ class AuthRepository {
         return exists
     }
 
-    suspend fun addDriver(driver: Driver) {
+    suspend fun addDriver(driver: Driver): Result<Unit> {
         val myRef = database.getReference("Drivers")
+        val data = myRef.get().await()
+        for (dataSnapshot in data.children) {
+            val existingDriver = dataSnapshot.getValue(Driver::class.java)
+            if (existingDriver?.phone == driver.phone) {
+                return Result.failure(Exception("A driver account with this phone number already exists."))
+            }
+        }
         val driverObject = mapOf(
+            "id" to myRef.push().key,
             "name" to driver.firstName,
             "surname" to driver.lastName,
             "password" to hashPassword(driver.password),
@@ -99,6 +115,7 @@ class AuthRepository {
             "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate)
         )
         myRef.push().setValue(driverObject)
+        return Result.success(Unit)
     }
 
 }

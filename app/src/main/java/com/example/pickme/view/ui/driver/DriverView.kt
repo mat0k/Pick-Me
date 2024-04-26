@@ -1,6 +1,8 @@
 package com.example.pickme.view.ui.driver
 
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -66,6 +68,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
@@ -152,7 +155,7 @@ class DriverView : ComponentActivity() {
                                     HomeScreen(navController)
                                 }
                                 composable("profile") {
-                                    ProfileScreen(navController)
+                                    ProfileScreen(navController, this@DriverView)
                                 }
                             }
                         }
@@ -1023,8 +1026,8 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
-
+fun ProfileScreen(navController: NavHostController, context: Context) {
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     Column(
         modifier = Modifier
             .fillMaxSize(),
@@ -1035,6 +1038,15 @@ fun ProfileScreen(navController: NavHostController) {
             text = "profile",
             fontSize = 20.sp
         )
+
+        Button(onClick = {
+            sharedPref.edit().clear().apply()
+            Intent(context, MainActivity::class.java).also {
+                context.startActivity(it)
+            }
+        }) {
+            Text(text = "Log out")
+        }
 
     }
 }
