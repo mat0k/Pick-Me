@@ -1737,18 +1737,38 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 text = "End: ${trip["end"]}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Text(
-                                text = "Rating: ${trip["rate"]}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "Seats: ${trip["seats"]}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                         //       horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Rating: ${trip["rate"]}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "    Seats: ${trip["seats"]}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                             Text(
                                 text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        // Handle preview icon click
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.preview_icon),
+                                        contentDescription = "Preview"
+                                    )
+                                }
+                            }
                         }
                     }
                 }
