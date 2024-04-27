@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -40,8 +39,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,6 +84,7 @@ import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.DataSnapshot
@@ -108,7 +106,6 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 
@@ -1161,6 +1158,9 @@ fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel)
         composable("mapView2") {
             MapView2(navController, tripViewModel)
         }
+        composable("mapView3") {
+            MapView3(navController, tripViewModel )
+        }
     }
 
 }
@@ -1760,7 +1760,25 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             ) {
                                 IconButton(
                                     onClick = {
-                                        // Handle preview icon click
+                                        // get trips starting and destination lat lng here
+                                        val tripStartLatLngMap = trip["startingLatLng"] as? Map<String, Double> ?: emptyMap()
+                                        val tripDestinationLatLngMap = trip["destinationLatLng"] as? Map<String, Double> ?: emptyMap()
+
+                                        val tripStartLatLng = LatLng(
+                                            tripStartLatLngMap["latitude"] ?: 0.0,
+                                            tripStartLatLngMap["longitude"] ?: 0.0
+                                        )
+                                        val tripDestLatLng = LatLng(
+                                            tripDestinationLatLngMap["latitude"] ?: 0.0,
+                                            tripDestinationLatLngMap["longitude"] ?: 0.0
+                                        )
+                                        Log.i("trip","start lat lng: ${tripStartLatLng.latitude}, ${tripStartLatLng.longitude}")
+                                        Log.i("trip","dest lat lng: ${tripDestLatLng.latitude}, ${tripDestLatLng.longitude}")
+
+                                        tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
+                                        tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
+                                        navController.navigate("mapView3")
+
                                     }
                                 ) {
                                     Icon(
@@ -2166,6 +2184,92 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
     }
 }
 
+
+@Composable
+fun MapView3(navController: NavHostController, tripViewModel: TripViewModel, ) {
+    val context = LocalContext.current
+    val passengerViewModel: PassengerViewModel = PassengerViewModel()
+
+    val startLatLng = tripViewModel.tripStartLatLng.value
+    val destLatLng = tripViewModel.tripDestLatLng.value
+
+    val tripStartLatLng= tripViewModel.searchedTripStartLatLng.value
+    val tripDestLatLng= tripViewModel.searchedTripDestLatLng.value
+
+    val distance = passengerViewModel.calculateDistance(tripStartLatLng, tripDestLatLng)
+    val zoomLevel = when {
+        distance <= 5 -> 13f // Adjust these values based on your preference
+        distance <= 30 -> 12f
+        distance <= 55 -> 11f
+        distance <= 80 -> 10f
+        else -> 9f
+    }
+
+    val uiSetting by remember { mutableStateOf(MapUiSettings()) }
+    val properties by remember {
+        mutableStateOf(MapProperties(mapType = MapType.NORMAL))
+    }
+
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(tripStartLatLng, zoomLevel)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = startLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = destLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+            Marker(
+                state = MarkerState(position = tripStartLatLng),
+                title = "Searched Trip Start Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            )
+            // Searched trip destination location marker
+            Marker(
+                state = MarkerState(position = tripDestLatLng),
+                title = "Searched Trip Destination Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            )
+        }
+        // Add a button that navigates back to the search page
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        ) {
+            Button(
+                modifier = Modifier
+                    .size(width = 220.dp, height = 50.dp),
+                shape = RoundedCornerShape(15.dp),
+                onClick = {
+                    navController.navigate("searchTrips")
+                }
+            ) {
+                Text(text = "Return to Search")
+            }
+        }
+    }
+}
 
 fun deleteOldTrips() {
     val database = FirebaseDatabase.getInstance()
