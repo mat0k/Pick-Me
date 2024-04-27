@@ -98,6 +98,9 @@ dependencies {
 
     implementation(libs.maps.platform)
 
+    implementation(libs.maps.services)
+    implementation(libs.maps.org)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

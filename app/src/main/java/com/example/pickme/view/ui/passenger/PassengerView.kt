@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -40,8 +39,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +91,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
+import com.google.maps.DirectionsApiRequest
+import com.google.maps.GeoApiContext
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -101,6 +100,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.model.DirectionsResult
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -108,9 +108,8 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
-
+import com.google.maps.PendingResult.Callback
 
 data class BottomNavigationItem(
     val title: String,
@@ -684,6 +683,46 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
+fun calculateDirections(pickUpLocation: LatLng, target: LatLng, mGeoApiContext: GeoApiContext) {
+    Log.i("xxxx", ">>calculateDirections: calculating directions.")
+    val destination = com.google.maps.model.LatLng(
+        target.latitude,
+        target.longitude
+    )
+    val directions = DirectionsApiRequest(mGeoApiContext)
+    directions.alternatives(true)
+    directions.origin(
+        com.google.maps.model.LatLng(
+            pickUpLocation.latitude,
+            pickUpLocation.longitude
+        )
+    )
+    Log.i("xxxx", "calculateDirections: destination: $destination")
+    directions.destination(destination).setCallback(object : Callback<DirectionsResult?> {
+        override fun onResult(result: DirectionsResult?) {
+            if (result != null) {
+                Log.i("xxxx", "calculateDirections: routes: " + result.routes[0].toString())
+            }
+            if (result != null) {
+                Log.i("xxxx", "calculateDirections: duration: " + result.routes[0].legs[0].duration)
+            }
+            if (result != null) {
+                Log.i("xxxx", "calculateDirections: distance: " + result.routes[0].legs[0].distance)
+            }
+            if (result != null) {
+                Log.i(
+                    "xxxx",
+                    "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString()
+                )
+            }
+        }
+
+        override fun onFailure(e: Throwable) {
+            Log.e("xxxx", "calculateDirections: Failed to get directions: " + e.message)
+        }
+    })
+}
+
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -732,6 +771,11 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
     }
 
     val passengerClass = PassengerViewModel()
+
+    val mGeoApiContext: GeoApiContext = GeoApiContext.Builder()
+        .apiKey(context.getString(R.string.DIR_API_KEY))
+        .build()
+
 
     Box(
         modifier = Modifier
@@ -1008,6 +1052,17 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                         Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
                             .show()  //confirmation
+                        Log.i(
+                            "xxxx",
+                            "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng"
+                        )
+                        if (mGeoApiContext != null) {
+                            calculateDirections(pickUpLocation = pickUpLatLng, targetLatLng, mGeoApiContext = mGeoApiContext)
+                        }
+                        else{
+                            Log.i("xxxx","mgeo application is null")
+                        }
+
                     }
 
                 }) {
