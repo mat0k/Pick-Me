@@ -66,8 +66,8 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
                         putString("carPlate", driver.carPlate)
                         putString("driverLicense", driver.driverLicense)
                         putBoolean("verified", driver.verified)
-                        putString("carPhotoUri", driver.carPhoto.toString())
-                        putString("driverPhotoUri", driver.driverPhoto.toString())
+                        putString("carPhotoUrl", driver.carPhotoUrl)
+                        putString("driverPhotoUri", driver.driverPhotoUrl)
                         apply()
                     }
                     loginResult.value = true

@@ -21,34 +21,42 @@ class ProfileViewModelFactory(private val context: Context) : ViewModelProvider.
     }
 }
 
-class ProfileViewModel (val context: Context) : ViewModel() {
+class ProfileViewModel(val context: Context) : ViewModel() {
     val sharedPref: SharedPreferences = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     var name = mutableStateOf(sharedPref.getString("name", "")!!)
     var surname = mutableStateOf(sharedPref.getString("surname", "") ?: "")
     var phone = mutableStateOf(sharedPref.getString("phone", "") ?: "")
     var emergencyNumber = mutableStateOf(sharedPref.getString("emergencyNumber", "") ?: "")
+    var photoUrl = mutableStateOf(sharedPref.getString("photoUrl", "") ?: "")
+    var loading = mutableStateOf(false)
+    var photoChanged = mutableStateOf(false)
+    var newPhotoUrl = mutableStateOf("")
     private val authRepository = AuthRepository()
+
+
     fun saveProfileData() {
-        with(sharedPref.edit()) {
-            putString("name", name.value)
-            putString("surname", surname.value)
-            putString("phone", phone.value)
-            apply()
-        }
-
-        val updatedPassenger = Passenger(
-            id = sharedPref.getString("id", "") ?: "",
-            name = name.value,
-            surname = surname.value,
-            phone = phone.value,
-            password = sharedPref.getString("hashedPassword", "") ?: "",
-            photoUrl = sharedPref.getString("photoUrl", "") ?: "",
-            emergencyNumber = sharedPref.getString("emergencyNumber", "") ?: ""
-        )
-
-        // Call updatePassenger() with the updated Passenger object
         viewModelScope.launch {
+            val editor = sharedPref.edit()
+            editor.putString("name", name.value)
+            editor.putString("surname", surname.value)
+            editor.putString("phone", phone.value)
+            editor.putString("emergencyNumber", emergencyNumber.value)
+
+            if (photoChanged.value) {
+                newPhotoUrl.value = authRepository.uploadImageToFirebase(Uri.parse(photoUrl.value))
+                editor.putString("photoUrl", newPhotoUrl.value)
+            }
+            val updatedPassenger = Passenger(
+                id = sharedPref.getString("id", "") ?: "",
+                name = name.value,
+                surname = surname.value,
+                phone = phone.value,
+                password = sharedPref.getString("hashedPassword", "") ?: "",
+                photoUrl = newPhotoUrl.value,
+                emergencyNumber = sharedPref.getString("emergencyNumber", "") ?: ""
+            )
             authRepository.updatePassenger(updatedPassenger)
+            editor.apply()
         }
     }
 
@@ -56,5 +64,6 @@ class ProfileViewModel (val context: Context) : ViewModel() {
         name.value = sharedPref.getString("name", "") ?: ""
         surname.value = sharedPref.getString("surname", "") ?: ""
         phone.value = sharedPref.getString("phone", "") ?: ""
+        emergencyNumber.value = sharedPref.getString("emergencyNumber", "") ?: ""
     }
 }

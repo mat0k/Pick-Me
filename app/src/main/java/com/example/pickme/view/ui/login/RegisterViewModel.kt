@@ -123,28 +123,34 @@ class RegisterViewModel : ViewModel() {
         photo.value = it
     }
 
-    private fun registerPassenger(context: Context) {
+    private suspend fun registerPassenger(context: Context) {
         val newPassenger = Passenger(
             "",
             firstName.value,
             lastName.value,
             password.value,
             phoneNumber.value,
-            photo.value.toString(),
+            authRepository.uploadImageToFirebase(photo.value!!),
             emergencyNumber.value
         )
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = authRepository.addPassenger(newPassenger)
-            if (result.isFailure) {
-                val message = result.exceptionOrNull()?.message ?: "An error occurred"
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
+        val result = authRepository.addPassenger(newPassenger)
+        if (result.isFailure) {
+            val message = result.exceptionOrNull()?.message ?: "An error occurred"
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun registerDriver(context: Context) {
+    private suspend fun registerDriver(context: Context) {
         val newDriver = Driver(
-            // ... existing code ...
+            "",
+            firstName.value,
+            lastName.value,
+            password.value,
+            phoneNumber.value,
+            carPlate.value,
+            authRepository.uploadImageToFirebase(carPhoto.value!!),
+            authRepository.uploadImageToFirebase(photo.value!!),
+            driverLicense.value
         )
         viewModelScope.launch(Dispatchers.IO) {
             val result = authRepository.addDriver(newDriver)
@@ -158,10 +164,15 @@ class RegisterViewModel : ViewModel() {
     }
 
     fun register(context: Context) {
-        if(role.intValue == 0) {
-            registerPassenger(context)
+        if (role.intValue == 0) {
+            viewModelScope.launch {
+                registerPassenger(context)
+            }
+        } else {
+            viewModelScope.launch {
+                registerDriver(context)
+            }
         }
-        else registerDriver(context)
     }
 }
 

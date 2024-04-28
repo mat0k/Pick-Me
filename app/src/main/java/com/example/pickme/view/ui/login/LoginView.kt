@@ -108,8 +108,9 @@ fun LoginScreen(navController: NavController) {
                     else -> Intent(context, DriverView::class.java)
                 }
                 context.startActivity(intent)
-            } else if(loginResult == false) {
-                Toast.makeText(context, "Invalid phone number or password", Toast.LENGTH_SHORT).show()
+            } else if (loginResult == false) {
+                Toast.makeText(context, "Invalid phone number or password", Toast.LENGTH_SHORT)
+                    .show()
                 loggingIn = false
             }
         }
@@ -398,17 +399,16 @@ fun OTP(
     activity: ComponentActivity
 ) {
     val otpViewModel = viewModel<OTPViewModel>()
-    var loading by remember { mutableStateOf(true) }
     LaunchedEffect(key1 = true) {
         otpViewModel.authenticate("+961 ${registerViewModel.phoneNumber.value}", activity) {
         }
-        loading = false
     }
     Column(
         modifier = Modifier
             .padding(50.dp)
             .fillMaxSize(),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Enter the 6-digit code we sent to ${registerViewModel.phoneNumber.value}",
@@ -432,18 +432,22 @@ fun OTP(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                otpViewModel.verifyOTP { verificationSuccessful ->
-                    if (verificationSuccessful) {
-                        registerViewModel.register(activity)
-                        navController.navigate("login")
+        if (otpViewModel.isLoading.value) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = {
+                    otpViewModel.verifyOTP { verificationSuccessful ->
+                        if (verificationSuccessful) {
+                            registerViewModel.register(activity)
+                            navController.navigate("login")
+                        }
                     }
-                }
-            },
-            enabled = otpViewModel.otp.value.length == 6
-        ) {
-            Text("Verify")
+                },
+                enabled = otpViewModel.otp.value.length == 6
+            ) {
+                Text("Verify")
+            }
         }
     }
 }

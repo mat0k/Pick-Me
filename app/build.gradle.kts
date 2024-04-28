@@ -108,7 +108,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(platform(libs.firebase.bom))
-
+    implementation(libs.coil.compose)
     implementation("com.google.firebase:firebase-auth")
 }
 

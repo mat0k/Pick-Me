@@ -6,6 +6,6 @@ data class Passenger(
    val surname: String = "",
    val password: String = "",
    val phone: String = "",
-   val photoUrl: String? = "",
+   val photoUrl: String = "",
    val emergencyNumber: String = ""
 )

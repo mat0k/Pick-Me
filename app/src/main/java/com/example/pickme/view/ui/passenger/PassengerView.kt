@@ -2,12 +2,14 @@ package com.example.pickme.view.ui.passenger
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,12 +29,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -45,9 +49,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -87,11 +91,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
-import com.example.pickme.data.model.Passenger
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
@@ -120,7 +124,6 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 
@@ -157,8 +160,10 @@ class PassengerView : ComponentActivity() {
                                     NavigationBarItem(
                                         selected = (selectedItemIndex == index),
                                         onClick = {
-                                            selectedItemIndex = index
-                                            navController.navigate(item.title)
+                                            if (selectedItemIndex != index) {
+                                                selectedItemIndex = index
+                                                navController.navigate(item.title)
+                                            }
                                         },
                                         label = { Text(item.title) },
                                         alwaysShowLabel = false,
@@ -1039,28 +1044,72 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val viewModelFactory = remember {
         ProfileViewModelFactory(context)
     }
     val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
     var isEditing by remember { mutableStateOf(false) }
     var valuesChanged by remember { mutableStateOf(false) }
-    var loggingOut by remember { mutableStateOf(false) }
-    var saving by remember { mutableStateOf(false) }
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.photoUrl.value = it.toString()
+            viewModel.photoChanged.value = true
+        }
+    }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Profile") },
                 actions = {
-                    IconButton(onClick = {
-                        isEditing = true
-                    }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                    if (!isEditing) {
+                        IconButton(onClick = {
+                            viewModel.sharedPref.edit().clear().apply()
+                            Intent(context, MainActivity::class.java).also {
+                                context.startActivity(it)
+                            }
+                            viewModel.loading.value = true
+                        }) {
+                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                        }
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (!isEditing) {
+                FloatingActionButton(
+                    onClick = {
+                        isEditing = true
+                    }
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+            } else {
+                Column {
+                    FloatingActionButton(
+                        onClick = {
+                            isEditing = false
+                            viewModel.loading.value = true
+                            viewModel.saveProfileData()
+                            viewModel.loading.value = false
+                        }
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Save")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    FloatingActionButton(
+                        onClick = {
+                            isEditing = false
+                            viewModel.loadProfileData()
+                        }
+                    ) {
+                        Icon(Icons.Default.Clear, contentDescription = "Cancel")
+                    }
+                }
+            }
         }
     ) { pad ->
         Column(
@@ -1069,6 +1118,37 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        CircleShape
+                    )
+            ) {
+                AsyncImage(
+                    model = viewModel.photoUrl.value,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .scale(1.2f)
+                )
+                if (isEditing) {
+                    IconButton(
+                        onClick = {
+                            pickImageLauncher.launch("image/*")
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .background(Color.White, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = viewModel.name.value,
                 onValueChange = {
@@ -1079,7 +1159,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 enabled = isEditing
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = viewModel.surname.value,
                 onValueChange = {
@@ -1090,7 +1170,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 enabled = isEditing
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = viewModel.phone.value,
                 onValueChange = {
@@ -1098,51 +1178,22 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     valuesChanged = true
                 },
                 label = { Text("Phone") },
-                enabled = isEditing
+                enabled = isEditing,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            if (isEditing) {
-                Row {
-                    Button(
-                        onClick = {
-                            isEditing = false
-                            saving = true
-                            viewModel.saveProfileData()
-                            saving = false
-                        }, enabled = valuesChanged
-                    ) {
-                        Text("Save")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            isEditing = false
-                            viewModel.loadProfileData()
-                        }
-                    ) {
-                        Text("Cancel")
-                    }
-                }
-                if (saving) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                Button(
-                    onClick = {
-                        viewModel.sharedPref.edit().clear().apply()
-                        Intent(context, MainActivity::class.java).also {
-                            context.startActivity(it)
-                        }
-                        loggingOut = true
-                    },
-                    enabled = !loggingOut
-                ) {
-                    Text("Log out")
-                }
-                if(loggingOut) {
-                    CircularProgressIndicator()
-                }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.emergencyNumber.value,
+                onValueChange = {
+                    if (isEditing) viewModel.emergencyNumber.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Emergency Number") },
+                enabled = isEditing,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
+            )
+            if (viewModel.loading.value) {
+                CircularProgressIndicator()
             }
         }
     }

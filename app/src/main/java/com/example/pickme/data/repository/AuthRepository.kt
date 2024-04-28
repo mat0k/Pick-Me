@@ -6,9 +6,14 @@ import com.example.pickme.data.model.Driver
 import com.example.pickme.data.model.Passenger
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 
 class AuthRepository {
@@ -29,17 +34,14 @@ class AuthRepository {
                 return Result.failure(Exception("A passenger account with this phone number already exists."))
             }
         }
-//        var photoUrl = ""
-//        passenger.photo?.let{
-//            photoUrl = uploadImageToFirebase(it)
-//        }
+
         val passengerObject = mapOf(
             "id" to myRef.push().key,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to hashPassword(passenger.password),
             "phone" to passenger.phone,
-//            "photoUrl" to photoUrl.toString(),
+            "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber
         )
         myRef.push().setValue(passengerObject)
@@ -111,8 +113,8 @@ class AuthRepository {
             "password" to hashPassword(driver.password),
             "phone" to driver.phone,
             "carPlate" to driver.carPlate,
-            "carPhoto" to driver.carPhoto,
-            "photo" to driver.driverPhoto,
+            "carPhoto" to driver.carPhotoUrl,
+            "photo" to driver.driverPhotoUrl,
             "driverLicense" to driver.driverLicense,
             "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate)
         )
@@ -135,17 +137,24 @@ class AuthRepository {
         return Result.success(Unit)
     }
 
-    private suspend fun uploadImageToFirebase(image: Uri): String {
-        val storage = FirebaseStorage.getInstance()
-        val storageRef = storage.getReference("images")
-        val uploadTask = storageRef.putFile(image)
-        val taskSnapshot = uploadTask.await() // This requires the kotlinx-coroutines-play-services library
-        return taskSnapshot.metadata?.reference?.downloadUrl?.await().toString()
+    suspend fun uploadImageToFirebase(imageUri: Uri): String {
+        return suspendCoroutine { continuation ->
+            val storageRef =
+                FirebaseStorage.getInstance().getReference("images/${imageUri.lastPathSegment}")
+            storageRef.putFile(imageUri)
+                .addOnSuccessListener { task ->
+                    task.metadata!!.reference!!.downloadUrl
+                        .addOnSuccessListener {
+                            continuation.resume(it.toString())
+                        }
+                        .addOnFailureListener {
+                            continuation.resumeWithException(it)
+                        }
+                }
+                .addOnFailureListener {
+                    continuation.resumeWithException(it)
+                }
+        }
     }
 
-    suspend fun getImage(imageUrl: String): Uri {
-        val storage = FirebaseStorage.getInstance()
-        val storageRef = storage.getReferenceFromUrl(imageUrl)
-        return storageRef.downloadUrl.await()
-    }
 }
