@@ -237,5 +237,11 @@ class PassengerViewModel {
         }
     }
 
+
+    fun calculateMidPoint(start: LatLng, target: LatLng): LatLng {
+        val midLat = (start.latitude + target.latitude) / 2
+        val midLng = (start.longitude + target.longitude) / 2
+        return LatLng(midLat, midLng)
+    }
 }
 

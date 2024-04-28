@@ -199,6 +199,9 @@ fun HomeScreen(
         composable("mapView") {
             MapView(context, navController, pickUpViewModel)
         }
+        composable("pickUpPreview") {
+            PickUpPreview(context, navController, pickUpViewModel)
+        }
     }
 }
 
@@ -270,6 +273,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         pickUpTitle = "Pick Up"
         targetTitle = "Destination"
         isButtonEnabled1 = false
+    }
+
+    if(pickUpViewModel.dateDialogState.value){
+        dateDialogState.show()
+        pickUpViewModel.setDialogState(false)
     }
 
     Column(
@@ -575,21 +583,26 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 onClick = { showDeleteConfirm.value = localPickUp }
                             ) {
                                 Icon(
-                                    painter = painterResource(id = com.example.pickme.R.drawable.delete_icon),
+                                    painter = painterResource(id = R.drawable.delete_icon),
                                     contentDescription = "Delete"
                                 )
                             }
-                            /*   IconButton(
-                                   onClick = {
-                                       databaseHelper.deleteLocalPickUp(localPickUp.id)
+                            IconButton(
+                                onClick = {
+                                    pickUpViewModel.setPrevPickUpTitle(localPickUp.pickUpTitle)
+                                    pickUpViewModel.setPrevTargetTitle(localPickUp.targetTitle)
+                                    pickUpViewModel.setPrevPickUPLatLng(localPickUp.pickUpLatLng)
+                                    pickUpViewModel.setPrevTargetLatLng(localPickUp.targetLatLng)
+                                    pickUpViewModel.setPrevDistance(localPickUp.distance)
 
-                                   }
-                               ) {
-                                   Icon(
-                                       painter = painterResource(id = com.example.pickmeup.R.drawable.preview_icon),
-                                       contentDescription = "Preview"
-                                   )
-                               } */
+                                    navController.navigate("pickUpPreview")
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.preview_icon),
+                                    contentDescription = "Preview"
+                                )
+                            }
                         }
                     }
 
@@ -1022,6 +1035,206 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 
 @Composable
+fun PickUpPreview(
+    context: Context,
+    navController: NavHostController,
+    pickUpViewModel: PickUpViewModel
+) {
+
+    val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
+    val targetLatLng = pickUpViewModel.prevTargetLatLng.value
+
+    val passengerViewModel= PassengerViewModel()
+    val midPoint= passengerViewModel.calculateMidPoint(pickUpLatLng,targetLatLng)
+
+    val distance = pickUpViewModel.prevDistance.value
+    val zoomLevel = when {
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
+        distance <= 80 -> 10f
+        distance <= 100 -> 9f
+        else -> 8f
+    }
+
+    val uiSetting by remember { mutableStateOf(MapUiSettings()) }
+    val properties by remember {
+        mutableStateOf(MapProperties(mapType = MapType.NORMAL))
+    }
+
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = pickUpLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = targetLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+        }
+        // Add a button that navigates back to the search page
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 15.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for pick up location and cancel button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pick Up: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevPickUpTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            //display target details
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for target location and cancel button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Target: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevTargetTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+                    .alpha(0.9f),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Distance: ",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "$distance",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            navController.navigate("pickUps")
+                        }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "location Icon",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }                    }
+
+                    Button(
+                        modifier = Modifier
+                            .weight(3f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            pickUpViewModel.setPickUpTitle(pickUpViewModel.prevPickUpTitle.value)
+                            pickUpViewModel.setTargetTitle(pickUpViewModel.prevTargetTitle.value)
+                            pickUpViewModel.setPickUpLatLng(pickUpViewModel.prevPickUPLatLng.value)
+                            pickUpViewModel.setTargetLatLng(pickUpViewModel.prevTargetLatLng.value)
+                            pickUpViewModel.setDistance(pickUpViewModel.prevDistance.value)
+                            pickUpViewModel.setDialogState(true)
+                            navController.navigate("pickUps")
+                        }
+                    ) {
+                        Text(
+                            text = "Order Trip",
+                            fontSize = 22.sp
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+
+@Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val firstName = sharedPref.getString("name", "First Name")
@@ -1035,7 +1248,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 .weight(6f)
                 .fillMaxWidth()
         ) {
-            showAllTrips()
+            ShowAllTrips()
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -1064,7 +1277,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
 }
 
 @Composable
-fun showAllTrips() {
+fun ShowAllTrips() {
     val context = LocalContext.current
     val passengerViewModel: PassengerViewModel = PassengerViewModel()
 
@@ -1156,10 +1369,10 @@ fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel)
             SearchTrip(navController, tripViewModel)
         }
         composable("mapView2") {
-            MapView2(navController, tripViewModel)
+            TripMap(navController, tripViewModel)
         }
         composable("mapView3") {
-            MapView3(navController, tripViewModel )
+            TripPreview(navController, tripViewModel)
         }
     }
 
@@ -1739,7 +1952,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                         //       horizontalArrangement = Arrangement.SpaceBetween
+                                //       horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
                                     text = "Rating: ${trip["rate"]}",
@@ -1761,8 +1974,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 IconButton(
                                     onClick = {
                                         // get trips starting and destination lat lng here
-                                        val tripStartLatLngMap = trip["startingLatLng"] as? Map<String, Double> ?: emptyMap()
-                                        val tripDestinationLatLngMap = trip["destinationLatLng"] as? Map<String, Double> ?: emptyMap()
+                                        val tripStartLatLngMap =
+                                            trip["startingLatLng"] as? Map<String, Double>
+                                                ?: emptyMap()
+                                        val tripDestinationLatLngMap =
+                                            trip["destinationLatLng"] as? Map<String, Double>
+                                                ?: emptyMap()
 
                                         val tripStartLatLng = LatLng(
                                             tripStartLatLngMap["latitude"] ?: 0.0,
@@ -1772,8 +1989,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                             tripDestinationLatLngMap["latitude"] ?: 0.0,
                                             tripDestinationLatLngMap["longitude"] ?: 0.0
                                         )
-                                        Log.i("trip","start lat lng: ${tripStartLatLng.latitude}, ${tripStartLatLng.longitude}")
-                                        Log.i("trip","dest lat lng: ${tripDestLatLng.latitude}, ${tripDestLatLng.longitude}")
+                                        Log.i(
+                                            "trip",
+                                            "start lat lng: ${tripStartLatLng.latitude}, ${tripStartLatLng.longitude}"
+                                        )
+                                        Log.i(
+                                            "trip",
+                                            "dest lat lng: ${tripDestLatLng.latitude}, ${tripDestLatLng.longitude}"
+                                        )
 
                                         tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
@@ -1847,7 +2070,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 }
 
 @Composable
-fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
+fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     // var defaultLocation=  LatLng(33.8938,35.5018)
     val context = LocalContext.current
@@ -2186,23 +2409,28 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
 
 
 @Composable
-fun MapView3(navController: NavHostController, tripViewModel: TripViewModel, ) {
-    val context = LocalContext.current
-    val passengerViewModel: PassengerViewModel = PassengerViewModel()
+fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) {
+
+    val passengerViewModel = PassengerViewModel()
 
     val startLatLng = tripViewModel.tripStartLatLng.value
     val destLatLng = tripViewModel.tripDestLatLng.value
 
-    val tripStartLatLng= tripViewModel.searchedTripStartLatLng.value
-    val tripDestLatLng= tripViewModel.searchedTripDestLatLng.value
+    val tripStartLatLng = tripViewModel.searchedTripStartLatLng.value
+    val tripDestLatLng = tripViewModel.searchedTripDestLatLng.value
+
+
+    val midPoint= passengerViewModel.calculateMidPoint(tripStartLatLng,tripDestLatLng)
 
     val distance = passengerViewModel.calculateDistance(tripStartLatLng, tripDestLatLng)
     val zoomLevel = when {
-        distance <= 5 -> 13f // Adjust these values based on your preference
-        distance <= 30 -> 12f
-        distance <= 55 -> 11f
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
         distance <= 80 -> 10f
-        else -> 9f
+        distance <= 100 -> 9f
+        else -> 8f
     }
 
     val uiSetting by remember { mutableStateOf(MapUiSettings()) }
@@ -2211,7 +2439,7 @@ fun MapView3(navController: NavHostController, tripViewModel: TripViewModel, ) {
     }
 
     val cameraPosition = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(tripStartLatLng, zoomLevel)
+        position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
 
     Box(
@@ -2254,18 +2482,51 @@ fun MapView3(navController: NavHostController, tripViewModel: TripViewModel, ) {
         // Add a button that navigates back to the search page
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
         ) {
-            Button(
-                modifier = Modifier
-                    .size(width = 220.dp, height = 50.dp),
-                shape = RoundedCornerShape(15.dp),
-                onClick = {
-                    navController.navigate("searchTrips")
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(text = "Return to Search")
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        navController.navigate("searchTrips")
+                    }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.back),
+                            contentDescription = "location Icon",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }                    }
+
+                Button(
+                    modifier = Modifier
+                        .weight(3f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+
+                        navController.navigate("searchTrips")
+                    }
+                ) {
+                    Text(
+                        text = "Book Trip",
+                        fontSize = 22.sp
+                    )
+                }
             }
         }
     }
