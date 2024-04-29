@@ -42,7 +42,7 @@ class RegisterViewModel : ViewModel() {
     var lastName = mutableStateOf("")
         private set
 
-    private var photo: MutableState<Uri?> = mutableStateOf(Uri.EMPTY)
+    private var photo: MutableState<Uri> = mutableStateOf(Uri.EMPTY)
 
     var password = mutableStateOf("")
         private set
@@ -92,7 +92,7 @@ class RegisterViewModel : ViewModel() {
     var driverLicense = mutableStateOf("")
         private set
 
-    var carPhoto: MutableState<Uri?> = mutableStateOf(Uri.EMPTY)
+    var carPhoto: MutableState<Uri> = mutableStateOf(Uri.EMPTY)
         private set
 
     fun updateCarPlate(newCarPlate: String) {
@@ -116,7 +116,6 @@ class RegisterViewModel : ViewModel() {
                 && password.value.isNotEmpty()
                 && confirmPassword.value.isNotEmpty()
                 && passwordsMatch()
-                && photo.value != null
     }
 
     fun updateProfilePicture(it: Uri) {
@@ -130,7 +129,7 @@ class RegisterViewModel : ViewModel() {
             lastName.value,
             password.value,
             phoneNumber.value,
-            authRepository.uploadImageToFirebase(photo.value!!),
+            authRepository.uploadImageToFirebase(photo.value),
             emergencyNumber.value
         )
         val result = authRepository.addPassenger(newPassenger)
@@ -148,8 +147,8 @@ class RegisterViewModel : ViewModel() {
             password.value,
             phoneNumber.value,
             carPlate.value,
-            authRepository.uploadImageToFirebase(carPhoto.value!!),
-            authRepository.uploadImageToFirebase(photo.value!!),
+            authRepository.uploadImageToFirebase(carPhoto.value),
+            authRepository.uploadImageToFirebase(photo.value),
             driverLicense.value
         )
         viewModelScope.launch(Dispatchers.IO) {

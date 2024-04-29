@@ -133,11 +133,12 @@ class AuthRepository {
             "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber
         )
-        myRef.setValue(passengerObject).await()
+        myRef.updateChildren(passengerObject).await()
         return Result.success(Unit)
     }
 
     suspend fun uploadImageToFirebase(imageUri: Uri): String {
+        if(imageUri == Uri.EMPTY) return ""
         return suspendCoroutine { continuation ->
             val storageRef =
                 FirebaseStorage.getInstance().getReference("images/${imageUri.lastPathSegment}")
