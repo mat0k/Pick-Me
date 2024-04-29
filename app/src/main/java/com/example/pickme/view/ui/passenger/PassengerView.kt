@@ -56,7 +56,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -75,14 +74,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,6 +100,7 @@ import com.example.pickme.viewModel.ProfileViewModel
 import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.DataSnapshot
@@ -219,6 +217,9 @@ fun HomeScreen(
         composable("mapView") {
             MapView(context, navController, pickUpViewModel)
         }
+        composable("pickUpPreview") {
+            PickUpPreview(context, navController, pickUpViewModel)
+        }
     }
 }
 
@@ -290,6 +291,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         pickUpTitle = "Pick Up"
         targetTitle = "Destination"
         isButtonEnabled1 = false
+    }
+
+    if(pickUpViewModel.dateDialogState.value){
+        dateDialogState.show()
+        pickUpViewModel.setDialogState(false)
     }
 
     Column(
@@ -595,21 +601,26 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 onClick = { showDeleteConfirm.value = localPickUp }
                             ) {
                                 Icon(
-                                    painter = painterResource(id = com.example.pickme.R.drawable.delete_icon),
+                                    painter = painterResource(id = R.drawable.delete_icon),
                                     contentDescription = "Delete"
                                 )
                             }
-                            /*   IconButton(
-                                   onClick = {
-                                       databaseHelper.deleteLocalPickUp(localPickUp.id)
+                            IconButton(
+                                onClick = {
+                                    pickUpViewModel.setPrevPickUpTitle(localPickUp.pickUpTitle)
+                                    pickUpViewModel.setPrevTargetTitle(localPickUp.targetTitle)
+                                    pickUpViewModel.setPrevPickUPLatLng(localPickUp.pickUpLatLng)
+                                    pickUpViewModel.setPrevTargetLatLng(localPickUp.targetLatLng)
+                                    pickUpViewModel.setPrevDistance(localPickUp.distance)
 
-                                   }
-                               ) {
-                                   Icon(
-                                       painter = painterResource(id = com.example.pickmeup.R.drawable.preview_icon),
-                                       contentDescription = "Preview"
-                                   )
-                               } */
+                                    navController.navigate("pickUpPreview")
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.preview_icon),
+                                    contentDescription = "Preview"
+                                )
+                            }
                         }
                     }
 
@@ -1041,6 +1052,206 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
+@Composable
+fun PickUpPreview(
+    context: Context,
+    navController: NavHostController,
+    pickUpViewModel: PickUpViewModel
+) {
+
+    val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
+    val targetLatLng = pickUpViewModel.prevTargetLatLng.value
+
+    val passengerViewModel= PassengerViewModel()
+    val midPoint= passengerViewModel.calculateMidPoint(pickUpLatLng,targetLatLng)
+
+    val distance = pickUpViewModel.prevDistance.value
+    val zoomLevel = when {
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
+        distance <= 80 -> 10f
+        distance <= 100 -> 9f
+        else -> 8f
+    }
+
+    val uiSetting by remember { mutableStateOf(MapUiSettings()) }
+    val properties by remember {
+        mutableStateOf(MapProperties(mapType = MapType.NORMAL))
+    }
+
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = pickUpLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = targetLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+        }
+        // Add a button that navigates back to the search page
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 15.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for pick up location and cancel button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pick Up: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevPickUpTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            //display target details
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for target location and cancel button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Target: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevTargetTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+                    .alpha(0.9f),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Distance: ",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "$distance",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            navController.navigate("pickUps")
+                        }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "location Icon",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }                    }
+
+                    Button(
+                        modifier = Modifier
+                            .weight(3f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            pickUpViewModel.setPickUpTitle(pickUpViewModel.prevPickUpTitle.value)
+                            pickUpViewModel.setTargetTitle(pickUpViewModel.prevTargetTitle.value)
+                            pickUpViewModel.setPickUpLatLng(pickUpViewModel.prevPickUPLatLng.value)
+                            pickUpViewModel.setTargetLatLng(pickUpViewModel.prevTargetLatLng.value)
+                            pickUpViewModel.setDistance(pickUpViewModel.prevDistance.value)
+                            pickUpViewModel.setDialogState(true)
+                            navController.navigate("pickUps")
+                        }
+                    ) {
+                        Text(
+                            text = "Order Trip",
+                            fontSize = 22.sp
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
@@ -1201,7 +1412,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
 }
 
 @Composable
-fun showAllTrips() {
+fun ShowAllTrips() {
     val context = LocalContext.current
     val passengerViewModel: PassengerViewModel = PassengerViewModel()
 
@@ -1293,7 +1504,10 @@ fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel)
             SearchTrip(navController, tripViewModel)
         }
         composable("mapView2") {
-            MapView2(navController, tripViewModel)
+            TripMap(navController, tripViewModel)
+        }
+        composable("mapView3") {
+            TripPreview(navController, tripViewModel)
         }
     }
 
@@ -1871,18 +2085,66 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 text = "End: ${trip["end"]}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Text(
-                                text = "Rating: ${trip["rate"]}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "Seats: ${trip["seats"]}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                //       horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Rating: ${trip["rate"]}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "    Seats: ${trip["seats"]}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                             Text(
                                 text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        // get trips starting and destination lat lng here
+                                        val tripStartLatLngMap =
+                                            trip["startingLatLng"] as? Map<String, Double>
+                                                ?: emptyMap()
+                                        val tripDestinationLatLngMap =
+                                            trip["destinationLatLng"] as? Map<String, Double>
+                                                ?: emptyMap()
+
+                                        val tripStartLatLng = LatLng(
+                                            tripStartLatLngMap["latitude"] ?: 0.0,
+                                            tripStartLatLngMap["longitude"] ?: 0.0
+                                        )
+                                        val tripDestLatLng = LatLng(
+                                            tripDestinationLatLngMap["latitude"] ?: 0.0,
+                                            tripDestinationLatLngMap["longitude"] ?: 0.0
+                                        )
+                                        Log.i(
+                                            "trip",
+                                            "start lat lng: ${tripStartLatLng.latitude}, ${tripStartLatLng.longitude}"
+                                        )
+                                        Log.i(
+                                            "trip",
+                                            "dest lat lng: ${tripDestLatLng.latitude}, ${tripDestLatLng.longitude}"
+                                        )
+
+                                        tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
+                                        tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
+                                        navController.navigate("mapView3")
+
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.preview_icon),
+                                        contentDescription = "Preview"
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1943,7 +2205,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 }
 
 @Composable
-fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
+fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     // var defaultLocation=  LatLng(33.8938,35.5018)
     val context = LocalContext.current
@@ -2280,6 +2542,130 @@ fun MapView2(navController: NavHostController, tripViewModel: TripViewModel) {
     }
 }
 
+
+@Composable
+fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) {
+
+    val passengerViewModel = PassengerViewModel()
+
+    val startLatLng = tripViewModel.tripStartLatLng.value
+    val destLatLng = tripViewModel.tripDestLatLng.value
+
+    val tripStartLatLng = tripViewModel.searchedTripStartLatLng.value
+    val tripDestLatLng = tripViewModel.searchedTripDestLatLng.value
+
+
+    val midPoint= passengerViewModel.calculateMidPoint(tripStartLatLng,tripDestLatLng)
+
+    val distance = passengerViewModel.calculateDistance(tripStartLatLng, tripDestLatLng)
+    val zoomLevel = when {
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
+        distance <= 80 -> 10f
+        distance <= 100 -> 9f
+        else -> 8f
+    }
+
+    val uiSetting by remember { mutableStateOf(MapUiSettings()) }
+    val properties by remember {
+        mutableStateOf(MapProperties(mapType = MapType.NORMAL))
+    }
+
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = startLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = destLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+            Marker(
+                state = MarkerState(position = tripStartLatLng),
+                title = "Searched Trip Start Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            )
+            // Searched trip destination location marker
+            Marker(
+                state = MarkerState(position = tripDestLatLng),
+                title = "Searched Trip Destination Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            )
+        }
+        // Add a button that navigates back to the search page
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        navController.navigate("searchTrips")
+                    }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.back),
+                            contentDescription = "location Icon",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }                    }
+
+                Button(
+                    modifier = Modifier
+                        .weight(3f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+
+                        navController.navigate("searchTrips")
+                    }
+                ) {
+                    Text(
+                        text = "Book Trip",
+                        fontSize = 22.sp
+                    )
+                }
+            }
+        }
+    }
+}
 
 fun deleteOldTrips() {
     val database = FirebaseDatabase.getInstance()

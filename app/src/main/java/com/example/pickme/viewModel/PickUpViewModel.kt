@@ -15,6 +15,14 @@ class PickUpViewModel : ViewModel() {
     val distance:   MutableState<Double> = mutableStateOf(0.0)
 
     val dateAndTime: MutableState<String> = mutableStateOf("")
+
+    val prevPickUpTitle:   MutableState<String> = mutableStateOf("")
+    val prevTargetTitle:   MutableState<String> = mutableStateOf("")
+    val prevPickUPLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(0.0,0.0))
+    val prevTargetLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(0.0,0.0))
+    val prevDistance :     MutableState<Double> = mutableStateOf(0.0)
+    val dateDialogState:    MutableState<Boolean> = mutableStateOf(false)
+
     fun setPickUpTitle(title: String) {
         pickUpTitle.value = title
     }
@@ -23,16 +31,39 @@ class PickUpViewModel : ViewModel() {
         targetTitle.value = title
     }
 
-    fun setPickUpLatLng(title: LatLng){
-        pickUpLatLng.value = title
+    fun setPickUpLatLng(latLng: LatLng){
+        pickUpLatLng.value = latLng
     }
-    fun setTargetLatLng(title: LatLng){
-        targetLatLng.value = title
+    fun setTargetLatLng(latLng: LatLng){
+        targetLatLng.value = latLng
     }
-    fun setDistance(title: Double){
-        distance.value= title
+    fun setDistance(dist: Double){
+        distance.value= dist
     }
     fun setDateAndTime(dateTime: String) {
         dateAndTime.value = dateTime
+    }
+    fun setPrevPickUpTitle(title: String) {
+        prevPickUpTitle.value = title
+    }
+
+    fun setPrevTargetTitle(title: String) {
+        prevTargetTitle.value = title
+    }
+
+    fun setPrevPickUPLatLng(latLng: LatLng){
+        prevPickUPLatLng.value = latLng
+    }
+
+    fun setPrevTargetLatLng(latLng: LatLng){
+        prevTargetLatLng.value = latLng
+    }
+
+    fun setPrevDistance(distance: Double){
+        prevDistance.value = distance
+    }
+
+    fun setDialogState(state: Boolean){
+        dateDialogState.value= state
     }
 }

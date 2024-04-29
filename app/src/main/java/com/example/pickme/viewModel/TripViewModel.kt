@@ -17,6 +17,10 @@ class TripViewModel : ViewModel() {
     val tripStartLatLng: MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
     val tripDestLatLng: MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
 
+    val searchedTripStartLatLng: MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
+    val searchedTripDestLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
+
+
     val distance:   MutableState<Double> = mutableStateOf(0.0)
 
     val dateAndTime: MutableState<String> = mutableStateOf("")
@@ -43,5 +47,11 @@ class TripViewModel : ViewModel() {
     }
     fun setDateAndTime(dateTime: String) {
         dateAndTime.value = dateTime
+    }
+    fun setSearchedTripStartLatLng(title: LatLng){
+        searchedTripStartLatLng.value = title
+    }
+    fun setSearchedTripDestLatLng(title: LatLng){
+        searchedTripDestLatLng.value = title
     }
 }
