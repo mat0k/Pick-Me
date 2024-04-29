@@ -130,6 +130,18 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.google.maps.PendingResult.Callback
+import com.google.maps.android.compose.Polyline
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.Call
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
+import kotlinx.serialization.decodeFromString
+import com.google.maps.android.PolyUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class BottomNavigationItem(
     val title: String,
@@ -758,6 +770,64 @@ fun calculateDirections(pickUpLocation: LatLng, target: LatLng, mGeoApiContext: 
     })
 }
 
+
+
+
+@Serializable
+data class DirectionsResponse(
+    val routes: List<Route>
+)
+
+@Serializable
+data class Route(
+    val overviewPolyline: OverviewPolyline
+)
+
+@Serializable
+data class OverviewPolyline(
+    val points: String
+)
+
+fun getDirectionURL(origin: LatLng, dest: LatLng, apiKey: String): String {
+    return "https://maps.googleapis.com/maps/api/directions/json" +
+            "?origin=${origin.latitude},${origin.longitude}" +
+            "&destination=${dest.latitude},${dest.longitude}" +
+            "&mode=driving" +
+            "&key=$apiKey"
+}
+
+fun fetchDirections(pickUpLatLng: LatLng, targetLatLng: LatLng): List<LatLng>{
+    // Make a request to the Google Directions API
+    val url = getDirectionURL(pickUpLatLng, targetLatLng, "YOUR_API_KEY")
+    val request = Request.Builder().url(url).build()
+    val client = OkHttpClient()
+    var polylinePoints = mutableListOf<LatLng>()
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            // Handle the error
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            if (response.isSuccessful) {
+                val body = response.body?.string()
+                if (body != null) {
+                    // Parse the response to extract the polyline data
+                    val json = Json { ignoreUnknownKeys = true }
+                    val directionsResponse = json.decodeFromString<DirectionsResponse>(body)
+                    val points = directionsResponse.routes[0].overviewPolyline.points
+
+                    // Decode the polyline data
+                    val latLngList = PolyUtil.decode(points)
+
+                    // Update the polylinePoints state
+                    polylinePoints = latLngList
+                }
+            }
+        }
+        return polylinePoints
+    })
+}
+
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -811,7 +881,12 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         .apiKey(context.getString(R.string.DIR_API_KEY))
         .build()
 
+    var polylinePoints by remember { mutableStateOf(listOf<LatLng>()) }
 
+
+    if (mainButtonState == "Confirm Starting") {
+        polylinePoints = fetchDirections(pickUpLatLng, targetLatLng)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -836,6 +911,10 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 title = targetTitle,
                 visible = targetMarkerState
             )
+            if (mainButtonState == "Confirm Starting") {
+                Polyline(polylinePoints)
+            }
+
         }
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -1091,12 +1170,12 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             "xxxx",
                             "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng"
                         )
-                        if (mGeoApiContext != null) {
+                     /*   if (mGeoApiContext != null) {
                             calculateDirections(pickUpLocation = pickUpLatLng, targetLatLng, mGeoApiContext = mGeoApiContext)
                         }
                         else{
                             Log.i("xxxx","mgeo application is null")
-                        }
+                        } */
 
                     }
 
