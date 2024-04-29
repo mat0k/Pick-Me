@@ -2,11 +2,14 @@ package com.example.pickme.view.ui.passenger
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,9 +29,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -38,12 +46,17 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -62,19 +75,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
@@ -82,6 +99,8 @@ import com.example.pickme.data.model.LocalPickUpDbHelper
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
+import com.example.pickme.viewModel.ProfileViewModel
+import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -145,8 +164,10 @@ class PassengerView : ComponentActivity() {
                                     NavigationBarItem(
                                         selected = (selectedItemIndex == index),
                                         onClick = {
-                                            selectedItemIndex = index
-                                            navController.navigate(item.title)
+                                            if (selectedItemIndex != index) {
+                                                selectedItemIndex = index
+                                                navController.navigate(item.title)
+                                            }
                                         },
                                         label = { Text(item.title) },
                                         alwaysShowLabel = false,
@@ -1293,46 +1314,163 @@ fun PickUpPreview(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-    val firstName = sharedPref.getString("name", "First Name")
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(6f)
-                .fillMaxWidth()
-        ) {
-            ShowAllTrips()
+    context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val viewModelFactory = remember {
+        ProfileViewModelFactory(context)
+    }
+    val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
+    var isEditing by remember { mutableStateOf(false) }
+    var valuesChanged by remember { mutableStateOf(false) }
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.photoUrl.value = it.toString()
+            viewModel.photoChanged.value = true
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = "$firstName")
-                Button(onClick = {
-                    sharedPref.edit().clear().apply()
-                    Intent(context, MainActivity::class.java).also {
-                        context.startActivity(it)
+    }
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Profile") },
+                actions = {
+                    if (!isEditing) {
+                        IconButton(onClick = {
+                            viewModel.sharedPref.edit().clear().apply()
+                            Intent(context, MainActivity::class.java).also {
+                                context.startActivity(it)
+                            }
+                            viewModel.loading.value = true
+                        }) {
+                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                        }
                     }
-                }) {
-                    Text(text = "Log out")
+                }
+            )
+        },
+        floatingActionButton = {
+            if (!isEditing) {
+                FloatingActionButton(
+                    onClick = {
+                        isEditing = true
+                    }
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+            } else {
+                Column {
+                    FloatingActionButton(
+                        onClick = {
+                            isEditing = false
+                            viewModel.loading.value = true
+                            viewModel.saveProfileData()
+                            viewModel.loading.value = false
+                        }
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Save")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    FloatingActionButton(
+                        onClick = {
+                            isEditing = false
+                            viewModel.loadProfileData()
+                        }
+                    ) {
+                        Icon(Icons.Default.Clear, contentDescription = "Cancel")
+                    }
                 }
             }
         }
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .padding(pad)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        CircleShape
+                    )
+            ) {
+                AsyncImage(
+                    model = viewModel.photoUrl.value,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .scale(1.2f)
+                )
+                if (isEditing) {
+                    IconButton(
+                        onClick = {
+                            pickImageLauncher.launch("image/*")
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .background(Color.White, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.name.value,
+                onValueChange = {
+                    if (isEditing) viewModel.name.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Name") },
+                enabled = isEditing
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.surname.value,
+                onValueChange = {
+                    if (isEditing) viewModel.surname.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Surname") },
+                enabled = isEditing
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.phone.value,
+                onValueChange = {
+                    if (isEditing) viewModel.phone.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Phone") },
+                enabled = isEditing,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.emergencyNumber.value,
+                onValueChange = {
+                    if (isEditing) viewModel.emergencyNumber.value = it
+                    valuesChanged = true
+                },
+                label = { Text("Emergency Number") },
+                enabled = isEditing,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
+            )
+            if (viewModel.loading.value) {
+                CircularProgressIndicator()
+            }
+        }
     }
+
 }
 
 @Composable

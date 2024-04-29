@@ -37,14 +37,17 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
     fun login() {
         viewModelScope.launch {
             if (role == 0) {
-                val passenger = authRepository.loginAsPassenger(phoneNumber, password)
-                if (passenger != null) {
+                val result = authRepository.loginAsPassenger(phoneNumber, password)
+                if (result.isSuccess) {
+                    val passenger = result.getOrNull()
                     with(sharedPref.edit()) {
-                        putString("name", passenger.name)
-                        putString("surname", passenger.surname)
-                        putString("phone", passenger.phone)
-                        putString("photo", passenger.photo)
-                        putString("emergencyNumber", passenger.emergencyNumber)
+                        putString("id", passenger?.id)
+                        putString("name", passenger?.name)
+                        putString("surname", passenger?.surname)
+                        putString("hashedPassword", passenger?.password)
+                        putString("phone", passenger?.phone)
+                        putString("photoUrl", passenger?.photoUrl)
+                        putString("emergencyNumber", passenger?.emergencyNumber)
                         apply()
                     }
                     loginResult.value = true
@@ -55,14 +58,16 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
                 val driver = authRepository.loginAsDriver(phoneNumber, password)
                 if (driver != null) {
                     with(sharedPref.edit()) {
+                        putString("id", driver.id)
                         putString("name", driver.firstName)
                         putString("surname", driver.lastName)
+                        putString("hashedPassword", driver.password)
                         putString("phone", driver.phone)
                         putString("carPlate", driver.carPlate)
-                        putString("carPhoto", driver.carPhoto)
-                        putString("photo", driver.driverPhoto)
                         putString("driverLicense", driver.driverLicense)
                         putBoolean("verified", driver.verified)
+                        putString("carPhotoUrl", driver.carPhotoUrl)
+                        putString("driverPhotoUri", driver.driverPhotoUrl)
                         apply()
                     }
                     loginResult.value = true
