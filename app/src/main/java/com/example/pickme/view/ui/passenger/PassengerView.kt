@@ -70,6 +70,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,6 +142,7 @@ import java.io.IOException
 import kotlinx.serialization.decodeFromString
 import com.google.maps.android.PolyUtil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class BottomNavigationItem(
@@ -788,46 +790,45 @@ data class OverviewPolyline(
     val points: String
 )
 
-fun getDirectionURL(origin: LatLng, dest: LatLng, apiKey: String): String {
+fun getDirectionURL(origin: LatLng, dest: LatLng): String {
     return "https://maps.googleapis.com/maps/api/directions/json" +
             "?origin=${origin.latitude},${origin.longitude}" +
             "&destination=${dest.latitude},${dest.longitude}" +
             "&mode=driving" +
-            "&key=$apiKey"
+            "&key=AIzaSyC4S_Vu2iCL1MjlKBFTpHiYPds7OoYZTYc"
 }
 
-fun fetchDirections(pickUpLatLng: LatLng, targetLatLng: LatLng): List<LatLng>{
-    // Make a request to the Google Directions API
-    val url = getDirectionURL(pickUpLatLng, targetLatLng, "YOUR_API_KEY")
-    val request = Request.Builder().url(url).build()
-    val client = OkHttpClient()
-    var polylinePoints = mutableListOf<LatLng>()
-    client.newCall(request).enqueue(object : okhttp3.Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            // Handle the error
-        }
+suspend fun fetchDirections(pickUpLatLng: LatLng, targetLatLng: LatLng): List<LatLng> {
+    Log.i("xxxx","fetch start")
+    return withContext(Dispatchers.IO) {
+        val url = getDirectionURL(pickUpLatLng, targetLatLng)
+        Log.i("xxxx","url is: $url")
+        val request = Request.Builder().url(url).build()
+        val client = OkHttpClient()
 
-        override fun onResponse(call: Call, response: Response) {
+        val polylinePoints = mutableListOf<LatLng>()
+        try {
+            val response = client.newCall(request).execute()
             if (response.isSuccessful) {
+                Log.i("xxxx","response succeed")
                 val body = response.body?.string()
                 if (body != null) {
-                    // Parse the response to extract the polyline data
                     val json = Json { ignoreUnknownKeys = true }
                     val directionsResponse = json.decodeFromString<DirectionsResponse>(body)
                     val points = directionsResponse.routes[0].overviewPolyline.points
-
-                    // Decode the polyline data
                     val latLngList = PolyUtil.decode(points)
-
-                    // Update the polylinePoints state
-                    polylinePoints = latLngList
+                    polylinePoints.addAll(latLngList)
                 }
+            } else {
+                Log.i("xxxx","fetch failed with response code: ${response.code}")
             }
+        } catch (e: Exception) {
+            Log.e("xxxx", "Error fetching directions", e)
         }
-        return polylinePoints
-    })
-}
 
+        polylinePoints
+    }
+}
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -882,11 +883,12 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         .build()
 
     var polylinePoints by remember { mutableStateOf(listOf<LatLng>()) }
+    val scope = rememberCoroutineScope()
 
 
-    if (mainButtonState == "Confirm Starting") {
+ /*   if (mainButtonState == "Confirm Starting") {
         polylinePoints = fetchDirections(pickUpLatLng, targetLatLng)
-    }
+    }*/
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1097,9 +1099,20 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
+                modifier= Modifier.size(width = 200.dp, height = 45.dp).padding(10.dp),
+                shape = RoundedCornerShape(15.dp),
+                onClick = {
+                  //  polylinePoints= fetchDirections(pickUpLatLng, targetLatLng)
+                    scope.launch {
+                        Log.i("xxxx","launched")
+                        polylinePoints = fetchDirections(pickUpLatLng, targetLatLng)
+                    }
+                }){
+                Text(text = "draw poly")
+            }
+            Button(
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
-
                 shape = RoundedCornerShape(15.dp),
                 onClick = {
 
