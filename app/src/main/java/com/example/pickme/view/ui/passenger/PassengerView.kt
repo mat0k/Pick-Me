@@ -282,6 +282,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
     val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
     val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
 
+    var passengerViewModel= PassengerViewModel()
 
     if (pickUpTitleTest.isNotEmpty()) {
         pickUpTitle = pickUpTitleTest
@@ -413,8 +414,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                     modifier = Modifier
                         .fillMaxSize(),          // Fill the entire available space in the box
                     onClick = {
-                        navController.navigate("mapView")
-
+                        if(passengerViewModel.isNetworkAvailable(context)){
+                            navController.navigate("mapView")
+                        }else{
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
                     },
                     shape = MaterialTheme.shapes.medium, // Set the button shape to medium (cubic)
                 ) {
@@ -856,7 +860,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
 
     if(mainButtonState== "Confirm pick up"){
-        Log.i("xxxx","update is called")
         if (pickUpLatLng != LatLng(0.0, 0.0) && targetLatLng != LatLng(0.0, 0.0)) {
             updatePolyline(pickUpLatLng, targetLatLng) { decodedPolyline ->
                 setPolylinePoints(decodedPolyline)
@@ -1822,7 +1825,11 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         .size(width = 220.dp, height = 50.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        navController.navigate("mapView2")
+                        if(passengerViewModel.isNetworkAvailable(context)){
+                            navController.navigate("mapView2")
+                        }else{
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
                     }
                 ) {
                     Icon(
@@ -2248,7 +2255,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                         tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
-                                        navController.navigate("mapView3")
+
+                                        if(passengerViewModel.isNetworkAvailable(context)){
+                                            navController.navigate("mapView3")
+                                        }else{
+                                            passengerViewModel.ShowWifiProblemDialog(context)
+                                        }
+
 
                                     }
                                 ) {

@@ -254,6 +254,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         enableConfirmation1 = true
     }
 
+    val passengerViewModel= PassengerViewModel()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -438,7 +439,11 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         if(seats!=0){
                             tripViewModel.setTripTitle(tripTitle)
                         }
-                        navController.navigate("mapView")
+                        if(passengerViewModel.isNetworkAvailable(context)){
+                            navController.navigate("mapView")
+                        }else{
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
                     }
                 ) {
                     Icon(
