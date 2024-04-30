@@ -70,7 +70,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -112,8 +111,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
-import com.google.maps.DirectionsApiRequest
-import com.google.maps.GeoApiContext
+import com.google.gson.Gson
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -121,7 +119,6 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.model.DirectionsResult
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -130,20 +127,14 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.google.maps.PendingResult.Callback
 import com.google.maps.android.compose.Polyline
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
-import java.io.IOException
-import kotlinx.serialization.decodeFromString
-import com.google.maps.android.PolyUtil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.pickme.data.model.GoogleMapDTO
 
 data class BottomNavigationItem(
     val title: String,
@@ -732,63 +723,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
-fun calculateDirections(pickUpLocation: LatLng, target: LatLng, mGeoApiContext: GeoApiContext) {
-    Log.i("xxxx", ">>calculateDirections: calculating directions.")
-    val destination = com.google.maps.model.LatLng(
-        target.latitude,
-        target.longitude
-    )
-    val directions = DirectionsApiRequest(mGeoApiContext)
-    directions.alternatives(true)
-    directions.origin(
-        com.google.maps.model.LatLng(
-            pickUpLocation.latitude,
-            pickUpLocation.longitude
-        )
-    )
-    Log.i("xxxx", "calculateDirections: destination: $destination")
-    directions.destination(destination).setCallback(object : Callback<DirectionsResult?> {
-        override fun onResult(result: DirectionsResult?) {
-            if (result != null) {
-                Log.i("xxxx", "calculateDirections: routes: " + result.routes[0].toString())
-            }
-            if (result != null) {
-                Log.i("xxxx", "calculateDirections: duration: " + result.routes[0].legs[0].duration)
-            }
-            if (result != null) {
-                Log.i("xxxx", "calculateDirections: distance: " + result.routes[0].legs[0].distance)
-            }
-            if (result != null) {
-                Log.i(
-                    "xxxx",
-                    "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString()
-                )
-            }
-        }
-
-        override fun onFailure(e: Throwable) {
-            Log.e("xxxx", "calculateDirections: Failed to get directions: " + e.message)
-        }
-    })
-}
-
-
-
-
-@Serializable
-data class DirectionsResponse(
-    val routes: List<Route>
-)
-
-@Serializable
-data class Route(
-    val overviewPolyline: OverviewPolyline
-)
-
-@Serializable
-data class OverviewPolyline(
-    val points: String
-)
 
 fun getDirectionURL(origin: LatLng, dest: LatLng): String {
     return "https://maps.googleapis.com/maps/api/directions/json" +
@@ -798,37 +732,77 @@ fun getDirectionURL(origin: LatLng, dest: LatLng): String {
             "&key=AIzaSyC4S_Vu2iCL1MjlKBFTpHiYPds7OoYZTYc"
 }
 
-suspend fun fetchDirections(pickUpLatLng: LatLng, targetLatLng: LatLng): List<LatLng> {
-    Log.i("xxxx","fetch start")
-    return withContext(Dispatchers.IO) {
-        val url = getDirectionURL(pickUpLatLng, targetLatLng)
-        Log.i("xxxx","url is: $url")
-        val request = Request.Builder().url(url).build()
-        val client = OkHttpClient()
 
-        val polylinePoints = mutableListOf<LatLng>()
-        try {
+
+
+
+fun updatePolyline(origin: LatLng, destination: LatLng, setPolylinePoints: (List<LatLng>) -> Unit) {
+    val url = getDirectionURL(origin, destination)
+    Log.i("xxxx","url is $url")
+
+    GlobalScope.launch(Dispatchers.IO) {
+        val decodedPolyline = try {
+            val client = OkHttpClient()
+            val request = Request.Builder().url(url).build()
             val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                Log.i("xxxx","response succeed")
-                val body = response.body?.string()
-                if (body != null) {
-                    val json = Json { ignoreUnknownKeys = true }
-                    val directionsResponse = json.decodeFromString<DirectionsResponse>(body)
-                    val points = directionsResponse.routes[0].overviewPolyline.points
-                    val latLngList = PolyUtil.decode(points)
-                    polylinePoints.addAll(latLngList)
-                }
-            } else {
-                Log.i("xxxx","fetch failed with response code: ${response.code}")
+            val data = response.body!!.string()
+            val respObj = Gson().fromJson(data, GoogleMapDTO::class.java)
+            val path = ArrayList<LatLng>()
+
+            for (i in 0 until respObj.routes[0].legs[0].steps.size) {
+                val decodedPoints = decodePolyline(respObj.routes[0].legs[0].steps[i].polyline.points)
+                path.addAll(decodedPoints)
             }
+            path
         } catch (e: Exception) {
-            Log.e("xxxx", "Error fetching directions", e)
+            e.printStackTrace()
+            Log.i("xxxx","error  $e")
+            emptyList<LatLng>()
         }
 
-        polylinePoints
+        withContext(Dispatchers.Main) {
+            setPolylinePoints(decodedPolyline)
+        }
     }
 }
+
+fun decodePolyline(encoded: String): List<LatLng> {
+    val poly = ArrayList<LatLng>()
+    var index = 0
+    val len = encoded.length
+    var lat = 0
+    var lng = 0
+
+    while (index < len) {
+        var b: Int
+        var shift = 0
+        var result = 0
+        do {
+            b = encoded[index++].toInt() - 63
+            result = result or (b and 0x1f shl shift)
+            shift += 5
+        } while (b >= 0x20)
+        val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+        lat += dlat
+
+        shift = 0
+        result = 0
+        do {
+            b = encoded[index++].toInt() - 63
+            result = result or (b and 0x1f shl shift)
+            shift += 5
+        } while (b >= 0x20)
+        val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+        lng += dlng
+
+        val latLng = LatLng((lat.toDouble() / 1E5),(lng.toDouble() / 1E5))
+        poly.add(latLng)
+    }
+    return poly
+}
+
+
+
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -878,17 +852,18 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     val passengerClass = PassengerViewModel()
 
-    val mGeoApiContext: GeoApiContext = GeoApiContext.Builder()
-        .apiKey(context.getString(R.string.DIR_API_KEY))
-        .build()
-
-    var polylinePoints by remember { mutableStateOf(listOf<LatLng>()) }
-    val scope = rememberCoroutineScope()
+    val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
 
- /*   if (mainButtonState == "Confirm Starting") {
-        polylinePoints = fetchDirections(pickUpLatLng, targetLatLng)
-    }*/
+    if(mainButtonState== "Confirm pick up"){
+        Log.i("xxxx","update is called")
+        if (pickUpLatLng != LatLng(0.0, 0.0) && targetLatLng != LatLng(0.0, 0.0)) {
+            updatePolyline(pickUpLatLng, targetLatLng) { decodedPolyline ->
+                setPolylinePoints(decodedPolyline)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -913,10 +888,13 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm Starting") {
-                Polyline(polylinePoints)
-            }
 
+            if(mainButtonState== "Confirm pick up") {
+                Polyline(
+                    points = polylinePoints,
+                    color = Color.Blue,
+                )
+            }
         }
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -1099,18 +1077,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                modifier= Modifier.size(width = 200.dp, height = 45.dp).padding(10.dp),
-                shape = RoundedCornerShape(15.dp),
-                onClick = {
-                  //  polylinePoints= fetchDirections(pickUpLatLng, targetLatLng)
-                    scope.launch {
-                        Log.i("xxxx","launched")
-                        polylinePoints = fetchDirections(pickUpLatLng, targetLatLng)
-                    }
-                }){
-                Text(text = "draw poly")
-            }
-            Button(
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
                 shape = RoundedCornerShape(15.dp),
@@ -1183,13 +1149,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             "xxxx",
                             "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng"
                         )
-                     /*   if (mGeoApiContext != null) {
-                            calculateDirections(pickUpLocation = pickUpLatLng, targetLatLng, mGeoApiContext = mGeoApiContext)
-                        }
-                        else{
-                            Log.i("xxxx","mgeo application is null")
-                        } */
-
                     }
 
                 }) {
