@@ -781,7 +781,8 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
-            tripDistance = distance
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha= 1f
         })
     }
 
@@ -813,7 +814,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             if(mainButtonState== "Confirm pick up") {
                 Polyline(
                     points = polylinePoints,
-                    color = Color.Blue,
+                    color = colorResource(id = R.color.polyline_color_1),
                 )
             }
         }
@@ -905,7 +906,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     }
                 }
 
-            }
+            }       //distance row
             Row(
                 modifier = Modifier
                     .alpha(distanceAlpha)
@@ -1022,9 +1023,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                     mainButtonState = "Set Target location"
                                 } else {
                                     mainButtonState = "Confirm pick up"
-                                    distanceAlpha = 1f
-                                    tripDistance =
-                                        passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                                 }
                             }
                         else {
@@ -1048,9 +1046,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Set Pick Up location"
                             else {
                                 mainButtonState = "Confirm pick up"
-                                distanceAlpha = 1f
-                                tripDistance =
-                                    passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                             }
                         }
                     } else if (mainButtonState == "Confirm pick up") {
@@ -1101,21 +1096,28 @@ fun PickUpPreview(
 
     val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
-    var tripDistance = 0.0
+    var tripDistance by remember {
+        mutableStateOf(0.0)
+    }
+    var distanceAlpha by remember {
+        mutableStateOf(0.5f)
+    }
 
     passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
         setPolylinePoints(decodedPolyline)
     }, { distance ->
-        tripDistance = distance
+        tripDistance = "%.2f".format(distance).toDouble()
+         distanceAlpha = 0.9f
     })
 
+    val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
     val zoomLevel = when {
-        tripDistance <= 5 -> 13f
-        tripDistance <= 10 -> 12f
-        tripDistance <= 20 -> 11.5f
-        tripDistance <= 40 -> 10.5f
-        tripDistance <= 80 -> 10f
-        tripDistance <= 100 -> 9f
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
+        distance <= 80 -> 10f
+        distance <= 100 -> 9f
         else -> 8f
     }
 
@@ -1222,7 +1224,7 @@ fun PickUpPreview(
             }
             Row(
                 modifier = Modifier
-                    .alpha(0.9f)
+                    .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -2237,7 +2239,8 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
-            tripDistance = distance
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha=1f
         })
     }
 
@@ -2500,9 +2503,6 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Starting location"
                             else {
                                 mainButtonState = "Confirm Starting"
-                                distanceAlpha = 1f
-                                tripDistance =
-                                    passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                             }
                         }
                     } else if (mainButtonState == "Confirm Starting") {
@@ -2572,17 +2572,22 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val cameraPosition = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
-
-/*    passengerViewModel.updatePolyline(startLatLng, destLatLng) { decodedPolyline ->
+    var tripDistance by remember {
+        mutableStateOf(0.0)
+    }
+    var distanceAlpha by remember {
+        mutableStateOf(0.5f)
+    }
+    passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
         setPolylinePoints1(decodedPolyline)
-    }*/
-
-    var tripDistance=0.0
+    }, { distance -> //
+        tripDistance = "%.2f".format(distance).toDouble()
+        distanceAlpha=1f
+    })
 
     passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
         setPolylinePoints2(decodedPolyline)
     }, { distance ->
-        tripDistance = distance
     })
 
     Box(
@@ -2632,6 +2637,21 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
 
                 )
 
+        }
+        Row(
+            modifier = Modifier
+                .alpha(distanceAlpha)
+                .padding(start = 15.dp, end = 15.dp, top = 30.dp)
+                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
         }
         // Add a button that navigates back to the search page
         Column(
