@@ -14,8 +14,16 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
+import com.example.pickme.data.model.GoogleMapDTO
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.IOException
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -243,5 +251,105 @@ class PassengerViewModel {
         val midLng = (start.longitude + target.longitude) / 2
         return LatLng(midLat, midLng)
     }
+
+
+    fun getDirectionURL(origin: LatLng, dest: LatLng): String {
+        return "https://maps.googleapis.com/maps/api/directions/json" +
+                "?origin=${origin.latitude},${origin.longitude}" +
+                "&destination=${dest.latitude},${dest.longitude}" +
+                "&mode=driving" +
+                "&key=AIzaSyC4S_Vu2iCL1MjlKBFTpHiYPds7OoYZTYc"
+    }
+
+
+    fun updatePolyline(
+        origin: LatLng,
+        destination: LatLng,
+        setPolylinePoints: (List<LatLng>) -> Unit,
+        setDistance: (Double) -> Unit
+    ) {
+        val url = getDirectionURL(origin, destination)
+
+        GlobalScope.launch(Dispatchers.IO) {
+            val decodedPolyline = try {
+                val client = OkHttpClient()
+                val request = Request.Builder().url(url).build()
+                val response = client.newCall(request).execute()
+                val data = response.body!!.string()
+                val respObj = Gson().fromJson(data, GoogleMapDTO::class.java)
+                val path = ArrayList<LatLng>()
+
+                for (i in 0 until respObj.routes[0].legs[0].steps.size) {
+                    val decodedPoints = decodePolyline(respObj.routes[0].legs[0].steps[i].polyline.points)
+                    path.addAll(decodedPoints)
+                }
+
+                val distance = getDistance(path)
+
+                withContext(Dispatchers.Main) {
+                    setDistance(distance)
+                }
+
+                path
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.i("xxxx","error  $e")
+                emptyList<LatLng>()
+            }
+
+            withContext(Dispatchers.Main) {
+                setPolylinePoints(decodedPolyline)
+            }
+        }
+    }
+
+    fun getDistance(path: List<LatLng>): Double {
+        var distance = 0.0
+        for (i in 1 until path.size) {
+            distance += calculateDistance(path[i - 1], path[i])
+        }
+        return distance
+    }
+
+
+
+
+
+    fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].toInt() - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].toInt() - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            val latLng = LatLng((lat.toDouble() / 1E5),(lng.toDouble() / 1E5))
+            poly.add(latLng)
+        }
+        return poly
+    }
 }
+
+
 
