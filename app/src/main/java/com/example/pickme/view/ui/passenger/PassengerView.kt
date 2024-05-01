@@ -267,15 +267,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
     var isButtonEnabled1 by remember { mutableStateOf(false) }
     var isButtonEnabled2 by remember { mutableStateOf(false) }
 
-    var pickUpTitleTest = pickUpViewModel.pickUpTitle.value
-    var targetTitleTest = pickUpViewModel.targetTitle.value
+    val pickUpTitleTest = pickUpViewModel.pickUpTitle.value
+    val targetTitleTest = pickUpViewModel.targetTitle.value
 
     val showDialog = remember { mutableStateOf(false) }
 
     val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
     val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
 
-    var passengerViewModel= PassengerViewModel()
+    val passengerViewModel= PassengerViewModel()
 
     if (pickUpTitleTest.isNotEmpty()) {
         pickUpTitle = pickUpTitleTest
@@ -856,7 +856,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             .size(22.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = com.example.pickme.R.drawable.cancel_icon),
+                            painter = painterResource(id = R.drawable.cancel_icon),
                             contentDescription = "Cancel",
                         )
                     }
@@ -900,7 +900,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             .size(22.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = com.example.pickme.R.drawable.cancel_icon),
+                            painter = painterResource(id = R.drawable.cancel_icon),
                             contentDescription = "Cancel",
                         )
                     }
@@ -931,7 +931,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         ) {
             IconButton(onClick = { }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.pin3),
+                    painter = painterResource(id =R.drawable.pin3),
                     contentDescription = "marker",
                 )
             }
@@ -961,7 +961,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     }
                 }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.aim),
+                    painter = painterResource(id = R.drawable.aim),
                     contentDescription = "Get Current Location",
 
                     )
@@ -982,7 +982,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                 }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.search2),
+                    painter = painterResource(id = R.drawable.search2),
                     contentDescription = "Get Current Location",
 
                     )

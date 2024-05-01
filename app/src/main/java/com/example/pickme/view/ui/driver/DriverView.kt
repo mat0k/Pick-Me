@@ -4,7 +4,6 @@ package com.example.pickme.view.ui.driver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -305,7 +304,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     onClick = { if (seats > 0) seats-- }
                 ) {
                     Icon(
-                        painterResource(id = com.example.pickme.R.drawable.remove_icon),
+                        painterResource(id = R.drawable.remove_icon),
                         contentDescription = "Decrease seats"
                     )
                 }
@@ -581,7 +580,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         }
 
         val database= Firebase.database
-        var myRef=database.getReference("Trips")
+        val myRef=database.getReference("Trips")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
