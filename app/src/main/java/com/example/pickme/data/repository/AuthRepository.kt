@@ -4,10 +4,10 @@ import android.net.Uri
 import android.util.Log
 import com.example.pickme.data.model.Driver
 import com.example.pickme.data.model.Passenger
+import com.example.pickme.data.model.User
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -16,7 +16,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class AuthRepository {
+class AuthRepository() {
     private val database = FirebaseDatabase.getInstance()
 
     private fun hashPassword(password: String): String {
@@ -42,41 +42,54 @@ class AuthRepository {
             "password" to hashPassword(passenger.password),
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
-            "emergencyNumber" to passenger.emergencyNumber
+            "emergencyNumber" to passenger.emergencyNumber,
         )
         myRef.push().setValue(passengerObject)
         return Result.success(Unit)
     }
 
-    suspend fun loginAsPassenger(phone: String, password: String): Result<Passenger> {
+    suspend fun loginAsPassenger(phone: String, password: String): Result<User> {
         Log.d("AuthRepository", "loginAsPassenger: $phone $password")
         val myRef = database.getReference("Passengers")
         val data = myRef.get().await()
         for (dataSnapshot in data.children) {
             val passenger = dataSnapshot.getValue(Passenger::class.java)
             if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
-                return Result.success(passenger.copy(id = dataSnapshot.key ?: ""))
+                val user = User(
+                    id = dataSnapshot.key ?: "",
+                    role = 0, // Assuming role 0 is for passengers
+                    photoUrl = passenger.photoUrl,
+                    firstName = passenger.name,
+                    lastName = passenger.surname
+                )
+                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
+                user.token = tokenResult?.token
+                return Result.success(user)
             }
         }
         return Result.failure(Exception("Invalid phone number or password"))
     }
 
-    suspend fun loginAsDriver(phone: String, password: String): Driver? {
+    suspend fun loginAsDriver(phone: String, password: String): Result<User> {
         Log.d("AuthRepository", "loginAsDriver: $phone $password")
         val myRef = database.getReference("Drivers")
-        var loggedInDriver: Driver? = null
-
         val data = myRef.get().await()
         for (dataSnapshot in data.children) {
             val driver = dataSnapshot.getValue(Driver::class.java)
             if (driver?.phone == phone && driver.password == hashPassword(password)) {
-                loggedInDriver = driver.copy(id = dataSnapshot.key ?: "")
-                Log.d("AuthRepository", "loginAsDriver: $loggedInDriver")
-                break
+                val user = User(
+                    id = dataSnapshot.key ?: "",
+                    role = 1, // Assuming role 1 is for drivers
+                    photoUrl = driver.driverPhotoUrl,
+                    firstName = driver.firstName,
+                    lastName = driver.lastName
+                )
+                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
+                user.token = tokenResult?.token
+                return Result.success(user)
             }
         }
-
-        return loggedInDriver
+        return Result.failure(Exception("Invalid phone number or password"))
     }
 
     private suspend fun checkDriverLicenseAndCarPlate(license: String, carPlate: String): Boolean {
@@ -116,7 +129,7 @@ class AuthRepository {
             "carPhoto" to driver.carPhotoUrl,
             "photo" to driver.driverPhotoUrl,
             "driverLicense" to driver.driverLicense,
-            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate)
+            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
         )
         myRef.push().setValue(driverObject)
         return Result.success(Unit)
@@ -138,7 +151,7 @@ class AuthRepository {
     }
 
     suspend fun uploadImageToFirebase(imageUri: Uri): String {
-        if(imageUri == Uri.EMPTY) return ""
+        if (imageUri == Uri.EMPTY) return ""
         return suspendCoroutine { continuation ->
             val storageRef =
                 FirebaseStorage.getInstance().getReference("images/${imageUri.lastPathSegment}")
@@ -158,4 +171,9 @@ class AuthRepository {
         }
     }
 
+    suspend fun getPassengerData(id: String): Passenger? {
+        val myRef = database.getReference("Passengers").child(id)
+        val data = myRef.get().await()
+        return data.getValue(Passenger::class.java)
+    }
 }

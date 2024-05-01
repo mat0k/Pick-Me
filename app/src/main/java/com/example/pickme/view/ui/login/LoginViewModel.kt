@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.login
 
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,22 +10,28 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.pickme.data.model.User
+import com.example.pickme.data.model.UserDatabaseHelper
 import com.example.pickme.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class LoginViewModelFactory(private val sharedPref: SharedPreferences) : ViewModelProvider.Factory {
+class LoginViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(sharedPref) as T
+            return LoginViewModel(context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
-class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
+class LoginViewModel(private val context: Context) : ViewModel() {
     private val authRepository = AuthRepository()
+    private val userDatabaseHelper = UserDatabaseHelper(context)
+    private val sharedPreferences: SharedPreferences =
+        context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+
     var phoneNumber by mutableStateOf("")
         private set
     var password by mutableStateOf("")
@@ -39,42 +46,36 @@ class LoginViewModel(private val sharedPref: SharedPreferences) : ViewModel() {
             if (role == 0) {
                 val result = authRepository.loginAsPassenger(phoneNumber, password)
                 if (result.isSuccess) {
-                    val passenger = result.getOrNull()
-                    with(sharedPref.edit()) {
-                        putString("id", passenger?.id)
-                        putString("name", passenger?.name)
-                        putString("surname", passenger?.surname)
-                        putString("hashedPassword", passenger?.password)
-                        putString("phone", passenger?.phone)
-                        putString("photoUrl", passenger?.photoUrl)
-                        putString("emergencyNumber", passenger?.emergencyNumber)
-                        apply()
+                    val user = result.getOrNull()
+                    user?.let {
+                        userDatabaseHelper.addUser(it)
+                        sharedPreferences.edit().putString("lastUserId", it.id).apply()
                     }
                     loginResult.value = true
                 } else {
                     loginResult.value = false
                 }
             } else {
-                val driver = authRepository.loginAsDriver(phoneNumber, password)
-                if (driver != null) {
-                    with(sharedPref.edit()) {
-                        putString("id", driver.id)
-                        putString("name", driver.firstName)
-                        putString("surname", driver.lastName)
-                        putString("hashedPassword", driver.password)
-                        putString("phone", driver.phone)
-                        putString("carPlate", driver.carPlate)
-                        putString("driverLicense", driver.driverLicense)
-                        putBoolean("verified", driver.verified)
-                        putString("carPhotoUrl", driver.carPhotoUrl)
-                        putString("driverPhotoUri", driver.driverPhotoUrl)
-                        apply()
+                val result = authRepository.loginAsDriver(phoneNumber, password)
+                if (result.isSuccess) {
+                    val user = result.getOrNull()
+                    user?.let {
+                        userDatabaseHelper.addUser(it)
+                        sharedPreferences.edit().putString("lastUserId", it.id).apply()
                     }
                     loginResult.value = true
-                }else {
+                } else {
                     loginResult.value = false
                 }
             }
+        }
+    }
+
+    fun loginAsUser(user: User) {
+        viewModelScope.launch {
+            userDatabaseHelper.addUser(user)
+            sharedPreferences.edit().putString("lastUserId", user.id).apply()
+            loginResult.value = true
         }
     }
 

@@ -14,6 +14,8 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
@@ -43,25 +46,31 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -80,9 +89,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -126,6 +137,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.example.pickme.data.model.UserDatabaseHelper
+import com.example.pickme.data.model.User
+import com.example.pickme.view.ui.driver.DriverView
+import com.example.pickme.view.ui.login.LoginViewModel
+import com.example.pickme.view.ui.login.LoginViewModelFactory
 
 
 data class BottomNavigationItem(
@@ -296,7 +312,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         isButtonEnabled1 = false
     }
 
-    if(pickUpViewModel.dateDialogState.value){
+    if (pickUpViewModel.dateDialogState.value) {
         dateDialogState.show()
         pickUpViewModel.setDialogState(false)
     }
@@ -1065,8 +1081,8 @@ fun PickUpPreview(
     val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
     val targetLatLng = pickUpViewModel.prevTargetLatLng.value
 
-    val passengerViewModel= PassengerViewModel()
-    val midPoint= passengerViewModel.calculateMidPoint(pickUpLatLng,targetLatLng)
+    val passengerViewModel = PassengerViewModel()
+    val midPoint = passengerViewModel.calculateMidPoint(pickUpLatLng, targetLatLng)
 
     val distance = pickUpViewModel.prevDistance.value
     val zoomLevel = when {
@@ -1223,7 +1239,8 @@ fun PickUpPreview(
                                 contentDescription = "location Icon",
                                 modifier = Modifier.size(24.dp)
                             )
-                        }                    }
+                        }
+                    }
 
                     Button(
                         modifier = Modifier
@@ -1245,7 +1262,7 @@ fun PickUpPreview(
                         Text(
                             text = "Order Trip",
                             fontSize = 22.sp
-                            )
+                        )
                     }
                 }
             }
@@ -1258,11 +1275,11 @@ fun PickUpPreview(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val viewModelFactory = remember {
         ProfileViewModelFactory(context)
     }
     val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
+    viewModel.loadProfileData()
     var isEditing by remember { mutableStateOf(false) }
     var valuesChanged by remember { mutableStateOf(false) }
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -1273,6 +1290,15 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
             viewModel.photoChanged.value = true
         }
     }
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val userDatabaseHelper = UserDatabaseHelper(context)
+    val users: List<User> = userDatabaseHelper.getAllUsers()
+    val loginViewModelFactory = remember {
+        LoginViewModelFactory(context)
+    }
+    val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -1288,6 +1314,11 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                         }) {
                             Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                         }
+                        IconButton(onClick = {
+                            showBottomSheet = true
+                        }) {
+                            Icon(Icons.Filled.Person, contentDescription = "Accounts")
+                        }
                     }
                 }
             )
@@ -1297,7 +1328,8 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 FloatingActionButton(
                     onClick = {
                         isEditing = true
-                    }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
@@ -1309,7 +1341,8 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                             viewModel.loading.value = true
                             viewModel.saveProfileData()
                             viewModel.loading.value = false
-                        }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary
                     ) {
                         Icon(Icons.Default.Check, contentDescription = "Save")
                     }
@@ -1318,7 +1351,8 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                         onClick = {
                             isEditing = false
                             viewModel.loadProfileData()
-                        }
+                        },
+                        containerColor = MaterialTheme.colorScheme.error
                     ) {
                         Icon(Icons.Default.Clear, contentDescription = "Cancel")
                     }
@@ -1409,9 +1443,180 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
             if (viewModel.loading.value) {
                 CircularProgressIndicator()
             }
+            if (showBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showBottomSheet = false
+                    },
+                    sheetState = sheetState
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
+                        items(users) { user ->
+                            UserProfileRow(user) {
+                                loginViewModel.loginAsUser(it)
+                            }
+                        }
+                    }
+
+                    LoginDialog(context)
+
+                }
+            }
+
         }
     }
 
+}
+
+@Composable
+fun LoginDialog(context: Context) {
+    var showDialog by remember { mutableStateOf(false) }
+    val loginViewModelFactory = remember {
+        LoginViewModelFactory(context)
+    }
+    val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
+    var loggingIn by remember {
+        mutableStateOf(false)
+    }
+    OutlinedButton(onClick = { showDialog = true },
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()) {
+        Text("Add User")
+    }
+    LaunchedEffect(key1 = true) {
+        loginViewModel.loginResult.collect { loginResult ->
+            if (loginResult == true) {
+                val intent = when (loginViewModel.getUserRole()) {
+                    0 -> Intent(context, PassengerView::class.java)
+                    else -> Intent(context, DriverView::class.java)
+                }
+                context.startActivity(intent)
+            } else if (loginResult == false) {
+                Toast.makeText(context, "Invalid phone number or password", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+    }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Login") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = loginViewModel.phoneNumber,
+                        onValueChange = {loginViewModel.updatePhoneNumber(it) },
+                        label = { Text("Phone Number") },
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
+                    )
+                    OutlinedTextField(
+                        value = loginViewModel.password,
+                        onValueChange = { loginViewModel.updatePassword(it) },
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation()
+                    )
+                    Row {
+                        FilterChip(selected = loginViewModel.role == 0,
+                            onClick = {
+                                if (loginViewModel.role != 0) loginViewModel.updateRole(0)
+                            },
+                            label = { Text("Passenger") },
+                            leadingIcon = {
+                                if (loginViewModel.role == 0) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Done,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                        FilterChip(selected = loginViewModel.role == 1,
+                            onClick = {
+                                if (loginViewModel.role != 1) loginViewModel.updateRole(1)
+                            },
+                            label = { Text("Driver") },
+                            leadingIcon = {
+                                if (loginViewModel.role == 1) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Done,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    loginViewModel.login()
+                }) {
+                    Text("Login")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDialog = false },
+                    ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun UserProfileRow(user: User, onLoginClick: (User) -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = true),
+                onClick = { onLoginClick(user) }
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Load the user's profile picture using the Coil library
+
+        AsyncImage(
+            model = user.photoUrl,
+            contentDescription = "User Profile Picture",
+            modifier = Modifier
+                .size(50.dp)
+                .clip(CircleShape)
+        )
+
+        // Add a spacer for some padding between the image and the texts
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = "${user.firstName} ${user.lastName}",
+                fontWeight = FontWeight.W600,
+                fontSize = 20.sp
+            )
+
+            Text(
+                text = when (user.role) {
+                    1 -> "Driver"
+                    0 -> "Passenger"
+                    else -> "Unknown"
+                },
+                fontWeight = FontWeight.W400,
+                fontSize = 14.sp
+            )
+        }
+    }
 }
 
 @Composable
@@ -2558,7 +2763,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val tripDestLatLng = tripViewModel.searchedTripDestLatLng.value
 
 
-    val midPoint= passengerViewModel.calculateMidPoint(tripStartLatLng,tripDestLatLng)
+    val midPoint = passengerViewModel.calculateMidPoint(tripStartLatLng, tripDestLatLng)
 
     val distance = passengerViewModel.calculateDistance(tripStartLatLng, tripDestLatLng)
     val zoomLevel = when {
@@ -2646,7 +2851,8 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                             contentDescription = "location Icon",
                             modifier = Modifier.size(24.dp)
                         )
-                    }                    }
+                    }
+                }
 
                 Button(
                     modifier = Modifier

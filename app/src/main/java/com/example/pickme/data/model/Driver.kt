@@ -10,5 +10,6 @@ data class Driver(
     var carPhotoUrl: String = "",
     var driverPhotoUrl: String = "",
     var driverLicense: String = "",
+    val role: Int = 1,
     var verified: Boolean = false
 )

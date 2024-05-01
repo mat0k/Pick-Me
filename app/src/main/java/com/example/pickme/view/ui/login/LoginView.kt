@@ -95,8 +95,7 @@ class LoginView : ComponentActivity() {
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current // Capture the context here
-    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-    val viewModelFactory = remember { LoginViewModelFactory(sharedPref) }
+    val viewModelFactory = remember { LoginViewModelFactory(context) }
     val viewModel = viewModel<LoginViewModel>(factory = viewModelFactory)
     var loggingIn by remember { mutableStateOf(false) }
 
@@ -384,7 +383,7 @@ fun DriverInfo(navController: NavController, viewModel: RegisterViewModel) {
             onClick = {
                 navController.navigate("otp")
             },
-            enabled = viewModel.carPlate.value.isNotEmpty() && viewModel.driverLicense.value.isNotEmpty() && viewModel.carPhoto.value != null
+            enabled = viewModel.carPlate.value.isNotEmpty() && viewModel.driverLicense.value.isNotEmpty() && viewModel.carPhoto.value != Uri.EMPTY
         ) {
             Text("Register")
         }
