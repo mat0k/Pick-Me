@@ -4,6 +4,7 @@ package com.example.pickme.view.ui.driver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -749,7 +750,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
     val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
 
-    if(mainButtonState== "Confirm pick up"){
+    if(mainButtonState== "Confirm Starting"){
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
@@ -781,7 +782,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if(mainButtonState== "Confirm pick up") {
+            if(mainButtonState== "Confirm Starting") {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
