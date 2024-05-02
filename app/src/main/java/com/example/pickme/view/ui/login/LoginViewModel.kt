@@ -75,6 +75,7 @@ class LoginViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             userDatabaseHelper.addUser(user)
             sharedPreferences.edit().putString("lastUserId", user.id).apply()
+            role = user.role
             loginResult.value = true
         }
     }

@@ -80,12 +80,13 @@ class AuthRepository() {
                 val user = User(
                     id = dataSnapshot.key ?: "",
                     role = 1, // Assuming role 1 is for drivers
-                    photoUrl = driver.driverPhotoUrl,
-                    firstName = driver.firstName,
-                    lastName = driver.lastName
+                    photoUrl = driver.photo,
+                    firstName = driver.name,
+                    lastName = driver.surname
                 )
                 val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
                 user.token = tokenResult?.token
+                Log.d("AuthRepository", "loginAsDriver: $user")
                 return Result.success(user)
             }
         }
@@ -121,13 +122,13 @@ class AuthRepository() {
         }
         val driverObject = mapOf(
             "id" to myRef.push().key,
-            "name" to driver.firstName,
-            "surname" to driver.lastName,
+            "name" to driver.name,
+            "surname" to driver.surname,
             "password" to hashPassword(driver.password),
             "phone" to driver.phone,
             "carPlate" to driver.carPlate,
-            "carPhoto" to driver.carPhotoUrl,
-            "photo" to driver.driverPhotoUrl,
+            "carPhoto" to driver.carPhoto,
+            "photo" to driver.photo,
             "driverLicense" to driver.driverLicense,
             "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
         )

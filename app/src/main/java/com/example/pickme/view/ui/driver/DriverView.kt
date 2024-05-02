@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.driver
 
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -22,27 +23,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -64,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -71,6 +80,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
+import com.example.pickme.view.ui.login.LoginViewModel
+import com.example.pickme.view.ui.login.LoginViewModelFactory
+import com.example.pickme.view.ui.passenger.LoginDialog
+import com.example.pickme.view.ui.passenger.UserProfileRow
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -405,7 +418,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                             startingTitle = "Starting point"
                             destinationTitle = "Destination"
                             isButtonClicked1 = false
-                            enableConfirmation1= false
+                            enableConfirmation1 = false
                         },
                         modifier = Modifier
                             .size(40.dp)
@@ -432,10 +445,10 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         .size(width = 220.dp, height = 50.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        if(tripTitle.isNotEmpty()){
-                               tripViewModel.setTripTitle(tripTitle)
+                        if (tripTitle.isNotEmpty()) {
+                            tripViewModel.setTripTitle(tripTitle)
                         }
-                        if(seats!=0){
+                        if (seats != 0) {
                             tripViewModel.setTripTitle(tripTitle)
                         }
                         navController.navigate("mapView")
@@ -556,7 +569,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         var isDriverVerified by remember {
             mutableStateOf(false)
         }
-        Row(                     //verified driver      will be removed late
+        Row(
+            //verified driver      will be removed late
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -565,15 +579,15 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
             ) {
 
-                Text(text = "Driver Verified")
-                Checkbox(
-                    checked = isDriverVerified,
-                    onCheckedChange = { isDriverVerified = it }
-                )
+            Text(text = "Driver Verified")
+            Checkbox(
+                checked = isDriverVerified,
+                onCheckedChange = { isDriverVerified = it }
+            )
         }
 
-        val database= Firebase.database
-        var myRef=database.getReference("Trips")
+        val database = Firebase.database
+        var myRef = database.getReference("Trips")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -584,7 +598,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
                 shape = RoundedCornerShape(15.dp),
-                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle!="" && seats!=0,
+                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
                     val title = tripTitle
                     val tripSeats = seats
@@ -592,8 +606,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val end = destinationTitle
                     val startingLatLng = tripViewModel.tripStartLatLng.value
                     val destinationLatLng = tripViewModel.tripDestLatLng.value
-                    val date= formattedDate
-                    val time= formattedTime
+                    val date = formattedDate
+                    val time = formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
                     val rate = 4
@@ -616,15 +630,16 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     // Add the trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                        //    tripViewModel.tripTitle.value= ""
-                        //    tripTitle= ""
-                        //    tripViewModel.seats.value= 0
-                        //    seats= 0
-                          //  isButtonClicked1= false
-                            isButtonClicked2= false
-                         //   enableConfirmation1= false
-                            enableConfirmation2= false
+                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
+                                .show()
+                            //    tripViewModel.tripTitle.value= ""
+                            //    tripTitle= ""
+                            //    tripViewModel.seats.value= 0
+                            //    seats= 0
+                            //  isButtonClicked1= false
+                            isButtonClicked2 = false
+                            //   enableConfirmation1= false
+                            enableConfirmation2 = false
                         }
                         .addOnFailureListener {
                             Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
@@ -1025,30 +1040,63 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-    Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "profile",
-            fontSize = 20.sp
-        )
+    var isEditing by remember { mutableStateOf(false) }
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val viewModelFactory = DriverProfileVMFactory(context)
+    val viewModel = viewModel<DriverProfileVM>(factory = viewModelFactory)
+    val loginViewModelFactory = remember {
+        LoginViewModelFactory(context)
+    }
+    val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
 
-        Button(onClick = {
-            sharedPref.edit().clear().apply()
-            Intent(context, MainActivity::class.java).also {
-                context.startActivity(it)
-            }
-        }) {
-            Text(text = "Log out")
+    var sheetState = rememberModalBottomSheetState()
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(title = { Text("Profile") },
+                actions = {
+                    if (!isEditing) {
+                        IconButton(onClick = {
+                            viewModel.sharedPref.edit().clear().apply()
+                            Intent(context, MainActivity::class.java).also {
+                                context.startActivity(it)
+                            }
+                        }) {
+                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                        }
+                        IconButton(onClick = {
+                            showBottomSheet = true
+                        }) {
+                            Icon(Icons.Filled.Person, contentDescription = "Accounts")
+                        }
+                    }
+                }
+            )
         }
-
+    ) {
+        if (showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showBottomSheet = false
+                },
+                sheetState = sheetState
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
+                    items(viewModel.users) { user ->
+                        UserProfileRow(user, viewModel.currentId == user.id) {
+                            loginViewModel.loginAsUser(it)
+                        }
+                    }
+                }
+                LoginDialog(context)
+            }
+        }
     }
 }
-
-

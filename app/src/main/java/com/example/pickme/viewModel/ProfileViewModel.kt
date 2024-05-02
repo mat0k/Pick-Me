@@ -36,11 +36,10 @@ class ProfileViewModel(val context: Context) : ViewModel() {
     private var newPhotoUrl = mutableStateOf("")
     private val authRepository = AuthRepository()
     val users = MutableLiveData<List<User>>()
-
+    val currentPassengerId = sharedPref.getString("lastUserId", "") ?: ""
 
     fun saveProfileData() {
         viewModelScope.launch {
-            val currentPassengerId = sharedPref.getString("lastUserId", "") ?: ""
             val currentPassenger = authRepository.getPassengerData(currentPassengerId)
 
             if (photoChanged.value) {
@@ -73,11 +72,4 @@ class ProfileViewModel(val context: Context) : ViewModel() {
         }
     }
 
-    fun fetchUsers() {
-        viewModelScope.launch {
-            val userDatabaseHelper = UserDatabaseHelper(context)
-            val usersList = userDatabaseHelper.getAllUsers()
-            users.value = usersList
-        }
-    }
 }

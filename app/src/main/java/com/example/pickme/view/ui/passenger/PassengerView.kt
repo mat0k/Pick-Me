@@ -53,7 +53,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -89,7 +88,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -1456,7 +1454,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     ) {
                         item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
                         items(users) { user ->
-                            UserProfileRow(user) {
+                            UserProfileRow(user, viewModel.currentPassengerId == user.id) {
                                 loginViewModel.loginAsUser(it)
                             }
                         }
@@ -1573,8 +1571,9 @@ fun LoginDialog(context: Context) {
 }
 
 @Composable
-fun UserProfileRow(user: User, onLoginClick: (User) -> Unit) {
+fun UserProfileRow(user: User, selected: Boolean, onLoginClick: (User) -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1582,7 +1581,7 @@ fun UserProfileRow(user: User, onLoginClick: (User) -> Unit) {
             .clickable(
                 interactionSource = interactionSource,
                 indication = rememberRipple(bounded = true),
-                onClick = { onLoginClick(user) }
+                onClick = { if(!selected) onLoginClick(user) }
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1615,7 +1614,13 @@ fun UserProfileRow(user: User, onLoginClick: (User) -> Unit) {
                 fontWeight = FontWeight.W400,
                 fontSize = 14.sp
             )
+
         }
+        Spacer(modifier = Modifier.weight(1f))
+        if(selected) {
+            Icon(Icons.Filled.Done, contentDescription = "Selected")
+        }
+        Spacer(modifier = Modifier.width(8.dp))
     }
 }
 
