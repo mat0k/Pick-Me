@@ -79,6 +79,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -126,7 +127,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
+import com.google.maps.android.compose.Polyline
 
 data class BottomNavigationItem(
     val title: String,
@@ -266,14 +267,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
     var isButtonEnabled1 by remember { mutableStateOf(false) }
     var isButtonEnabled2 by remember { mutableStateOf(false) }
 
-    var pickUpTitleTest = pickUpViewModel.pickUpTitle.value
-    var targetTitleTest = pickUpViewModel.targetTitle.value
+    val pickUpTitleTest = pickUpViewModel.pickUpTitle.value
+    val targetTitleTest = pickUpViewModel.targetTitle.value
 
     val showDialog = remember { mutableStateOf(false) }
 
     val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
     val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
 
+    val passengerViewModel= PassengerViewModel()
 
     if (pickUpTitleTest.isNotEmpty()) {
         pickUpTitle = pickUpTitleTest
@@ -405,8 +407,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                     modifier = Modifier
                         .fillMaxSize(),          // Fill the entire available space in the box
                     onClick = {
-                        navController.navigate("mapView")
-
+                        if(passengerViewModel.isNetworkAvailable(context)){
+                            navController.navigate("mapView")
+                        }else{
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
                     },
                     shape = MaterialTheme.shapes.medium, // Set the button shape to medium (cubic)
                 ) {
@@ -616,7 +621,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                     pickUpViewModel.setPrevTargetLatLng(localPickUp.targetLatLng)
                                     pickUpViewModel.setPrevDistance(localPickUp.distance)
 
-                                    navController.navigate("pickUpPreview")
+                                    if(passengerViewModel.isNetworkAvailable(context)){
+                                        navController.navigate("pickUpPreview") //here
+                                    }else{
+                                        passengerViewModel.ShowWifiProblemDialog(context)
+                                    }
                                 }
                             ) {
                                 Icon(
@@ -715,6 +724,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
+
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -758,11 +768,23 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         mutableStateOf(0.5f)
     }
 
-    var distance by remember {
+    var tripDistance by remember {
         mutableStateOf(0.0)
     }
 
     val passengerClass = PassengerViewModel()
+
+    val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
+
+
+    if(mainButtonState== "Confirm pick up"){
+        passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+            setPolylinePoints(decodedPolyline)
+        }, { distance ->
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha= 1f
+        })
+    }
 
     Box(
         modifier = Modifier
@@ -788,6 +810,13 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 title = targetTitle,
                 visible = targetMarkerState
             )
+
+            if(mainButtonState== "Confirm pick up") {
+                Polyline(
+                    points = polylinePoints,
+                    color = colorResource(id = R.color.polyline_color_1),
+                )
+            }
         }
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -819,7 +848,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             pickUpTitle = "Pick up location"
                             pickUpMarkerState = false
                             mainButtonState = "Set Pick Up location"
-                            distance = 0.0
+                            tripDistance = 0.0
                             distanceAlpha = 0.5f
                         },
                         modifier = Modifier
@@ -827,7 +856,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             .size(22.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = com.example.pickme.R.drawable.cancel_icon),
+                            painter = painterResource(id = R.drawable.cancel_icon),
                             contentDescription = "Cancel",
                         )
                     }
@@ -862,7 +891,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             targetMarkerState = false
                             if (mainButtonState != "Set Pick Up location") {
                                 mainButtonState = "Set Target location"
-                                distance = 0.0
+                                tripDistance = 0.0
                                 distanceAlpha = 0.5f
                             }
                         },
@@ -871,13 +900,13 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             .size(22.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = com.example.pickme.R.drawable.cancel_icon),
+                            painter = painterResource(id = R.drawable.cancel_icon),
                             contentDescription = "Cancel",
                         )
                     }
                 }
 
-            }
+            }       //distance row
             Row(
                 modifier = Modifier
                     .alpha(distanceAlpha)
@@ -888,7 +917,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 horizontalArrangement = Arrangement.Start
             ) {
                 Text(
-                    text = if (distance == 0.0) "distance:" else "distance: $distance Km",
+                    text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
@@ -902,7 +931,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
         ) {
             IconButton(onClick = { }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.pin3),
+                    painter = painterResource(id =R.drawable.pin3),
                     contentDescription = "marker",
                 )
             }
@@ -932,7 +961,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     }
                 }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.aim),
+                    painter = painterResource(id = R.drawable.aim),
                     contentDescription = "Get Current Location",
 
                     )
@@ -954,7 +983,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                 }) {
                 Image(
-                    painter = painterResource(id = com.example.pickme.R.drawable.search2),
+                    painter = painterResource(id = R.drawable.search2),
                     contentDescription = "Get Current Location",
 
                     )
@@ -973,7 +1002,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             Button(
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
-
                 shape = RoundedCornerShape(15.dp),
                 onClick = {
 
@@ -996,9 +1024,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                     mainButtonState = "Set Target location"
                                 } else {
                                     mainButtonState = "Confirm pick up"
-                                    distanceAlpha = 1f
-                                    distance =
-                                        passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                                 }
                             }
                         else {
@@ -1022,9 +1047,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Set Pick Up location"
                             else {
                                 mainButtonState = "Confirm pick up"
-                                distanceAlpha = 1f
-                                distance =
-                                    passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                             }
                         }
                     } else if (mainButtonState == "Confirm pick up") {
@@ -1035,11 +1057,15 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                         pickUpViewModel.setPickUpLatLng(pickUpLatLng)
                         pickUpViewModel.setTargetLatLng(targetLatLng)
 
-                        pickUpViewModel.setDistance(distance)
+                        pickUpViewModel.setDistance(tripDistance)
                         navController.navigate("pickUps")
 
                         Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
                             .show()  //confirmation
+                        Log.i(
+                            "xxxx",
+                            "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng"
+                        )
                     }
 
                 }) {
@@ -1069,7 +1095,23 @@ fun PickUpPreview(
     val passengerViewModel= PassengerViewModel()
     val midPoint= passengerViewModel.calculateMidPoint(pickUpLatLng,targetLatLng)
 
-    val distance = pickUpViewModel.prevDistance.value
+    val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
+
+    var tripDistance by remember {
+        mutableStateOf(0.0)
+    }
+    var distanceAlpha by remember {
+        mutableStateOf(0.5f)
+    }
+
+    passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+        setPolylinePoints(decodedPolyline)
+    }, { distance ->
+        tripDistance = "%.2f".format(distance).toDouble()
+         distanceAlpha = 0.9f
+    })
+
+    val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
     val zoomLevel = when {
         distance <= 5 -> 13f
         distance <= 10 -> 12f
@@ -1088,6 +1130,8 @@ fun PickUpPreview(
     val cameraPosition = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
+
+
 
     Box(
         modifier = Modifier
@@ -1111,6 +1155,10 @@ fun PickUpPreview(
                 state = MarkerState(position = targetLatLng),
                 title = "Destination Location",
                 visible = true
+            )
+            Polyline(
+                points = polylinePoints,
+                color = colorResource(id = R.color.polyline_color_1),
             )
         }
         // Add a button that navigates back to the search page
@@ -1177,7 +1225,7 @@ fun PickUpPreview(
             }
             Row(
                 modifier = Modifier
-                    .alpha(0.9f)
+                    .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -1191,7 +1239,7 @@ fun PickUpPreview(
                     color = Color.Gray
                 )
                 Text(
-                    text = "$distance",
+                    text = "$tripDistance",
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
@@ -1415,88 +1463,6 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
 
 }
 
-@Composable
-fun ShowAllTrips() {
-    val context = LocalContext.current
-    val passengerViewModel: PassengerViewModel = PassengerViewModel()
-
-    if (passengerViewModel.isNetworkAvailable(context)) {
-        // retrieving Trips
-        val tripList = remember { mutableStateListOf<Map<String, Any>>() }
-
-        LaunchedEffect(Unit) {
-            val database = FirebaseDatabase.getInstance()
-            val myRef = database.getReference("Trips")
-
-            val postListener = object : ValueEventListener {
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    val allTrips = mutableListOf<Map<String, Any>>()
-                    tripList.clear()
-                    for (postSnapshot in dataSnapshot.children) {
-                        val trip = postSnapshot.getValue(object :
-                            GenericTypeIndicator<Map<String, Any>>() {})
-                        if (trip != null) {
-                            allTrips.add(trip)
-                        }
-                    }
-                    // Update the displayed list
-                    tripList.clear()
-                    tripList.addAll(allTrips)
-                }
-
-                override fun onCancelled(databaseError: DatabaseError) {
-                    Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            myRef.addValueEventListener(postListener)
-        }
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Button(onClick = {
-                deleteOldTrips()
-            }) {
-                Text(text = "Delete old trips")
-            }
-            LazyColumn {
-                items(tripList) { trip ->
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "${trip["date"]} At ${trip["time"]}",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Text(
-                            text = "Starting: ${trip["starting"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "End: ${trip["end"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "Rating: ${trip["rate"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "Seats: ${trip["seats"]}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-
-        }
-    } else {
-        passengerViewModel.ShowWifiProblemDialog(context)
-    }
-}
 
 @Composable
 fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel) {
@@ -1713,7 +1679,11 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         .size(width = 220.dp, height = 50.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        navController.navigate("mapView2")
+                        if(passengerViewModel.isNetworkAvailable(context)){
+                            navController.navigate("mapView2")
+                        }else{
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
                     }
                 ) {
                     Icon(
@@ -2139,7 +2109,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                         tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
-                                        navController.navigate("mapView3")
+
+                                        if(passengerViewModel.isNetworkAvailable(context)){
+                                            navController.navigate("mapView3")
+                                        }else{
+                                            passengerViewModel.ShowWifiProblemDialog(context)
+                                        }
+
 
                                     }
                                 ) {
@@ -2252,11 +2228,23 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
         mutableStateOf(0.5f)
     }
 
-    var distance by remember {
+    var tripDistance by remember {
         mutableStateOf(0.0)
     }
 
     val passengerClass = PassengerViewModel()
+
+    val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
+
+    if(mainButtonState == "Confirm Starting"){
+        passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+            setPolylinePoints(decodedPolyline)
+        }, { distance ->
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha=1f
+        })
+    }
+
 
     Box(
         modifier = Modifier
@@ -2281,6 +2269,12 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
+            if(mainButtonState == "Confirm Starting"){
+                Polyline(
+                    points = polylinePoints,
+                    color = colorResource(id = R.color.polyline_color_1),
+                )
+            }
         }
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -2312,7 +2306,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                             pickUpTitle = "Starting location"
                             pickUpMarkerState = false
                             mainButtonState = "Set Starting location"
-                            distance = 0.0
+                            tripDistance = 0.0
                             distanceAlpha = 0.5f
                         },
                         modifier = Modifier
@@ -2355,7 +2349,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                             targetMarkerState = false
                             if (mainButtonState != "Set Starting location") {
                                 mainButtonState = "Set Target location"
-                                distance = 0.0
+                                tripDistance = 0.0
                                 distanceAlpha = 0.5f
                             }
                         },
@@ -2381,7 +2375,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 horizontalArrangement = Arrangement.Start
             ) {
                 Text(
-                    text = if (distance == 0.0) "distance:" else "distance: $distance Km",
+                    text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
@@ -2510,9 +2504,6 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Starting location"
                             else {
                                 mainButtonState = "Confirm Starting"
-                                distanceAlpha = 1f
-                                distance =
-                                    passengerClass.calculateDistance(pickUpLatLng, targetLatLng)
                             }
                         }
                     } else if (mainButtonState == "Confirm Starting") {
@@ -2526,7 +2517,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                             "xxxx",
                             "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
                         )
-                        tripViewModel.setDistance(distance)
+                        tripViewModel.setDistance(tripDistance)
                         navController.navigate("searchTrips")
 
                         Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
@@ -2558,6 +2549,8 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val tripStartLatLng = tripViewModel.searchedTripStartLatLng.value
     val tripDestLatLng = tripViewModel.searchedTripDestLatLng.value
 
+    val (polylinePoints1, setPolylinePoints1) = remember { mutableStateOf(emptyList<LatLng>()) }
+    val (polylinePoints2, setPolylinePoints2) = remember { mutableStateOf(emptyList<LatLng>()) }
 
     val midPoint= passengerViewModel.calculateMidPoint(tripStartLatLng,tripDestLatLng)
 
@@ -2580,6 +2573,23 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val cameraPosition = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
+    var tripDistance by remember {
+        mutableStateOf(0.0)
+    }
+    var distanceAlpha by remember {
+        mutableStateOf(0.5f)
+    }
+    passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
+        setPolylinePoints1(decodedPolyline)
+    }, { distance -> //
+        tripDistance = "%.2f".format(distance).toDouble()
+        distanceAlpha=1f
+    })
+
+    passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
+        setPolylinePoints2(decodedPolyline)
+    }, { distance ->
+    })
 
     Box(
         modifier = Modifier
@@ -2608,14 +2618,40 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 state = MarkerState(position = tripStartLatLng),
                 title = "Searched Trip Start Location",
                 visible = true,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
             )
             // Searched trip destination location marker
             Marker(
                 state = MarkerState(position = tripDestLatLng),
                 title = "Searched Trip Destination Location",
                 visible = true,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+            )
+            Polyline(
+                points = polylinePoints1,
+                color = colorResource(id = R.color.polyline_color_1),
+
+                )
+            Polyline(
+                points = polylinePoints2,
+                color = colorResource(id = R.color.polyline_color_2),
+
+                )
+
+        }
+        Row(
+            modifier = Modifier
+                .alpha(distanceAlpha)
+                .padding(start = 15.dp, end = 15.dp, top = 30.dp)
+                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
             )
         }
         // Add a button that navigates back to the search page
@@ -2668,6 +2704,104 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 }
             }
         }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            // not used
+@Composable
+fun ShowAllTrips() {
+    val context = LocalContext.current
+    val passengerViewModel: PassengerViewModel = PassengerViewModel()
+
+    if (passengerViewModel.isNetworkAvailable(context)) {
+        // retrieving Trips
+        val tripList = remember { mutableStateListOf<Map<String, Any>>() }
+
+        LaunchedEffect(Unit) {
+            val database = FirebaseDatabase.getInstance()
+            val myRef = database.getReference("Trips")
+
+            val postListener = object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val allTrips = mutableListOf<Map<String, Any>>()
+                    tripList.clear()
+                    for (postSnapshot in dataSnapshot.children) {
+                        val trip = postSnapshot.getValue(object :
+                            GenericTypeIndicator<Map<String, Any>>() {})
+                        if (trip != null) {
+                            allTrips.add(trip)
+                        }
+                    }
+                    // Update the displayed list
+                    tripList.clear()
+                    tripList.addAll(allTrips)
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            myRef.addValueEventListener(postListener)
+        }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = {
+                deleteOldTrips()
+            }) {
+                Text(text = "Delete old trips")
+            }
+            LazyColumn {
+                items(tripList) { trip ->
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "${trip["date"]} At ${trip["time"]}",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text(
+                            text = "Starting: ${trip["starting"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "End: ${trip["end"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Rating: ${trip["rate"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Seats: ${trip["seats"]}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+        }
+    } else {
+        passengerViewModel.ShowWifiProblemDialog(context)
     }
 }
 
