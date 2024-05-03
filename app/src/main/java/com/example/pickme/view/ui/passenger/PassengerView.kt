@@ -14,6 +14,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,8 +63,10 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -97,6 +100,7 @@ import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
+import com.example.pickme.data.model.Place
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.PickUpViewModel
@@ -104,6 +108,7 @@ import com.example.pickme.viewModel.ProfileViewModel
 import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -138,7 +143,6 @@ data class BottomNavigationItem(
 class PassengerView : ComponentActivity() {
     private val pickUpViewModel: PickUpViewModel by viewModels()
     private val tripViewModel: TripViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -776,6 +780,8 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
+    val showDialog = remember { mutableStateOf(false) }
+    val places = remember { mutableStateListOf<Place>() }
 
     if(mainButtonState== "Confirm pick up"){
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
@@ -976,18 +982,66 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 .padding(16.dp)
                 .padding(bottom = 180.dp)
         ) {
+
+
+            if (passengerClass.isNetworkAvailable(context)) {
+                // retrieving Trips
+                LaunchedEffect(Unit) {
+                    val database = FirebaseDatabase.getInstance()
+                    val ref = database.getReference("lebanon_places")
+
+                    Log.d("xxxx", "Database reference obtained")
+
+                    val postListener = object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            Log.d("xxxx", "Data change detected")
+                            val allPlaces = mutableListOf<Place>()
+                            places.clear()
+                            for (postSnapshot in dataSnapshot.children) {
+                                val place = postSnapshot.getValue(Place::class.java)
+                                if (place != null) {
+                                    allPlaces.add(place)
+                                    Log.d("xxxx", "Place added: ${place.title}")
+                                }
+                            }
+                            // Update the displayed list
+                            places.clear()
+                            places.addAll(allPlaces)
+                            Log.d("xxxx", "Places list updated")
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Log.d("xxxx", "Database error: ${databaseError.message}")
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    ref.addValueEventListener(postListener)
+                    Log.d("xxxx", "Listener added to reference")
+                }
+
+            } else {
+                passengerClass.ShowWifiProblemDialog(context)
+            }
+
+
             IconButton(
                 modifier = Modifier.size(45.dp),
                 onClick = {
-                    //here now
-
-                }) {
+                    showDialog.value = true
+                }
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.search2),
-                    contentDescription = "Get Current Location",
-
-                    )
+                    contentDescription = "Search Location",
+                )
             }
+
+            SearchLocationDialog(showDialog, places) { place ->
+                // Move camera to the selected place
+                // cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+            }
+
+
         }
 
         // centered button ( set pick up, target, confirm)
@@ -1079,7 +1133,84 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
         }
     }
+
 }
+
+
+@Composable
+fun SearchLocationDialog(
+    showDialog: MutableState<Boolean>,
+    places: List<Place>,
+    onPlaceSelected: (Place) -> Unit
+) {
+    if (showDialog.value) {
+        var input by remember { mutableStateOf("") }
+        var selectedPlace by remember { mutableStateOf<Place?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showDialog.value = false },
+            title = { Text(text = "Search Location") },
+            text = {
+                Column {
+                    // AutoComplete TextField
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { newValue ->
+                            input = newValue
+                            selectedPlace = places.find {
+                                it.title.contains(newValue, ignoreCase = true)
+                            }
+                        },
+                        label = { Text("Search") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp)) // Add some space between the TextField and Button
+
+                    // Autocomplete suggestions
+                    if (input.length >= 2) { // Only show suggestions when input length is 2 or more
+                        LazyColumn {
+                            items(places.filter { it.title.contains(input, ignoreCase = true) }) { place ->
+                                Text(
+                                    text = place.title,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            input = place.title // Set the input text to the selected suggestion
+                                            selectedPlace = place
+                                        }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp)) // Add space between suggestions and Button
+
+                    // Search Button
+                    Button(
+                        onClick = {
+                            selectedPlace?.let { onPlaceSelected(it) }
+                            showDialog.value = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth() // Make the button as wide as the TextField
+                            .height(35.dp), // Keep the height as before
+                        shape = RoundedCornerShape(15.dp),
+                    ) {
+                        Text("Search")
+                    }
+                }
+            },
+            confirmButton = { }
+        )
+    }
+}
+
+
+
+
+
+
 
 
 @Composable
@@ -2832,4 +2963,26 @@ fun deleteOldTrips() {
         }
     }
     myRef.addListenerForSingleValueEvent(postListener)
+}
+
+fun addPlacesToFirebase() {
+    val database = FirebaseDatabase.getInstance()
+    val ref = database.getReference("lebanon_places")
+
+    // Define the list of places with their titles, latitude, and longitude
+    val places = listOf(
+        Place("Tripoli", 34.4367, 35.8497),
+        Place("Tyre", 33.2733, 35.1939),
+    )
+
+    // Loop through the list and add each place to Firebase
+    places.forEach { place ->
+        ref.child(place.title).setValue(place)
+            .addOnSuccessListener {
+                println("Place ${place.title} added successfully!")
+            }
+            .addOnFailureListener { e ->
+                println("Error adding place ${place.title}: $e")
+            }
+    }
 }
