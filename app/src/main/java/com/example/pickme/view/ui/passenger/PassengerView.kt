@@ -1038,7 +1038,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
             SearchLocationDialog(showDialog, places) { place ->
                 // Move camera to the selected place
-                // cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+                 cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
             }
 
 
@@ -2367,6 +2367,9 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
+    val showDialog = remember { mutableStateOf(false) }
+    val places = remember { mutableStateListOf<Place>() }
+
     if(mainButtonState == "Confirm Starting"){
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -2565,17 +2568,66 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 .padding(16.dp)
                 .padding(bottom = 180.dp)
         ) {
+
+
+            if (passengerClass.isNetworkAvailable(context)) {
+                // retrieving Trips
+                LaunchedEffect(Unit) {
+                    val database = FirebaseDatabase.getInstance()
+                    val ref = database.getReference("lebanon_places")
+
+                    Log.d("xxxx", "Database reference obtained")
+
+                    val postListener = object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            Log.d("xxxx", "Data change detected")
+                            val allPlaces = mutableListOf<Place>()
+                            places.clear()
+                            for (postSnapshot in dataSnapshot.children) {
+                                val place = postSnapshot.getValue(Place::class.java)
+                                if (place != null) {
+                                    allPlaces.add(place)
+                                    Log.d("xxxx", "Place added: ${place.title}")
+                                }
+                            }
+                            // Update the displayed list
+                            places.clear()
+                            places.addAll(allPlaces)
+                            Log.d("xxxx", "Places list updated")
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Log.d("xxxx", "Database error: ${databaseError.message}")
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    ref.addValueEventListener(postListener)
+                    Log.d("xxxx", "Listener added to reference")
+                }
+
+            } else {
+                passengerClass.ShowWifiProblemDialog(context)
+            }
+
+
             IconButton(
                 modifier = Modifier.size(45.dp),
                 onClick = {
-
-                }) {
+                    showDialog.value = true
+                }
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.search2),
-                    contentDescription = "Get Current Location",
-
-                    )
+                    contentDescription = "Search Location",
+                )
             }
+
+            SearchLocationDialog(showDialog, places) { place ->
+                // Move camera to the selected place
+                 cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+            }
+
+
         }
 
         // centered button ( set Starting, target, confirm)

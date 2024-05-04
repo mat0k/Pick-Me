@@ -4,6 +4,7 @@ package com.example.pickme.view.ui.driver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,9 +45,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,13 +74,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.Place
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
+import com.example.pickme.view.ui.passenger.SearchLocationDialog
 import com.example.pickme.viewModel.PassengerViewModel
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -748,6 +757,8 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
     val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
 
+    val showDialog = remember { mutableStateOf(false) }
+    val places = remember { mutableStateListOf<Place>() }
 
     if(mainButtonState== "Confirm Starting"){
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
@@ -946,17 +957,66 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 .padding(16.dp)
                 .padding(bottom = 180.dp)
         ) {
+
+
+            if (passengerClass.isNetworkAvailable(context)) {
+                // retrieving Trips
+                LaunchedEffect(Unit) {
+                    val database = FirebaseDatabase.getInstance()
+                    val ref = database.getReference("lebanon_places")
+
+                    Log.d("xxxx", "Database reference obtained")
+
+                    val postListener = object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            Log.d("xxxx", "Data change detected")
+                            val allPlaces = mutableListOf<Place>()
+                            places.clear()
+                            for (postSnapshot in dataSnapshot.children) {
+                                val place = postSnapshot.getValue(Place::class.java)
+                                if (place != null) {
+                                    allPlaces.add(place)
+                                    Log.d("xxxx", "Place added: ${place.title}")
+                                }
+                            }
+                            // Update the displayed list
+                            places.clear()
+                            places.addAll(allPlaces)
+                            Log.d("xxxx", "Places list updated")
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Log.d("xxxx", "Database error: ${databaseError.message}")
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    ref.addValueEventListener(postListener)
+                    Log.d("xxxx", "Listener added to reference")
+                }
+
+            } else {
+                passengerClass.ShowWifiProblemDialog(context)
+            }
+
+
             IconButton(
                 modifier = Modifier.size(45.dp),
                 onClick = {
-
-                }) {
+                    showDialog.value = true
+                }
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.search2),
-                    contentDescription = "Get Current Location",
-
-                    )
+                    contentDescription = "Search Location",
+                )
             }
+
+            SearchLocationDialog(showDialog, places) { place ->
+                // Move camera to the selected place
+                cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+            }
+
+
         }
 
         // centered button ( set Starting, target, confirm)
