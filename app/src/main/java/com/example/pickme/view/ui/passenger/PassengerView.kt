@@ -799,12 +799,14 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
     val showDialog = remember { mutableStateOf(false) }
     val places = remember { mutableStateListOf<Place>() }
 
+    var isLoading by remember { mutableStateOf(false) }
+
     if(mainButtonState== "Confirm pick up"){
+        isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha= 1f
         })
     }
 
@@ -872,6 +874,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             mainButtonState = "Set Pick Up location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
+                            isLoading= false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -915,6 +918,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
+                                isLoading= false
                             }
                         },
                         modifier = Modifier
@@ -943,6 +947,12 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                if(isLoading && tripDistance==0.0) {
+                    distanceAlpha= 1f
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(25.dp)
+                        )
+                }
             }
         }
         // center marker
@@ -951,7 +961,9 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            IconButton(onClick = { }) {
+            IconButton(onClick = {
+                //Log.i("xxxx","is loading $isLoading")
+            }) {
                 Image(
                     painter = painterResource(id =R.drawable.pin3),
                     contentDescription = "marker",
@@ -1370,7 +1382,7 @@ fun PickUpPreview(
                     )
                 }
             }
-            Row(
+            Row(                     // distance row
                 modifier = Modifier
                     .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
@@ -1385,11 +1397,19 @@ fun PickUpPreview(
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray
                 )
-                Text(
-                    text = "$tripDistance",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
+                if(tripDistance==0.0) {
+                    distanceAlpha= 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
+                else{
+                    Text(
+                        text = "$tripDistance",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
             }
             Column(
                 modifier = Modifier
@@ -2582,12 +2602,14 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
     val showDialog = remember { mutableStateOf(false) }
     val places = remember { mutableStateListOf<Place>() }
 
+    var isLoading by remember { mutableStateOf(false) }
+
     if(mainButtonState == "Confirm Starting"){
+        isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha=1f
         })
     }
 
@@ -2654,6 +2676,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                             mainButtonState = "Set Starting location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
+                            isLoading= false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -2697,6 +2720,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
+                                isLoading= false
                             }
                         },
                         modifier = Modifier
@@ -2711,7 +2735,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
 
             }
-            Row(
+            Row(                // distance row
                 modifier = Modifier
                     .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
@@ -2725,6 +2749,12 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                if(isLoading && tripDistance==0.0) {
+                    distanceAlpha= 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
             }
         }
         // center marker
@@ -3048,6 +3078,12 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
+            if( tripDistance==0.0) {
+                distanceAlpha= 1f
+                CircularProgressIndicator(
+                    modifier = Modifier.size(25.dp)
+                )
+            }
         }
         // Add a button that navigates back to the search page
         Column(

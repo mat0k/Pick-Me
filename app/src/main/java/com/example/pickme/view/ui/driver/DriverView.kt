@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -773,12 +774,14 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
     val showDialog = remember { mutableStateOf(false) }
     val places = remember { mutableStateListOf<Place>() }
 
+    var isLoading by remember { mutableStateOf(false) }
+
     if(mainButtonState== "Confirm Starting"){
+        isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha= 1f
         })
     }
 
@@ -844,6 +847,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                             mainButtonState = "Set Starting location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
+                            isLoading= false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -887,6 +891,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
+                                isLoading= false
                             }
                         },
                         modifier = Modifier
@@ -901,7 +906,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
 
             }
-            Row(
+            Row(                                // distance row
                 modifier = Modifier
                     .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
@@ -915,6 +920,12 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                if(isLoading && tripDistance==0.0) {
+                    distanceAlpha= 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
             }
         }
         // center marker
