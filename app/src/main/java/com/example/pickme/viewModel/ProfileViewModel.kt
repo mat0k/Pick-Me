@@ -40,7 +40,7 @@ class ProfileViewModel(val context: Context) : ViewModel() {
 
     fun saveProfileData() {
         viewModelScope.launch {
-            val currentPassenger = authRepository.getPassengerData(currentPassengerId)
+            val currentPassenger = authRepository.getPassengerData()
 
             if (photoChanged.value) {
                 newPhotoUrl.value = authRepository.uploadImageToFirebase(Uri.parse(photoUrl.value))
@@ -60,8 +60,7 @@ class ProfileViewModel(val context: Context) : ViewModel() {
 
     fun loadProfileData() {
         viewModelScope.launch {
-            val id = sharedPref.getString("lastUserId", "") ?: ""
-            val passenger = authRepository.getPassengerData(id)
+            val passenger = authRepository.getPassengerData()
             if (passenger != null) {
                 name.value = passenger.name
                 surname.value = passenger.surname

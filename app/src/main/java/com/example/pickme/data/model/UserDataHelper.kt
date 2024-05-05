@@ -38,18 +38,40 @@ class UserDatabaseHelper(context: Context) :
         onCreate(db)
     }
 
-    fun addUser(user: User) {
+    fun addUser(user: User): Boolean {
+    val db = this.writableDatabase
+    val query = "SELECT * FROM $TABLE_USERS WHERE $COLUMN_ID = ?"
+    val cursor = db.rawQuery(query, arrayOf(user.id))
+    val exists = cursor.moveToFirst()
+    cursor.close()
+
+    if (exists) {
+        // User already exists, update the user's information
         val values = ContentValues()
-        values.put(COLUMN_ID, user.id)
-        values.put(COLUMN_ROLE, user.role)
-        values.put(COLUMN_PHOTO_URL, user.photoUrl)
         values.put(COLUMN_FIRST_NAME, user.firstName)
         values.put(COLUMN_LAST_NAME, user.lastName)
+        values.put(COLUMN_PHOTO_URL, user.photoUrl)
+        values.put(COLUMN_ROLE, user.role)
         values.put(TOKEN, user.token)
-        val db = this.writableDatabase
-        db.insert(TABLE_USERS, null, values)
+
+        val success = db.update(TABLE_USERS, values, "$COLUMN_ID = ?", arrayOf(user.id)).toLong()
         db.close()
+        return Integer.parseInt("$success") != -1
+    } else {
+        // User doesn't exist, insert the new user
+        val values = ContentValues()
+        values.put(COLUMN_ID, user.id)
+        values.put(COLUMN_FIRST_NAME, user.firstName)
+        values.put(COLUMN_LAST_NAME, user.lastName)
+        values.put(COLUMN_PHOTO_URL, user.photoUrl)
+        values.put(COLUMN_ROLE, user.role)
+        values.put(TOKEN, user.token)
+
+        val success = db.insert(TABLE_USERS, null, values)
+        db.close()
+        return (Integer.parseInt("$success") != -1)
     }
+}
 
     // Add methods to retrieve user data from the database
     // In UserDatabaseHelper.kt

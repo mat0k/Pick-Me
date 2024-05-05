@@ -1,4 +1,5 @@
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
@@ -21,16 +23,23 @@ class OTPViewModel : ViewModel() {
     var isLoading = mutableStateOf(false)
     var otp = mutableStateOf("")
     var otpError = mutableStateOf("")
+    var isResendEnabled = mutableStateOf(false)
     fun authenticate(phoneNumber: String, activity: Activity, onVerified: (Boolean) -> Unit) {
+        isLoading.value = true
+        isResendEnabled.value = false
         val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
                 signInWithPhoneAuthCredential(credential, onVerified)
+                isLoading.value = false
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
                 // This callback is invoked in an invalid request for verification is made,
                 // for instance if the the phone number format is not valid.
+                otpError.value = "Invalid phone number. Please enter a valid phone number."
+                isLoading.value = false
+                Toast.makeText(activity, "Invalid phone number. Please enter a valid phone number.", Toast.LENGTH_SHORT).show()
             }
 
             override fun onCodeSent(
@@ -39,6 +48,13 @@ class OTPViewModel : ViewModel() {
             ) {
                 storedVerificationId = verificationId
                 resendToken = token
+                Toast.makeText(activity, "OTP sent successfully", Toast.LENGTH_SHORT).show()
+                isLoading.value = false
+
+                viewModelScope.launch {
+                    delay(60 * 1000L)
+                    isResendEnabled.value = true
+                }
             }
         }
 

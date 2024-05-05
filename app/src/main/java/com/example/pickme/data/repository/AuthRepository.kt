@@ -16,7 +16,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class AuthRepository() {
+class AuthRepository {
     private val database = FirebaseDatabase.getInstance()
 
     private fun hashPassword(password: String): String {
@@ -34,17 +34,19 @@ class AuthRepository() {
                 return Result.failure(Exception("A passenger account with this phone number already exists."))
             }
         }
-
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
         val passengerObject = mapOf(
-            "id" to myRef.push().key,
+            "id" to uuid,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to hashPassword(passenger.password),
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber,
+            "token" to ""
         )
-        myRef.push().setValue(passengerObject)
+        myRef.child(uuid).setValue(passengerObject)
         return Result.success(Unit)
     }
 
@@ -64,6 +66,8 @@ class AuthRepository() {
                 )
                 val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
                 user.token = tokenResult?.token
+
+                myRef.child(user.id).child("token").setValue(user.token)
                 return Result.success(user)
             }
         }
@@ -86,7 +90,7 @@ class AuthRepository() {
                 )
                 val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
                 user.token = tokenResult?.token
-                Log.d("AuthRepository", "loginAsDriver: $user")
+                myRef.child(user.id).child("token").setValue(user.token)
                 return Result.success(user)
             }
         }
@@ -120,8 +124,10 @@ class AuthRepository() {
                 return Result.failure(Exception("A driver account with this phone number already exists."))
             }
         }
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
         val driverObject = mapOf(
-            "id" to myRef.push().key,
+            "id" to uuid,
             "name" to driver.name,
             "surname" to driver.surname,
             "password" to hashPassword(driver.password),
@@ -131,15 +137,18 @@ class AuthRepository() {
             "photo" to driver.photo,
             "driverLicense" to driver.driverLicense,
             "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
+            "token" to ""
         )
-        myRef.push().setValue(driverObject)
+        myRef.child(uuid).setValue(driverObject)
         return Result.success(Unit)
     }
 
     suspend fun updatePassenger(passenger: Passenger): Result<Unit> {
-        val myRef = database.getReference("Passengers").child(passenger.id)
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
+        val myRef = database.getReference("Passengers").child(uuid)
         val passengerObject = mapOf(
-            "id" to passenger.id,
+            "id" to uuid,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to passenger.password,
@@ -172,9 +181,18 @@ class AuthRepository() {
         }
     }
 
-    suspend fun getPassengerData(id: String): Passenger? {
-        val myRef = database.getReference("Passengers").child(id)
+    suspend fun getPassengerData(): Passenger? {
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return null
+        val myRef = database.getReference("Passengers").child(uuid)
         val data = myRef.get().await()
         return data.getValue(Passenger::class.java)
+    }
+
+    fun updateToken(token: String) {
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return
+        val myRef = database.getReference("Passengers").child(uuid)
+        myRef.child("token").setValue(token)
     }
 }

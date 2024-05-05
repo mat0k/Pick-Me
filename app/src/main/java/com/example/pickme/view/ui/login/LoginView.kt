@@ -434,18 +434,33 @@ fun OTP(
         if (otpViewModel.isLoading.value) {
             CircularProgressIndicator()
         } else {
-            Button(
-                onClick = {
-                    otpViewModel.verifyOTP { verificationSuccessful ->
-                        if (verificationSuccessful) {
-                            registerViewModel.register(activity)
-                            navController.navigate("login")
+            Row {
+                Button(
+                    onClick = {
+                        otpViewModel.authenticate(
+                            "+961 ${registerViewModel.phoneNumber.value}",
+                            activity
+                        ) {
                         }
-                    }
-                },
-                enabled = otpViewModel.otp.value.length == 6
-            ) {
-                Text("Verify")
+                    },
+                    enabled = otpViewModel.isResendEnabled.value
+                ) {
+                    Text("Resend OTP")
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(
+                    onClick = {
+                        otpViewModel.verifyOTP { verificationSuccessful ->
+                            if (verificationSuccessful) {
+                                registerViewModel.register(activity)
+                                navController.navigate("login")
+                            }
+                        }
+                    },
+                    enabled = otpViewModel.otp.value.length == 6
+                ) {
+                    Text("Verify")
+                }
             }
         }
     }

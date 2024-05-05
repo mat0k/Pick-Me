@@ -9,7 +9,7 @@ plugins {
 android {
     signingConfigs {
         getByName("debug") {
-            storeFile = file("C:\\Users\\user\\keystore.jks")
+            storeFile = file("E:\\Backup\\keystore.jks")
             storePassword = "mohammad"
             keyAlias = "key0"
             keyPassword = "mohammad"
@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.storage.ktx)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.messaging)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
@@ -112,11 +113,12 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.coil.compose)
-    implementation("com.google.firebase:firebase-auth")
+    implementation(libs.firebase.auth)
 
-    implementation("com.squareup.okhttp3:okhttp:4.9.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-    implementation ("com.google.maps.android:android-maps-utils:3.8.2")
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    implementation (libs.android.maps.utils)
+    implementation(libs.accompanist.insets)
 
 }
 
