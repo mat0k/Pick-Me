@@ -948,7 +948,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     color = Color.Black
                 )
                 if(isLoading && tripDistance==0.0) {
-                    distanceAlpha= 1f
+                        distanceAlpha= 1f
                         CircularProgressIndicator(
                             modifier = Modifier.size(25.dp)
                         )
@@ -1018,11 +1018,9 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     val database = FirebaseDatabase.getInstance()
                     val ref = database.getReference("lebanon_places")
 
-                    Log.d("xxxx", "Database reference obtained")
-
                     val postListener = object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            Log.d("xxxx", "Data change detected")
+                           // Log.d("xxxx", "Data change detected")
                             val allPlaces = mutableListOf<Place>()
                             places.clear()
                             for (postSnapshot in dataSnapshot.children) {
@@ -1035,7 +1033,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             // Update the displayed list
                             places.clear()
                             places.addAll(allPlaces)
-                            Log.d("xxxx", "Places list updated")
+                         //   Log.d("xxxx", "Places list updated")
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
@@ -1171,6 +1169,7 @@ fun SearchLocationDialog(
     places: List<Place>,
     onPlaceSelected: (Place) -> Unit
 ) {
+    val context = LocalContext.current // Get the current context
     if (showDialog.value) {
         var input by remember { mutableStateOf("") }
         var selectedPlace by remember { mutableStateOf<Place?>(null) }
@@ -1201,12 +1200,14 @@ fun SearchLocationDialog(
                             items(places.filter { it.title.contains(input, ignoreCase = true) }) { place ->
                                 Text(
                                     text = place.title,
+                                    fontSize = 15.sp,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
                                             input = place.title // Set the input text to the selected suggestion
                                             selectedPlace = place
                                         }
+                                        .padding(5.dp)
                                 )
                             }
                         }
@@ -1217,8 +1218,12 @@ fun SearchLocationDialog(
                     // Search Button
                     Button(
                         onClick = {
-                            selectedPlace?.let { onPlaceSelected(it) }
-                            showDialog.value = false
+                            if (selectedPlace != null) {
+                                onPlaceSelected(selectedPlace!!)
+                                showDialog.value = false
+                            } else {
+                                Toast.makeText(context, "Location not found", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth() // Make the button as wide as the TextField
