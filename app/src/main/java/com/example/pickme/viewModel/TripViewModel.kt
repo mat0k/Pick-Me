@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
+import java.time.LocalDate
 
 class TripViewModel : ViewModel() {
 
@@ -25,6 +26,7 @@ class TripViewModel : ViewModel() {
 
     val tripDateAndTime: MutableState<String> = mutableStateOf("")
 
+    val pickedDate: MutableState<LocalDate> = mutableStateOf(LocalDate.now())
     fun setTripTitle(title: String){
         tripTitle.value = title
     }
@@ -53,5 +55,8 @@ class TripViewModel : ViewModel() {
     }
     fun setSearchedTripDestLatLng(title: LatLng){
         searchedTripDestLatLng.value = title
+    }
+    fun setFormattedDate(date: LocalDate){
+        pickedDate.value = date
     }
 }

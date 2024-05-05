@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -117,6 +118,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
+import com.google.firebase.auth.FirebaseAuth
 
 
 data class BottomNavigationItem(
@@ -278,6 +280,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     if (startingTitle != "Starting point") {
         enableConfirmation1 = true
     }
+
+    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
 
     val passengerViewModel= PassengerViewModel()
     Column(
@@ -591,8 +595,6 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-
-
             ) {
 
                 Text(text = "Driver Verified")
@@ -626,7 +628,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val time= formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
-                    val rate = 4
+                    val driverId= sharedPref.getString("lastUserId", null)
 
                     // Create a new trip object
                     val trip = mapOf(
@@ -640,20 +642,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "time" to time,
                         "tripDistance" to tripDistance,
                         "verified" to verified,
-                        "rate" to rate
+                        "id"   to driverId
                     )
 
                     // Add the trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                        //    tripViewModel.tripTitle.value= ""
-                        //    tripTitle= ""
-                        //    tripViewModel.seats.value= 0
-                        //    seats= 0
-                          //  isButtonClicked1= false
                             isButtonClicked2= false
-                         //   enableConfirmation1= false
                             enableConfirmation2= false
                         }
                         .addOnFailureListener {
@@ -1198,6 +1194,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     }
                 }
                 LoginDialog(context)
+                Spacer(modifier = Modifier.height(25.dp))
             }
         }
     }

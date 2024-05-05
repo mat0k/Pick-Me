@@ -797,7 +797,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -831,7 +831,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 visible = targetMarkerState
             )
 
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -1897,6 +1897,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                 .format(pickedDate)
         }
     }
+
     val formattedTime by remember {
         derivedStateOf {
             DateTimeFormatter
@@ -1933,6 +1934,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
+    if(tripViewModel.tripDateAndTime.value.isNotEmpty()){
+        enableConfirmation2=true
+        pickedDate = tripViewModel.pickedDate.value
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -2136,7 +2141,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         onClick = {
                             enableConfirmation2 = false
                             isButtonClicked2 = false
-                         //   isButtonClicked1 = false
                             enableConfirmation1 = false
                             tripViewModel.setTripDateAndTime("")
                         },
@@ -2241,7 +2245,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
 
         if (showBottomSheet) {
-            ModalBottomSheet(                       // here now
+            ModalBottomSheet(
                 modifier = Modifier
                     .padding(10.dp)
                     .height(360.dp),
@@ -2354,7 +2358,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     minDriverRating,
                     minAvailableSeats,
                     searchRadius,
-                    formattedDate,
                     timeRange,
                     tripViewModel
                 ) {
@@ -2422,14 +2425,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
-                                    text = "    Seats: ${trip["seats"]}",
+                                    text = "\tDriver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
-                            Text(
-                                text = "Driver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
@@ -2474,8 +2473,17 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                     }
                                 ) {
                                     Icon(
+                                        painter = painterResource(id = R.drawable.search_location1),
+                                        contentDescription = "Trip Preview"
+                                    )
+                                }
+
+                                IconButton(onClick = {
+                                    // here now
+                                }) {
+                                    Icon(
                                         painter = painterResource(id = R.drawable.preview_icon),
-                                        contentDescription = "Preview"
+                                        contentDescription = "Driver Preview"
                                     )
                                 }
                             }
@@ -2509,6 +2517,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         ) {
             pickedDate = it
+            tripViewModel.setFormattedDate(pickedDate)
         }
     }
 
@@ -2531,7 +2540,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             pickedTime = it
             enableConfirmation2 = true
             isButtonClicked2 = true
-
             tripViewModel.setTripDateAndTime( "$formattedDate, $formattedTime")
         }
     }
@@ -2595,7 +2603,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
+    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng && false) { // remove false
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -2628,7 +2636,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) { // remove false
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
