@@ -23,7 +23,7 @@ class TripViewModel : ViewModel() {
 
     val distance:   MutableState<Double> = mutableStateOf(0.0)
 
-    val dateAndTime: MutableState<String> = mutableStateOf("")
+    val tripDateAndTime: MutableState<String> = mutableStateOf("")
 
     fun setTripTitle(title: String){
         tripTitle.value = title
@@ -45,8 +45,8 @@ class TripViewModel : ViewModel() {
     fun setDistance(title: Double){
         distance.value= title
     }
-    fun setDateAndTime(dateTime: String) {
-        dateAndTime.value = dateTime
+    fun setTripDateAndTime(dateTime: String) {
+        tripDateAndTime.value = dateTime
     }
     fun setSearchedTripStartLatLng(title: LatLng){
         searchedTripStartLatLng.value = title

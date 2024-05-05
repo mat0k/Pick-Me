@@ -712,7 +712,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             enableConfirmation2 = true
             isButtonClicked2 = true
             val dateAndTimeField = "$formattedDate, $formattedTime"
-            tripViewModel.setDateAndTime(dateAndTimeField)
+            tripViewModel.setTripDateAndTime(dateAndTimeField)
         }
     }
 

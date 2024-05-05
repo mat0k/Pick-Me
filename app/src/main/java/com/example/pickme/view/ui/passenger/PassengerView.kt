@@ -15,7 +15,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,7 +70,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -117,7 +115,6 @@ import com.example.pickme.viewModel.ProfileViewModel
 import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -1878,7 +1875,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     val context = LocalContext.current
 
     var startingTitle = tripViewModel.tripStartTitle.value
-
     var destinationTitle = tripViewModel.tripDestTitle.value
 
     var isButtonClicked1 by remember {
@@ -2101,7 +2097,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             horizontalArrangement = Arrangement.Center,         // date and time adder
 
         ) {
-            if (isButtonClicked2) { // calender
+            if (isButtonClicked2 || tripViewModel.tripDateAndTime.value.isNotEmpty()) { // calender
                 Box(
                     modifier = Modifier.weight(0.85f)
                 ) {
@@ -2122,9 +2118,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val dateAndTimeField = "$formattedDate, $formattedTime"
                             Text(
-                                text = dateAndTimeField,                  // date & time text
+                                text = tripViewModel.tripDateAndTime.value,                  // date & time text
                                 fontSize = 18.sp,
                                 color = Color.Black
                             )
@@ -2141,8 +2136,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         onClick = {
                             enableConfirmation2 = false
                             isButtonClicked2 = false
-                            isButtonClicked1 = false
+                         //   isButtonClicked1 = false
                             enableConfirmation1 = false
+                            tripViewModel.setTripDateAndTime("")
                         },
                         modifier = Modifier
                             .size(40.dp)
@@ -2535,8 +2531,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             pickedTime = it
             enableConfirmation2 = true
             isButtonClicked2 = true
-            val dateAndTimeField = "$formattedDate, $formattedTime"
-            tripViewModel.setDateAndTime(dateAndTimeField)
+
+            tripViewModel.setTripDateAndTime( "$formattedDate, $formattedTime")
         }
     }
 
@@ -3148,6 +3144,13 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         }
     }
 }
+
+
+
+
+
+
+
 
 
 // not used
