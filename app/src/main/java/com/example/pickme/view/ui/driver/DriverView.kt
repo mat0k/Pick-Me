@@ -776,7 +776,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if(mainButtonState== "Confirm Starting"){
+    if(mainButtonState== "Confirm pick up" && pickUpLatLng!= targetLatLng ){
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -808,7 +808,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if(mainButtonState== "Confirm Starting") {
+            if(mainButtonState== "Confirm Starting" && pickUpLatLng!= targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -925,6 +925,9 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
+                }
+                else if(tripDistance != 0.0){
+                    distanceAlpha= 1f
                 }
             }
         }
@@ -1104,17 +1107,25 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
-                        tripViewModel.setPickUpTitle(pickUpTitle)
-                        tripViewModel.setTargetTitle(targetTitle)
+                        if (pickUpLatLng == targetLatLng) {
+                            Toast.makeText(
+                                context,
+                                "Pick up and target locations are the same",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            tripViewModel.setPickUpTitle(pickUpTitle)
+                            tripViewModel.setTargetTitle(targetTitle)
 
-                        tripViewModel.setPickUpLatLng(pickUpLatLng)
-                        tripViewModel.setTargetLatLng(targetLatLng)
+                            tripViewModel.setPickUpLatLng(pickUpLatLng)
+                            tripViewModel.setTargetLatLng(targetLatLng)
 
-                        tripViewModel.setDistance(tripDistance)
-                        navController.navigate("setTrips")
+                            tripViewModel.setDistance(tripDistance)
+                            navController.navigate("setTrips")
 
-                        Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                            .show()  //confirmation
+                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                .show()  //confirmation
+                        }
                     }
 
                 }) {

@@ -295,7 +295,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
     val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
     val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
 
-    val passengerViewModel= PassengerViewModel()
+    val passengerViewModel = PassengerViewModel()
 
     if (pickUpTitleTest.isNotEmpty()) {
         pickUpTitle = pickUpTitleTest
@@ -427,9 +427,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                     modifier = Modifier
                         .fillMaxSize(),          // Fill the entire available space in the box
                     onClick = {
-                        if(passengerViewModel.isNetworkAvailable(context)){
+                        if (passengerViewModel.isNetworkAvailable(context)) {
                             navController.navigate("mapView")
-                        }else{
+                        } else {
                             passengerViewModel.ShowWifiProblemDialog(context)
                         }
                     },
@@ -641,9 +641,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                     pickUpViewModel.setPrevTargetLatLng(localPickUp.targetLatLng)
                                     pickUpViewModel.setPrevDistance(localPickUp.distance)
 
-                                    if(passengerViewModel.isNetworkAvailable(context)){
+                                    if (passengerViewModel.isNetworkAvailable(context)) {
                                         navController.navigate("pickUpPreview") //here
-                                    }else{
+                                    } else {
                                         passengerViewModel.ShowWifiProblemDialog(context)
                                     }
                                 }
@@ -744,7 +744,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 }
 
 
-
 @Composable
 fun MapView(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -801,7 +800,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if(mainButtonState== "Confirm pick up"){
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -835,7 +834,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 visible = targetMarkerState
             )
 
-            if(mainButtonState== "Confirm pick up") {
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -874,7 +873,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             mainButtonState = "Set Pick Up location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
-                            isLoading= false
+                            isLoading = false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -918,7 +917,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
-                                isLoading= false
+                                isLoading = false
                             }
                         },
                         modifier = Modifier
@@ -947,11 +946,13 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                if(isLoading && tripDistance==0.0) {
-                        distanceAlpha= 1f
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(25.dp)
-                        )
+                if (isLoading && tripDistance == 0.0) {
+                    distanceAlpha = 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                } else if (tripDistance != 0.0) {
+                    distanceAlpha = 1f
                 }
             }
         }
@@ -965,7 +966,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 //Log.i("xxxx","is loading $isLoading")
             }) {
                 Image(
-                    painter = painterResource(id =R.drawable.pin3),
+                    painter = painterResource(id = R.drawable.pin3),
                     contentDescription = "marker",
                 )
             }
@@ -1020,7 +1021,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                     val postListener = object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                           // Log.d("xxxx", "Data change detected")
+                            // Log.d("xxxx", "Data change detected")
                             val allPlaces = mutableListOf<Place>()
                             places.clear()
                             for (postSnapshot in dataSnapshot.children) {
@@ -1033,12 +1034,13 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                             // Update the displayed list
                             places.clear()
                             places.addAll(allPlaces)
-                         //   Log.d("xxxx", "Places list updated")
+                            //   Log.d("xxxx", "Places list updated")
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             Log.d("xxxx", "Database error: ${databaseError.message}")
-                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
@@ -1064,7 +1066,14 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
             SearchLocationDialog(showDialog, places) { place ->
                 // Move camera to the selected place
-                 cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+                cameraPosition.move(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            place.latitude,
+                            place.longitude
+                        ), 13f
+                    )
+                )
             }
 
 
@@ -1129,23 +1138,25 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Confirm pick up"
                             }
                         }
-                    } else if (mainButtonState == "Confirm pick up") {
+                    } else if (mainButtonState == "Confirm pick up" ) {
 
-                        pickUpViewModel.setPickUpTitle(pickUpTitle)
-                        pickUpViewModel.setTargetTitle(targetTitle)
+                        if(pickUpLatLng == targetLatLng){
+                            Toast.makeText(context, "Pick up and target locations are the same", Toast.LENGTH_LONG).show()
+                        }
+                        else {
+                            pickUpViewModel.setPickUpTitle(pickUpTitle)
+                            pickUpViewModel.setTargetTitle(targetTitle)
 
-                        pickUpViewModel.setPickUpLatLng(pickUpLatLng)
-                        pickUpViewModel.setTargetLatLng(targetLatLng)
+                            pickUpViewModel.setPickUpLatLng(pickUpLatLng)
+                            pickUpViewModel.setTargetLatLng(targetLatLng)
 
-                        pickUpViewModel.setDistance(tripDistance)
-                        navController.navigate("pickUps")
+                            pickUpViewModel.setDistance(tripDistance)
+                            navController.navigate("pickUps")
 
-                        Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                            .show()  //confirmation
-                        Log.i(
-                            "xxxx",
-                            "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng"
-                        )
+                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                .show()  //confirmation
+                          //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
+                        }
                     }
 
                 }) {
@@ -1197,14 +1208,20 @@ fun SearchLocationDialog(
                     // Autocomplete suggestions
                     if (input.length >= 2) { // Only show suggestions when input length is 2 or more
                         LazyColumn {
-                            items(places.filter { it.title.contains(input, ignoreCase = true) }) { place ->
+                            items(places.filter {
+                                it.title.contains(
+                                    input,
+                                    ignoreCase = true
+                                )
+                            }) { place ->
                                 Text(
                                     text = place.title,
                                     fontSize = 15.sp,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            input = place.title // Set the input text to the selected suggestion
+                                            input =
+                                                place.title // Set the input text to the selected suggestion
                                             selectedPlace = place
                                         }
                                         .padding(5.dp)
@@ -1222,7 +1239,8 @@ fun SearchLocationDialog(
                                 onPlaceSelected(selectedPlace!!)
                                 showDialog.value = false
                             } else {
-                                Toast.makeText(context, "Location not found", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Location not found", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         },
                         modifier = Modifier
@@ -1238,12 +1256,6 @@ fun SearchLocationDialog(
         )
     }
 }
-
-
-
-
-
-
 
 
 @Composable
@@ -1272,7 +1284,7 @@ fun PickUpPreview(
         setPolylinePoints(decodedPolyline)
     }, { distance ->
         tripDistance = "%.2f".format(distance).toDouble()
-         distanceAlpha = 0.9f
+        distanceAlpha = 0.9f
     })
 
     val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
@@ -1402,13 +1414,12 @@ fun PickUpPreview(
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray
                 )
-                if(tripDistance==0.0) {
-                    distanceAlpha= 1f
+                if (tripDistance == 0.0) {
+                    distanceAlpha = 1f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
-                }
-                else{
+                } else {
                     Text(
                         text = "$tripDistance",
                         fontWeight = FontWeight.Bold,
@@ -1659,7 +1670,14 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                         modifier = Modifier
                             .fillMaxWidth()
                     ) {
-                        item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
+                        item {
+                            Text(
+                                text = "Accounts",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
                         items(users) { user ->
                             UserProfileRow(user, viewModel.currentPassengerId == user.id) {
                                 loginViewModel.loginAsUser(it)
@@ -1668,7 +1686,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     }
 
                     LoginDialog(context)
-
+                    Spacer(modifier = Modifier.height(25.dp))
                 }
             }
 
@@ -1687,10 +1705,12 @@ fun LoginDialog(context: Context) {
     var loggingIn by remember {
         mutableStateOf(false)
     }
-    OutlinedButton(onClick = { showDialog = true },
+    OutlinedButton(
+        onClick = { showDialog = true },
         modifier = Modifier
             .padding(8.dp)
-            .fillMaxWidth()) {
+            .fillMaxWidth()
+    ) {
         Text("Add User")
     }
     LaunchedEffect(key1 = true) {
@@ -1715,7 +1735,7 @@ fun LoginDialog(context: Context) {
                 Column {
                     OutlinedTextField(
                         value = loginViewModel.phoneNumber,
-                        onValueChange = {loginViewModel.updatePhoneNumber(it) },
+                        onValueChange = { loginViewModel.updatePhoneNumber(it) },
                         label = { Text("Phone Number") },
                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
                     )
@@ -1769,7 +1789,7 @@ fun LoginDialog(context: Context) {
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDialog = false },
-                    ) {
+                ) {
                     Text("Cancel")
                 }
             }
@@ -1788,7 +1808,7 @@ fun UserProfileRow(user: User, selected: Boolean, onLoginClick: (User) -> Unit) 
             .clickable(
                 interactionSource = interactionSource,
                 indication = rememberRipple(bounded = true),
-                onClick = { if(!selected) onLoginClick(user) }
+                onClick = { if (!selected) onLoginClick(user) }
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1824,7 +1844,7 @@ fun UserProfileRow(user: User, selected: Boolean, onLoginClick: (User) -> Unit) 
 
         }
         Spacer(modifier = Modifier.weight(1f))
-        if(selected) {
+        if (selected) {
             Icon(Icons.Filled.Done, contentDescription = "Selected")
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -1851,6 +1871,7 @@ fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel)
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
@@ -1912,6 +1933,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     var showSearch by remember { mutableStateOf(false) }
 
     var timeRange by remember { mutableIntStateOf(0) } // Default time range is 0 hour
+
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -2047,9 +2071,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         .size(width = 220.dp, height = 50.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        if(passengerViewModel.isNetworkAvailable(context)){
+                        if (passengerViewModel.isNetworkAvailable(context)) {
                             navController.navigate("mapView2")
-                        }else{
+                        } else {
                             passengerViewModel.ShowWifiProblemDialog(context)
                         }
                     }
@@ -2165,18 +2189,76 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         ///////////////////////////////////////////////////////////////////////////////////////////////
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.75f),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {                                     //confirmation
+                Button(
+                    modifier = Modifier
+                        .weight(3f) // This will take 3/4 of the available space
+                        .height(45.dp),
+                    shape = RoundedCornerShape(15.dp),
+                    enabled = enableConfirmation1 && enableConfirmation2,
+                    onClick = {
+                        // Your onClick logic here
+                        showSearch = true
+                    }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.search3),
+                        contentDescription = "search Icon",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(start = 5.dp)
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 15.dp),
+                        text = "Search",
+                        fontSize = 20.sp
+                    )
+                }
+                Spacer(Modifier.width(5.dp))
 
+
+                Button(
+                    modifier = Modifier
+                        .weight(1f) // This will take 1/4 of the available space
+                        .height(45.dp),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        showBottomSheet = true
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.filter2),
+                        contentDescription = "search Icon",
+                        modifier = Modifier
+                            .size(34.dp)
+                    )
+                }
+            }
+        }
+
+
+        if (showBottomSheet) {
+            ModalBottomSheet(                       // here now
+                modifier = Modifier
+                    .padding(10.dp)
+                    .height(360.dp),
+                onDismissRequest = {
+                    showBottomSheet = false
+                },
+                sheetState = sheetState
             ) {
-            var expanded by remember { mutableStateOf(false) }
-
-
-
-            if (expanded) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(6.dp),
+                ) {
 
                     Row(
                         // verified check box
@@ -2259,102 +2341,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             steps = 5,
                         )
                     }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Button(
-                            modifier = Modifier
-                                .size(width = 180.dp, height = 45.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = { expanded = false })
-                        {
-                            Icon(
-                                painter = painterResource(id = R.drawable.collapse),
-                                contentDescription = "collapse Icon",
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .padding(end = 6.dp)
-                            )
-                            Text(
-                                text = "Search filter",
-                                fontSize = 15.sp
-                            )
-                        }
-                    }
-                }
-
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .size(width = 180.dp, height = 45.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        onClick = { expanded = true })
-                    {
-                        Icon(
-                            painter = painterResource(id = R.drawable.expand),
-                            contentDescription = "expand Icon",
-                            modifier = Modifier
-                                .size(26.dp)
-                                .padding(end = 6.dp)
-                        )
-                        Text(
-                            text = "Search filter",
-                            fontSize = 15.sp
-                        )
-                    }
                 }
             }
         }
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {                                     //confirmation
-            Button(
-                modifier = Modifier
-                    .size(width = 200.dp, height = 45.dp),
-                shape = RoundedCornerShape(15.dp),
-                enabled = enableConfirmation1 && enableConfirmation2,
-                onClick = {
-                    val starting = startingTitle
-                    val end = destinationTitle
-                    val startingLatLng = tripViewModel.tripStartLatLng.value
-                    val destinationLatLng = tripViewModel.tripDestLatLng.value
-                    val tripDistance = tripViewModel.distance.value
-                    val date = formattedDate
-                    val time = formattedTime
-                    val searchRad = searchRadius
-                    val isVerified = isDriverVerified
-                    val minRat = minDriverRating
-                    val minSeats = minAvailableSeats
-
-                    showSearch = true
-                }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.search3),
-                    contentDescription = "search Icon",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(start = 5.dp)
-                )
-                Text(
-                    modifier = Modifier.padding(start = 15.dp),
-                    text = "Search",
-                    fontSize = 20.sp
-                )
-            }
-        }
         ///////////////////////////////////////////////////////////////////////////////////////////////
 
         if (passengerViewModel.isNetworkAvailable(context)) {
@@ -2478,9 +2468,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                         tripViewModel.setSearchedTripStartLatLng(tripStartLatLng)
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
 
-                                        if(passengerViewModel.isNetworkAvailable(context)){
+                                        if (passengerViewModel.isNetworkAvailable(context)) {
                                             navController.navigate("mapView3")
-                                        }else{
+                                        } else {
                                             passengerViewModel.ShowWifiProblemDialog(context)
                                         }
 
@@ -2609,7 +2599,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if(mainButtonState == "Confirm Starting"){
+    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -2642,7 +2632,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if(mainButtonState == "Confirm Starting"){
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -2681,7 +2671,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                             mainButtonState = "Set Starting location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
-                            isLoading= false
+                            isLoading = false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -2725,7 +2715,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
-                                isLoading= false
+                                isLoading = false
                             }
                         },
                         modifier = Modifier
@@ -2754,11 +2744,13 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                if(isLoading && tripDistance==0.0) {
-                    distanceAlpha= 1f
+                if (isLoading && tripDistance == 0.0) {
+                    distanceAlpha = 1f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
+                } else if (tripDistance != 0.0) {
+                    distanceAlpha = 1f
                 }
             }
         }
@@ -2845,7 +2837,8 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             Log.d("xxxx", "Database error: ${databaseError.message}")
-                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
@@ -2871,7 +2864,14 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
             SearchLocationDialog(showDialog, places) { place ->
                 // Move camera to the selected place
-                 cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+                cameraPosition.move(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            place.latitude,
+                            place.longitude
+                        ), 13f
+                    )
+                )
             }
 
 
@@ -2938,20 +2938,25 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
-                        tripViewModel.setPickUpTitle(pickUpTitle)
-                        tripViewModel.setTargetTitle(targetTitle)
+                        if(pickUpLatLng == targetLatLng){
+                            Toast.makeText(context, "Pick up and target locations are the same", Toast.LENGTH_LONG).show()
+                        }
+                        else {
+                            tripViewModel.setPickUpTitle(pickUpTitle)
+                            tripViewModel.setTargetTitle(targetTitle)
 
-                        tripViewModel.setPickUpLatLng(pickUpLatLng)
-                        tripViewModel.setTargetLatLng(targetLatLng)
-                        Log.i(
-                            "xxxx",
-                            "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
-                        )
-                        tripViewModel.setDistance(tripDistance)
-                        navController.navigate("searchTrips")
+                            tripViewModel.setPickUpLatLng(pickUpLatLng)
+                            tripViewModel.setTargetLatLng(targetLatLng)
+                            Log.i(
+                                "xxxx",
+                                "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
+                            )
+                            tripViewModel.setDistance(tripDistance)
+                            navController.navigate("searchTrips")
 
-                        Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                            .show()  //confirmation
+                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                .show()  //confirmation
+                        }
                     }
 
                 }) {
@@ -3013,7 +3018,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         setPolylinePoints1(decodedPolyline)
     }, { distance -> //
         tripDistance = "%.2f".format(distance).toDouble()
-        distanceAlpha=1f
+        distanceAlpha = 1f
     })
 
     passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
@@ -3083,8 +3088,8 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
-            if( tripDistance==0.0) {
-                distanceAlpha= 1f
+            if (tripDistance == 0.0) {
+                distanceAlpha = 1f
                 CircularProgressIndicator(
                     modifier = Modifier.size(25.dp)
                 )
@@ -3145,20 +3150,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            // not used
+// not used
 @Composable
 fun ShowAllTrips() {
     val context = LocalContext.current
