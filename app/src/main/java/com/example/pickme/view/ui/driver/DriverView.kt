@@ -772,7 +772,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if(mainButtonState== "Confirm pick up" && pickUpLatLng!= targetLatLng ){
+    if(mainButtonState== "Confirm pick up" && pickUpLatLng!= targetLatLng && false){  // remove false
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
