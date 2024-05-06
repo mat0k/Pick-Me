@@ -12,7 +12,6 @@ import android.location.Location
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 import com.example.pickme.data.model.DriverData
@@ -376,7 +375,7 @@ class PassengerViewModel {
                             phoneNb = driverMap["phone"] as? String ?: "",
                             photo = driverMap["photo"] as? String ?: "",
                             carPhoto = driverMap["carPhoto"] as? String ?: "",
-                            rate = (driverMap["rate"] as? String) ?: "0",
+                            rate = driverMap["rate"] as? String ?: "00.0",
                             isVerified = driverMap["verified"] as? Boolean ?: false
                         )
 

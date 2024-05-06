@@ -31,9 +31,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -2491,7 +2493,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 }
 
                                 IconButton(onClick = {
-                                    // here now
+
                                     driverId = trip["id"] as? String ?: "empty"
                                     showPreviewBottomSheet = true
                                 }) {
@@ -2521,37 +2523,67 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             },
             sheetState = sheetState
         ) {
-            Text(text = "Bottom sheet")
-            Text(text= "driver id: $driverId")
+           // Text(text= "driver id: $driverId")
 
             var driver by remember { mutableStateOf<DriverData?>(null) }
-            val pickUpViewModel = PickUpViewModel()
 
             if (driverId != "empty") {
 
                 LaunchedEffect(driverId) {
                     driver = passengerViewModel.getDriverInfo(driverId)
                 }
-
                 if (driver != null) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(6.dp),
+                            .padding(10.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally
+
                     ) {
-                        Text(text = "First Name: ${driver?.firstName}")
-                        Text(text = "Last Name: ${driver?.lastName}")
-                        Text(text = "Phone Number: ${driver?.phoneNb}")
-                        Text(text = "Photo URL: ${driver?.photo}")
-                        Text(text = "Car Photo URL: ${driver?.carPhoto}")
-                        Text(text = "Rate: ${driver?.rate}")
-                        Text(text = "Is Verified: ${driver?.isVerified}")
+                        // url of both images to preview:
+                        var photoUrl= driver?.photo
+                        val carPhotoUrl= driver?.carPhoto
+                        // Text(text = "Photo URL: ${driver?.photo}")
+                        //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
+
+                        // Placeholder for image
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .background(Color.Gray), // Change this to your desired color or image
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // You can add your image here later
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = " ${driver?.firstName}", modifier = Modifier.padding(end = 8.dp))
+                            Text(text = "${driver?.lastName}")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Other data
+                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge)
+                        Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
+                        Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                        // add the comment section here
+                        Spacer(modifier = Modifier.height(50.dp))
                     }
                 } else {
-                    Text(text = "No data to preview (driver object is empty)")
+                    Text(text = "No data to preview")
                 }
+
             } else {
-                Text(text = "No data to preview (id is null)")   // on finish
+                Text(text = "No data to preview ")
             }
         }
     }
