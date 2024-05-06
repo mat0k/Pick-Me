@@ -181,18 +181,10 @@ class AuthRepository {
         }
     }
 
-    suspend fun getPassengerData(): Passenger? {
-        val uuid = FirebaseAuth.getInstance().currentUser?.uid
-            ?: return null
-        val myRef = database.getReference("Passengers").child(uuid)
+    suspend fun getPassengerData(id: String): Passenger? {
+        val myRef = database.getReference("Passengers").child(id)
         val data = myRef.get().await()
         return data.getValue(Passenger::class.java)
     }
 
-    fun updateToken(token: String) {
-        val uuid = FirebaseAuth.getInstance().currentUser?.uid
-            ?: return
-        val myRef = database.getReference("Passengers").child(uuid)
-        myRef.child("token").setValue(token)
-    }
 }

@@ -119,6 +119,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation (libs.android.maps.utils)
     implementation(libs.accompanist.insets)
-
+    implementation(libs.material.icons.extended)
+    implementation(libs.androidx.runtime.livedata)
 }
 

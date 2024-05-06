@@ -15,7 +15,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,19 +22,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -77,7 +70,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -123,7 +115,6 @@ import com.example.pickme.viewModel.ProfileViewModel
 import com.example.pickme.viewModel.ProfileViewModelFactory
 import com.example.pickme.viewModel.TripViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -149,10 +140,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.example.pickme.data.model.UserDatabaseHelper
 import com.example.pickme.data.model.User
+import com.example.pickme.data.repository.PickUpRepository
 import com.example.pickme.view.ui.driver.DriverView
 import com.example.pickme.view.ui.login.LoginViewModel
 import com.example.pickme.view.ui.login.LoginViewModelFactory
-import com.google.accompanist.insets.navigationBarsWithImePadding
 
 import com.google.maps.android.compose.Polyline
 
@@ -258,7 +249,8 @@ fun HomeScreen(
 @Composable
 fun PickUps(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
-
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val id = sharedPref.getString("lastUserId", "")
     var pickUpTitle by remember {
         mutableStateOf("Pick Up")
     }
@@ -552,6 +544,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                     //     ADD PICK UP LOCAL OBJECT TO DATA BASE
                     val localPickUp = LocalPickUp(
+                        id = 0,
                         pickUpTitle = pickUpTitle, targetTitle = targetTitle,
                         pickUpLatLng = LatLng(
                             pickUpViewModel.pickUpLatLng.value.latitude,
@@ -564,13 +557,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         distance = pickUpViewModel.distance.value,
                         dateAndTime = pickUpViewModel.dateAndTime.value
                     )
-                    val databaseHelper = LocalPickUpDbHelper(context)
-                    val rowId = databaseHelper.insertLocalPickUp(localPickUp)
-                    if (rowId != -1L) {
-                        // LocalPickUp object added successfully
-                    } else {
-                        // Error adding LocalPickUp object
-                    }
+                    val pickUpRepository = PickUpRepository()
+                    pickUpRepository.addPickUp(localPickUp, id!!)
                     resetTitles()
                 }) {
                 Text(

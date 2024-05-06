@@ -1,6 +1,5 @@
 package com.example.pickme.view.ui.driver
 
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -13,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,16 +28,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,7 +49,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -56,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -83,6 +88,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.Passenger
+import com.example.pickme.data.model.PickUp
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.view.ui.passenger.SearchLocationDialog
 import com.example.pickme.view.ui.login.LoginViewModel
@@ -116,6 +123,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
+import java.util.Locale
 
 
 data class BottomNavigationItem(
@@ -192,19 +200,114 @@ class DriverView : ComponentActivity() {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val showBottomSheet = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val viewModel = viewModel<HomeScreenVM>()
+    val pickUps = viewModel.pickUps.observeAsState(initial = emptyList())
+    val filteredPickUps = viewModel.filterPickUps(context, pickUps.value)
+    val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Home screen",
-            fontSize = 20.sp
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(title = {
+                Text("Home")
+            },
+                actions = {
+                    IconButton(onClick = {
+                        showBottomSheet.value = true
+                    }) {
+                        Icon(Icons.Filled.FilterAlt, contentDescription = "Filter")
+                    }
+                }
+            )
+        }
+    ) { it ->
+        LazyColumn(
+            modifier = Modifier.padding(it),
         )
+        {
+            items(filteredPickUps) {pickUp ->
+                val passenger = viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
+                PickUpCard(pickUp, passenger) {
+
+                }
+            }
+        }
+        if (showBottomSheet.value) {
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = { showBottomSheet.value = false }
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text("Working Hours")
+                    Text("From: ${LocalTime.of(viewModel.workingHoursRange.value.start.toInt(), 0).format(formatter)} To: ${LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0).format(formatter)}")
+                    RangeSlider(
+                        value = viewModel.workingHoursRange.value,
+                        onValueChange = { range -> viewModel.workingHoursRange.value = range },
+                        valueRange = 0f..23f,
+                        steps = 24,
+                        onValueChangeFinished = {
+
+                        }
+                    )
+                    Text("Radius")
+                    Slider(
+                        value = viewModel.radius.value,
+                        onValueChange = {
+                            viewModel.radius.value = it
+                        },
+                        valueRange = 1f..5f,
+                        steps = 5
+                    )
+                }
+            }
+        }
+
+    }
+}
+
+
+
+@Composable
+fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(onClick = onClick), // Moved .clickable to Card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = pickUp.dateAndTime,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Start: ${pickUp.pickUpTitle}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Destination: ${pickUp.targetTitle}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Distance: ${pickUp.distance} km",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Passenger: ${passenger?.name} ${passenger?.surname}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+        }
     }
 }
 
@@ -278,7 +381,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         enableConfirmation1 = true
     }
 
-    val passengerViewModel= PassengerViewModel()
+    val passengerViewModel = PassengerViewModel()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -357,9 +460,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     modifier = Modifier.weight(0.85f)
                 ) {
 
-                    Column(
-                        //   modifier = Modifier.padding(16.dp)
-                    ) {
+                    Column{
                         Box(                        // pick up location box
                             modifier = Modifier
                                 .padding(start = 4.dp, end = 4.dp, top = 4.dp)
@@ -463,9 +564,9 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         if (seats != 0) {
                             tripViewModel.setTripTitle(tripTitle)
                         }
-                        if(passengerViewModel.isNetworkAvailable(context)){
+                        if (passengerViewModel.isNetworkAvailable(context)) {
                             navController.navigate("mapView")
-                        }else{
+                        } else {
                             passengerViewModel.ShowWifiProblemDialog(context)
                         }
                     }
@@ -585,7 +686,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         var isDriverVerified by remember {
             mutableStateOf(false)
         }
-        Row(                     //verified driver      will be removed late
+        Row(
+            //verified driver      will be removed late
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -594,15 +696,15 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
             ) {
 
-                Text(text = "Driver Verified")
-                Checkbox(
-                    checked = isDriverVerified,
-                    onCheckedChange = { isDriverVerified = it }
-                )
+            Text(text = "Driver Verified")
+            Checkbox(
+                checked = isDriverVerified,
+                onCheckedChange = { isDriverVerified = it }
+            )
         }
 
-        val database= Firebase.database
-        val myRef=database.getReference("Trips")
+        val database = Firebase.database
+        val myRef = database.getReference("Trips")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -613,7 +715,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
                 shape = RoundedCornerShape(15.dp),
-                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle!="" && seats!=0,
+                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
                     val title = tripTitle
                     val tripSeats = seats
@@ -621,8 +723,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val end = destinationTitle
                     val startingLatLng = tripViewModel.tripStartLatLng.value
                     val destinationLatLng = tripViewModel.tripDestLatLng.value
-                    val date= formattedDate
-                    val time= formattedTime
+                    val date = formattedDate
+                    val time = formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
                     val rate = 4
@@ -645,15 +747,16 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     // Add the trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                        //    tripViewModel.tripTitle.value= ""
-                        //    tripTitle= ""
-                        //    tripViewModel.seats.value= 0
-                        //    seats= 0
-                          //  isButtonClicked1= false
-                            isButtonClicked2= false
-                         //   enableConfirmation1= false
-                            enableConfirmation2= false
+                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
+                                .show()
+                            //    tripViewModel.tripTitle.value= ""
+                            //    tripTitle= ""
+                            //    tripViewModel.seats.value= 0
+                            //    seats= 0
+                            //  isButtonClicked1= false
+                            isButtonClicked2 = false
+                            //   enableConfirmation1= false
+                            enableConfirmation2 = false
                         }
                         .addOnFailureListener {
                             Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
@@ -773,12 +876,12 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
     val showDialog = remember { mutableStateOf(false) }
     val places = remember { mutableStateListOf<Place>() }
 
-    if(mainButtonState== "Confirm Starting"){
+    if (mainButtonState == "Confirm Starting") {
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha= 1f
+            distanceAlpha = 1f
         })
     }
 
@@ -805,7 +908,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if(mainButtonState== "Confirm Starting") {
+            if (mainButtonState == "Confirm Starting") {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -1000,7 +1103,8 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             Log.d("xxxx", "Database error: ${databaseError.message}")
-                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
@@ -1026,7 +1130,14 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
             SearchLocationDialog(showDialog, places) { place ->
                 // Move camera to the selected place
-                cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+                cameraPosition.move(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            place.latitude,
+                            place.longitude
+                        ), 13f
+                    )
+                )
             }
 
 
@@ -1089,7 +1200,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Starting location"
                             else {
                                 mainButtonState = "Confirm Starting"
-                              }
+                            }
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
@@ -1124,7 +1235,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    var isEditing by remember { mutableStateOf(false) }
+    val isEditing by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val viewModelFactory = DriverProfileVMFactory(context)
     val viewModel = viewModel<DriverProfileVM>(factory = viewModelFactory)
@@ -1133,7 +1244,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
     }
     val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
 
-    var sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState()
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = { Text("Profile") },
@@ -1145,7 +1256,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                                 context.startActivity(it)
                             }
                         }) {
-                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                         }
                         IconButton(onClick = {
                             showBottomSheet = true
@@ -1168,7 +1279,14 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
+                    item {
+                        Text(
+                            text = "Accounts",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                     items(viewModel.users) { user ->
                         UserProfileRow(user, viewModel.currentId == user.id) {
                             loginViewModel.loginAsUser(it)
