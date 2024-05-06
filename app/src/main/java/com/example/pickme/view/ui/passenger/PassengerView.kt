@@ -105,6 +105,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.DriverData
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
 import com.example.pickme.data.model.Place
@@ -1135,12 +1136,15 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 mainButtonState = "Confirm pick up"
                             }
                         }
-                    } else if (mainButtonState == "Confirm pick up" ) {
+                    } else if (mainButtonState == "Confirm pick up") {
 
-                        if(pickUpLatLng == targetLatLng){
-                            Toast.makeText(context, "Pick up and target locations are the same", Toast.LENGTH_LONG).show()
-                        }
-                        else {
+                        if (pickUpLatLng == targetLatLng) {
+                            Toast.makeText(
+                                context,
+                                "Pick up and target locations are the same",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
                             pickUpViewModel.setPickUpTitle(pickUpTitle)
                             pickUpViewModel.setTargetTitle(targetTitle)
 
@@ -1152,7 +1156,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                             Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
                                 .show()  //confirmation
-                          //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
+                            //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
                         }
                     }
 
@@ -1932,10 +1936,18 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     var timeRange by remember { mutableIntStateOf(0) } // Default time range is 0 hour
 
     val sheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    var showFilterBottomSheet by remember { mutableStateOf(false) }
 
-    if(tripViewModel.tripDateAndTime.value.isNotEmpty()){
-        enableConfirmation2=true
+    var showPreviewBottomSheet by remember {
+        mutableStateOf(false)
+    }
+
+    var driverId by remember {
+        mutableStateOf("empty")
+    }
+
+    if (tripViewModel.tripDateAndTime.value.isNotEmpty()) {
+        enableConfirmation2 = true
         pickedDate = tripViewModel.pickedDate.value
     }
     Column(
@@ -2230,7 +2242,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         .height(45.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        showBottomSheet = true
+                        showFilterBottomSheet = true
                     }
                 ) {
                     Icon(
@@ -2244,13 +2256,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         }
 
 
-        if (showBottomSheet) {
+        if (showFilterBottomSheet) {
             ModalBottomSheet(
                 modifier = Modifier
                     .padding(10.dp)
                     .height(360.dp),
                 onDismissRequest = {
-                    showBottomSheet = false
+                    showFilterBottomSheet = false
                 },
                 sheetState = sheetState
             ) {
@@ -2480,6 +2492,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                 IconButton(onClick = {
                                     // here now
+                                    driverId = trip["id"] as? String ?: "empty"
+                                    showPreviewBottomSheet = true
                                 }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.preview_icon),
@@ -2495,6 +2509,51 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             passengerViewModel.ShowWifiProblemDialog(context)
         }
 
+    }
+
+    if (showPreviewBottomSheet) {          // bottom sheet
+        ModalBottomSheet(
+            modifier = Modifier
+                .padding(10.dp)
+                .height(360.dp),
+            onDismissRequest = {
+                showPreviewBottomSheet = false
+            },
+            sheetState = sheetState
+        ) {
+            Text(text = "Bottom sheet")
+            Text(text= "driver id: $driverId")
+
+            var driver by remember { mutableStateOf<DriverData?>(null) }
+            val pickUpViewModel = PickUpViewModel()
+
+            if (driverId != "empty") {
+
+                LaunchedEffect(driverId) {
+                    driver = passengerViewModel.getDriverInfo(driverId)
+                }
+
+                if (driver != null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(6.dp),
+                    ) {
+                        Text(text = "First Name: ${driver?.firstName}")
+                        Text(text = "Last Name: ${driver?.lastName}")
+                        Text(text = "Phone Number: ${driver?.phoneNb}")
+                        Text(text = "Photo URL: ${driver?.photo}")
+                        Text(text = "Car Photo URL: ${driver?.carPhoto}")
+                        Text(text = "Rate: ${driver?.rate}")
+                        Text(text = "Is Verified: ${driver?.isVerified}")
+                    }
+                } else {
+                    Text(text = "No data to preview (driver object is empty)")
+                }
+            } else {
+                Text(text = "No data to preview (id is null)")   // on finish
+            }
+        }
     }
 
 
@@ -2540,7 +2599,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             pickedTime = it
             enableConfirmation2 = true
             isButtonClicked2 = true
-            tripViewModel.setTripDateAndTime( "$formattedDate, $formattedTime")
+            tripViewModel.setTripDateAndTime("$formattedDate, $formattedTime")
         }
     }
 
@@ -2942,10 +3001,13 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
-                        if(pickUpLatLng == targetLatLng){
-                            Toast.makeText(context, "Pick up and target locations are the same", Toast.LENGTH_LONG).show()
-                        }
-                        else {
+                        if (pickUpLatLng == targetLatLng) {
+                            Toast.makeText(
+                                context,
+                                "Pick up and target locations are the same",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
                             tripViewModel.setPickUpTitle(pickUpTitle)
                             tripViewModel.setTargetTitle(targetTitle)
 
@@ -3018,17 +3080,20 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-    passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
-        setPolylinePoints1(decodedPolyline)
-    }, { distance -> //
-        tripDistance = "%.2f".format(distance).toDouble()
-        distanceAlpha = 1f
-    })
 
-    passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
-        setPolylinePoints2(decodedPolyline)
-    }, { distance ->
-    })
+    if (false) {                                                                                   // remove false
+        passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
+            setPolylinePoints1(decodedPolyline)
+        }, { distance -> //
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha = 1f
+        })
+
+        passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
+            setPolylinePoints2(decodedPolyline)
+        }, { distance ->
+        })
+    }
 
     Box(
         modifier = Modifier
@@ -3152,13 +3217,6 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         }
     }
 }
-
-
-
-
-
-
-
 
 
 // not used
