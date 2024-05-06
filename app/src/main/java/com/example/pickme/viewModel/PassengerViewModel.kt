@@ -14,9 +14,15 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
+import com.example.pickme.data.model.DriverData
 import com.example.pickme.data.model.GoogleMapDTO
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.ValueEventListener
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -29,6 +35,9 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -349,6 +358,42 @@ class PassengerViewModel {
         }
         return poly
     }
+
+
+    suspend fun getDriverInfo(driverId: String,): DriverData {
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("Drivers").child(driverId)
+
+        return suspendCoroutine { continuation ->
+            myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val driverMap = dataSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                    if (driverMap != null) {
+                        val driver = DriverData(
+                            firstName = driverMap["name"] as? String ?: "",
+                            lastName = driverMap["surname"] as? String ?: "",
+                            phoneNb = driverMap["phone"] as? String ?: "",
+                            photo = driverMap["photo"] as? String ?: "",
+                            carPhoto = driverMap["carPhoto"] as? String ?: "",
+                            rate = driverMap["rate"] as? String ?: "00.0",
+                            isVerified = driverMap["verified"] as? Boolean ?: false
+                        )
+
+                        continuation.resume(driver)
+                    } else {
+                        continuation.resumeWithException(RuntimeException("Driver not found"))
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    continuation.resumeWithException(databaseError.toException())
+                }
+            })
+        }
+    }
+
+
+
 }
 
 
