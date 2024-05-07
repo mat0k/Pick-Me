@@ -31,7 +31,7 @@ class HomeScreenVM : ViewModel() {
     val pickUps: LiveData<List<PickUp>> = pickUpRepository.getLivePickUps()
     private val authRepository = AuthRepository()
     val workingHoursRange = mutableStateOf(0f..23f)
-    val radius = mutableFloatStateOf(0f)
+    val radius = mutableFloatStateOf(1f)
     private val currentLocation = mutableStateOf<LatLng?>(null)
     fun getPassengerData(id: String): LiveData<Passenger?> {
         val passengerData = MutableLiveData<Passenger?>()

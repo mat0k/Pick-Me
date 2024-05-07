@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -54,6 +55,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -230,8 +232,9 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier.padding(it),
         )
         {
-            items(filteredPickUps) {pickUp ->
-                val passenger = viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
+            items(filteredPickUps) { pickUp ->
+                val passenger =
+                    viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
 
                 }
@@ -245,8 +248,17 @@ fun HomeScreen(navController: NavHostController) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text("Working Hours")
-                    Text("From: ${LocalTime.of(viewModel.workingHoursRange.value.start.toInt(), 0).format(formatter)} To: ${LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0).format(formatter)}")
+                    Text(
+                        "Working Hours: ${
+                            LocalTime.of(
+                                viewModel.workingHoursRange.value.start.toInt(),
+                                0
+                            ).format(formatter)
+                        } - ${
+                            LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0)
+                                .format(formatter)
+                        }"
+                    )
                     RangeSlider(
                         value = viewModel.workingHoursRange.value,
                         onValueChange = { range -> viewModel.workingHoursRange.value = range },
@@ -256,14 +268,14 @@ fun HomeScreen(navController: NavHostController) {
 
                         }
                     )
-                    Text("Radius")
+                    Text(String.format(Locale.ENGLISH, "Radius: %.1f", viewModel.radius.floatValue))
                     Slider(
-                        value = viewModel.radius.value,
+                        value = viewModel.radius.floatValue,
                         onValueChange = {
-                            viewModel.radius.value = it
+                            viewModel.radius.floatValue = it
                         },
-                        valueRange = 1f..5f,
-                        steps = 5
+                        valueRange = 1f..10f,
+                        steps = 8
                     )
                 }
             }
@@ -271,7 +283,6 @@ fun HomeScreen(navController: NavHostController) {
 
     }
 }
-
 
 
 @Composable
@@ -460,7 +471,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     modifier = Modifier.weight(0.85f)
                 ) {
 
-                    Column{
+                    Column {
                         Box(                        // pick up location box
                             modifier = Modifier
                                 .padding(start = 4.dp, end = 4.dp, top = 4.dp)
@@ -1245,16 +1256,14 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
     val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
 
     val sheetState = rememberModalBottomSheetState()
+    val confirmDialog = remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = { Text("Profile") },
                 actions = {
                     if (!isEditing) {
                         IconButton(onClick = {
-                            viewModel.sharedPref.edit().clear().apply()
-                            Intent(context, MainActivity::class.java).also {
-                                context.startActivity(it)
-                            }
+                            confirmDialog.value = true
                         }) {
                             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                         }
@@ -1295,6 +1304,31 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 }
                 LoginDialog(context)
             }
+        }
+        if (confirmDialog.value) {
+            AlertDialog(
+                title = {Text("Log Out")},
+                text = {Text("Are you sure you want to log out?")},
+                onDismissRequest = { confirmDialog.value = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmDialog.value = false
+                            viewModel.sharedPref.edit().clear().apply()
+                            Intent(context, MainActivity::class.java).also {
+                                context.startActivity(it)
+                            }
+                        }
+                    ) {
+                        Text("Yes")
+                    }
+
+            },
+                dismissButton = {
+                    TextButton(onClick = { confirmDialog.value = false }) {
+                        Text("Cancel")
+                    }
+                })
         }
     }
 }
