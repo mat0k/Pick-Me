@@ -114,7 +114,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.coil.compose)
     implementation(libs.firebase.auth)
-
+    
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation (libs.android.maps.utils)

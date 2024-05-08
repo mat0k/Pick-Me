@@ -62,7 +62,8 @@ class PickUpRepository {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val pickUps = mutableListOf<PickUp>()
                 for (postSnapshot in dataSnapshot.children) {
-                    val pickUpMap = postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                    val pickUpMap =
+                        postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
                     if (pickUpMap != null) {
                         val pickUp = mapToPickUp(pickUpMap)
                         pickUps.add(pickUp)

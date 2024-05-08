@@ -230,8 +230,9 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier.padding(it),
         )
         {
-            items(filteredPickUps) {pickUp ->
-                val passenger = viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
+            items(filteredPickUps) { pickUp ->
+                val passenger =
+                    viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
 
                 }
@@ -246,7 +247,15 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text("Working Hours")
-                    Text("From: ${LocalTime.of(viewModel.workingHoursRange.value.start.toInt(), 0).format(formatter)} To: ${LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0).format(formatter)}")
+                    Text(
+                        "From: ${
+                            LocalTime.of(viewModel.workingHoursRange.value.start.toInt(), 0)
+                                .format(formatter)
+                        } To: ${
+                            LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0)
+                                .format(formatter)
+                        }"
+                    )
                     RangeSlider(
                         value = viewModel.workingHoursRange.value,
                         onValueChange = { range -> viewModel.workingHoursRange.value = range },
@@ -271,7 +280,6 @@ fun HomeScreen(navController: NavHostController) {
 
     }
 }
-
 
 
 @Composable
@@ -460,7 +468,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     modifier = Modifier.weight(0.85f)
                 ) {
 
-                    Column{
+                    Column {
                         Box(                        // pick up location box
                             modifier = Modifier
                                 .padding(start = 4.dp, end = 4.dp, top = 4.dp)
