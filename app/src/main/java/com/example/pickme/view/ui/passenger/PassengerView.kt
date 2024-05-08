@@ -55,9 +55,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +73,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -1501,7 +1504,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
     viewModel.loadProfileData()
     var isEditing by remember { mutableStateOf(false) }
     var valuesChanged by remember { mutableStateOf(false) }
-    val pickImageLauncher = rememberLauncherForActivityResult(
+    val pickImageLauncher = rememberLauncherForActivityResult( // jump
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
@@ -2516,16 +2519,19 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     if (showPreviewBottomSheet) {          // bottom sheet
         ModalBottomSheet(
             modifier = Modifier
-                .padding(10.dp)
-                .height(360.dp),
+                .padding(10.dp),
             onDismissRequest = {
                 showPreviewBottomSheet = false
             },
             sheetState = sheetState
         ) {
-           // Text(text= "driver id: $driverId")
-
             var driver by remember { mutableStateOf<DriverData?>(null) }
+            val viewModelFactory = remember {
+                ProfileViewModelFactory(context)
+            }
+            val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
+            viewModel.loadProfileData()
+
 
             if (driverId != "empty") {
 
@@ -2542,12 +2548,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                     ) {
                         // url of both images to preview:
-                        var photoUrl= driver?.photo
+                        val photoUrl= driver?.photo
                         val carPhotoUrl= driver?.carPhoto
                         // Text(text = "Photo URL: ${driver?.photo}")
                         //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
 
-                        // Placeholder for image
+
                         Box(
                             modifier = Modifier
                                 .size(100.dp)
@@ -2556,6 +2562,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             contentAlignment = Alignment.Center
                         ) {
                             // You can add your image here later
+                            AsyncImage(
+                                model = photoUrl, // Use the photoUrl directly
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .scale(1.2f)
+                            )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -2563,19 +2576,74 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = " ${driver?.firstName}", modifier = Modifier.padding(end = 8.dp))
-                            Text(text = "${driver?.lastName}")
+                            Text(text = " ${driver?.firstName} ${driver?.lastName}",
+                                 modifier = Modifier.padding(end = 8.dp),
+                                fontSize = 20.sp
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Other data
-                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge)
+                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
                         Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
                         Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
 
                         Spacer(modifier = Modifier.height(20.dp))
-                        // add the comment section here
+
+
+                        // comment section
+                        Text(text = "Comments", style = MaterialTheme.typography.headlineMedium) // Title for the comment section
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider() // Separator
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        var comment by remember { mutableStateOf("") } // State to hold the comment text
+
+                        OutlinedTextField(
+                            value = comment,
+                            onValueChange = { comment = it },
+                            label = { Text("Add new comment") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {                                 // here now
+                                val idDriver= driverId
+                                val passengerName = viewModel.name.value
+                                val message= comment
+                                val date= LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                            /*    Log.i("xxxx","driver id: $idDriver" +             // on finish
+                                        "\tpassenger name: $passengerName" +
+                                        "\tmessage: $message" +
+                                        "\tdate: $date")*/
+
+                                // Get a reference to the Firebase Database
+                                val database = FirebaseDatabase.getInstance()
+
+                                // Get a reference to the "comments" node
+                                val commentsRef = database.getReference("comments")
+
+                                // Create a new comment object
+                                val newComment = mapOf(
+                                    "DriverId" to idDriver,
+                                    "passengerName" to passengerName,
+                                    "comment" to message,
+                                    "commentDate" to date
+                                )
+
+                                // Push the new comment to the "comments" node
+                                commentsRef.push().setValue(newComment)
+                            },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Submit")
+                        }
+
+
+
                         Spacer(modifier = Modifier.height(50.dp))
                     }
                 } else {
