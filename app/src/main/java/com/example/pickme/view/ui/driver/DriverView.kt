@@ -283,7 +283,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
     val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
 
-    val passengerViewModel= PassengerViewModel()
+    val passengerViewModel = PassengerViewModel()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -468,9 +468,9 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         if (seats != 0) {
                             tripViewModel.setTripTitle(tripTitle)
                         }
-                        if(passengerViewModel.isNetworkAvailable(context)){
+                        if (passengerViewModel.isNetworkAvailable(context)) {
                             navController.navigate("mapView")
-                        }else{
+                        } else {
                             passengerViewModel.ShowWifiProblemDialog(context)
                         }
                     }
@@ -590,22 +590,23 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         var isDriverVerified by remember {
             mutableStateOf(false)
         }
-        Row(                     //verified driver      will be removed late
+        Row(
+            //verified driver      will be removed late
             modifier = Modifier
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-            ) {
+        ) {
 
-                Text(text = "Driver Verified")
-                Checkbox(
-                    checked = isDriverVerified,
-                    onCheckedChange = { isDriverVerified = it }
-                )
+            Text(text = "Driver Verified")
+            Checkbox(
+                checked = isDriverVerified,
+                onCheckedChange = { isDriverVerified = it }
+            )
         }
 
-        val database= Firebase.database
-        val myRef=database.getReference("Trips")
+        val database = Firebase.database
+        val myRef = database.getReference("Trips")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -616,7 +617,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
                 shape = RoundedCornerShape(15.dp),
-                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle!="" && seats!=0,
+                enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
                     val title = tripTitle
                     val tripSeats = seats
@@ -624,11 +625,11 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val end = destinationTitle
                     val startingLatLng = tripViewModel.tripStartLatLng.value
                     val destinationLatLng = tripViewModel.tripDestLatLng.value
-                    val date= formattedDate
-                    val time= formattedTime
+                    val date = formattedDate
+                    val time = formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
-                    val driverId= sharedPref.getString("lastUserId", null)
+                    val driverId = sharedPref.getString("lastUserId", null)
 
                     // Create a new trip object
                     val trip = mapOf(
@@ -642,15 +643,16 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "time" to time,
                         "tripDistance" to tripDistance,
                         "verified" to verified,
-                        "id"   to driverId
+                        "id" to driverId
                     )
 
                     // Add the trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT).show()
-                            isButtonClicked2= false
-                            enableConfirmation2= false
+                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
+                                .show()
+                            isButtonClicked2 = false
+                            enableConfirmation2 = false
                         }
                         .addOnFailureListener {
                             Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
@@ -772,7 +774,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if(mainButtonState== "Confirm pick up" && pickUpLatLng!= targetLatLng && false){  // remove false
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -804,7 +806,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if(mainButtonState== "Confirm Starting" && pickUpLatLng!= targetLatLng) {
+            if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -843,7 +845,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                             mainButtonState = "Set Starting location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
-                            isLoading= false
+                            isLoading = false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -887,7 +889,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
-                                isLoading= false
+                                isLoading = false
                             }
                         },
                         modifier = Modifier
@@ -916,14 +918,13 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                if(isLoading && tripDistance==0.0) {
-                    distanceAlpha= 1f
+                if (isLoading && tripDistance == 0.0) {
+                    distanceAlpha = 1f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
-                }
-                else if(tripDistance != 0.0){
-                    distanceAlpha= 1f
+                } else if (tripDistance != 0.0) {
+                    distanceAlpha = 1f
                 }
             }
         }
@@ -1010,7 +1011,8 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             Log.d("xxxx", "Database error: ${databaseError.message}")
-                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
@@ -1036,7 +1038,14 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
             SearchLocationDialog(showDialog, places) { place ->
                 // Move camera to the selected place
-                cameraPosition.move(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 13f))
+                cameraPosition.move(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(
+                            place.latitude,
+                            place.longitude
+                        ), 13f
+                    )
+                )
             }
 
 
@@ -1099,7 +1108,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Starting location"
                             else {
                                 mainButtonState = "Confirm Starting"
-                              }
+                            }
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
@@ -1186,7 +1195,14 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    item{ Text(text = "Accounts", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))}
+                    item {
+                        Text(
+                            text = "Accounts",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                     items(viewModel.users) { user ->
                         UserProfileRow(user, viewModel.currentId == user.id) {
                             loginViewModel.loginAsUser(it)

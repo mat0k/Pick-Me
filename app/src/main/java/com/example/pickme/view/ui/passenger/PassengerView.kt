@@ -2523,7 +2523,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             },
             sheetState = sheetState
         ) {
-           // Text(text= "driver id: $driverId")
+            // Text(text= "driver id: $driverId")
 
             var driver by remember { mutableStateOf<DriverData?>(null) }
 
@@ -2542,8 +2542,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                     ) {
                         // url of both images to preview:
-                        var photoUrl= driver?.photo
-                        val carPhotoUrl= driver?.carPhoto
+                        var photoUrl = driver?.photo
+                        val carPhotoUrl = driver?.carPhoto
                         // Text(text = "Photo URL: ${driver?.photo}")
                         //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
 
@@ -2563,16 +2563,28 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = " ${driver?.firstName}", modifier = Modifier.padding(end = 8.dp))
+                            Text(
+                                text = " ${driver?.firstName}",
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
                             Text(text = "${driver?.lastName}")
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Other data
-                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "Phone Number: ${driver?.phoneNb}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = "Rate: ${driver?.rate}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = "Is Verified: ${driver?.isVerified}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
 
                         Spacer(modifier = Modifier.height(20.dp))
                         // add the comment section here
