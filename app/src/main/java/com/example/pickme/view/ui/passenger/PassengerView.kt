@@ -2519,7 +2519,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     if (showPreviewBottomSheet) {          // bottom sheet
         ModalBottomSheet(
             modifier = Modifier
-                .padding(10.dp),
+                .padding(10.dp)
+                .heightIn(min = 700.dp),
             onDismissRequest = {
                 showPreviewBottomSheet = false
             },
@@ -2542,8 +2543,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(10.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .padding(10.dp),
+                           // .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
 
                     ) {
@@ -2586,65 +2587,150 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         // Other data
                         Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
-                        Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
+                       // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
                         Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(25.dp))
+                        
+                        // rate
+                        Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        HorizontalDivider() // Separator
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                         Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
+                        
+                        Spacer(modifier = Modifier.height(25.dp))
 
 
                         // comment section
-                        Text(text = "Comments", style = MaterialTheme.typography.headlineMedium) // Title for the comment section
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(2.dp))
                         HorizontalDivider() // Separator
                         Spacer(modifier = Modifier.height(8.dp))
 
                         var comment by remember { mutableStateOf("") } // State to hold the comment text
-
-                        OutlinedTextField(
-                            value = comment,
-                            onValueChange = { comment = it },
-                            label = { Text("Add new comment") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
+                        var showDialog by remember { mutableStateOf(false) } // State to control the visibility of the dialog
 
                         Button(
-                            onClick = {                                 // here now
-                                val idDriver= driverId
-                                val passengerName = viewModel.name.value
-                                val message= comment
-                                val date= LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                            /*    Log.i("xxxx","driver id: $idDriver" +             // on finish
-                                        "\tpassenger name: $passengerName" +
-                                        "\tmessage: $message" +
-                                        "\tdate: $date")*/
-
-                                // Get a reference to the Firebase Database
-                                val database = FirebaseDatabase.getInstance()
-
-                                // Get a reference to the "comments" node
-                                val commentsRef = database.getReference("comments")
-
-                                // Create a new comment object
-                                val newComment = mapOf(
-                                    "DriverId" to idDriver,
-                                    "passengerName" to passengerName,
-                                    "comment" to message,
-                                    "commentDate" to date
-                                )
-
-                                // Push the new comment to the "comments" node
-                                commentsRef.push().setValue(newComment)
-                            },
-                            modifier = Modifier.align(Alignment.End)
+                            onClick = { showDialog = true },
+                            shape = RoundedCornerShape(4.dp) // Less rounded corners
                         ) {
-                            Text("Submit")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Add a new comment")
+                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
+                                Icon(
+                                    painter = painterResource(id = R.drawable.comment),
+                                    contentDescription = "Comment Icon",
+                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Fetch comments from Firebase
+                        val comments = remember { mutableStateListOf<Map<String, String>>() }
+                        LaunchedEffect(Unit) {
+                            val database = FirebaseDatabase.getInstance()
+                            val commentsRef = database.getReference("comments")
+                            commentsRef.addValueEventListener(object : ValueEventListener {
+                                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                    comments.clear()
+                                    dataSnapshot.children.mapNotNullTo(comments) { it.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) }
+                                }
+                                override fun onCancelled(databaseError: DatabaseError) {
+                                    // Handle possible errors.
+                                }
+                            })
+                        }
+                        // Display comments in a LazyColumn
+                        LazyColumn {
+                            items(comments.reversed()) { comment ->
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color.Gray.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp))
+                                        .padding(10.dp)
+                                        .fillMaxWidth()
+                                ) {
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "${comment["passengerName"]}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "${comment["commentDate"]}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                textAlign = TextAlign.End
+                                            )
+                                        }
+                                        Text(
+                                            text = "${comment["comment"]}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                            }
                         }
 
 
 
-                        Spacer(modifier = Modifier.height(50.dp))
+
+                        Spacer(modifier = Modifier.height(100.dp))
+                        if (showDialog) {       //dialog to add comment
+                                AlertDialog(
+                                    onDismissRequest = { showDialog = false },
+                                    title = { Text("Add a new comment") },
+                                    text = {
+                                        OutlinedTextField(
+                                            value = comment,
+                                            onValueChange = { comment = it },
+                                            label = { Text("Enter your comment") }
+                                        )
+                                    },
+                                    confirmButton = {
+                                        Button(
+                                            onClick = {
+                                                if (comment.isNotBlank()) {
+                                                    // Get a reference to the Firebase Database
+                                                    val database = FirebaseDatabase.getInstance()
+
+                                                    // Get a reference to the "comments" node
+                                                    val commentsRef = database.getReference("comments")
+
+                                                    // Create a new comment object
+                                                    val newComment = mapOf(
+                                                        "DriverId" to driverId,
+                                                        "passengerName" to (viewModel.name.value+" "+viewModel.surname.value),
+                                                        "comment" to comment,
+                                                        "commentDate" to LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                    )
+
+                                                    // Push the new comment to the "comments" node
+                                                    commentsRef.push().setValue(newComment)
+                                                    comment = ""
+                                                    showDialog = false
+                                                }
+                                                else{
+                                                    Toast.makeText(context, "Please enter a comment", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        ) {
+                                            Text("Add")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showDialog = false }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                        }
                     }
                 } else {
                     Text(text = "No data to preview")
