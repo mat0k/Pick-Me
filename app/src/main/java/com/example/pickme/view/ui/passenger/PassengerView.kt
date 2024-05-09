@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,6 +47,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
@@ -93,6 +96,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -2325,23 +2329,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         )
                     }
                     Row(
-                        // minimum rating
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Text("Minimum Driver Rating: $minDriverRating")
-                        Slider(
-                            modifier = Modifier
-                                .width(200.dp),
-                            value = minDriverRating.toFloat(),
-                            onValueChange = { minDriverRating = it.toInt() },
-                            valueRange = 0f..5f, // allow rating from 0 to 5
-                            steps = 5,
-                        )
-                    }
-                    Row(
                         // minimum available seats slider
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -2358,6 +2345,32 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             steps = 5,
                         )
                     }
+                    Row(
+                        // minimum rating
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text("Minimum Driver Rating: $minDriverRating")
+                        Slider(
+                            modifier = Modifier
+                                .width(200.dp),
+                            value = minDriverRating.toFloat(),
+                            onValueChange = { minDriverRating = it.toInt() },
+                            valueRange = 0f..5f, // allow rating from 0 to 5
+                            steps = 5,
+                        )
+                        // here now
+                       /* StarRatingBar(
+                            maxStars = 5,
+                            rating = minDriverRating.toFloat(),
+                            onRatingChanged = { newRating ->
+                                minDriverRating = newRating.toInt()
+                            }
+                        )*/
+                    }
+
                 }
             }
         }
@@ -2559,7 +2572,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             modifier = Modifier
                                 .size(100.dp)
                                 .clip(CircleShape)
-                                .background(Color.Gray), // Change this to your desired color or image
+                                .background(Color.Gray), // image box
                             contentAlignment = Alignment.Center
                         ) {
                             // You can add your image here later
@@ -2571,7 +2584,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                     .scale(1.2f)
                             )
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         Row(
                             horizontalArrangement = Arrangement.Center,
@@ -2583,26 +2597,78 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         // Other data
                         Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
                        // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
                         Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
 
-                        Spacer(modifier = Modifier.height(25.dp))
-                        
+                        Spacer(modifier = Modifier.height(22.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // rate
+                        var rate by remember {
+                           mutableStateOf(0f)
+                        }
+
                         Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
                         Spacer(modifier = Modifier.height(2.dp))
                         HorizontalDivider() // Separator
                         Spacer(modifier = Modifier.height(8.dp))
 
-                         Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
-                        
+                        Text(text = "Rate: ${"%.1f".format(rate)}", style = MaterialTheme.typography.bodyLarge)
+
+                        // get the rate from firebase, adding it as fun in view model didn't work
+                        val database = FirebaseDatabase.getInstance()
+                        val ratingRef = database.getReference("rating").child(driverId)
+                        ratingRef.addValueEventListener(object : ValueEventListener {
+                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                var sum = 0.0
+                                var count = 0
+
+                                for (ratingSnapshot in dataSnapshot.children) {
+                                    val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
+                                    if (rating != null) {
+                                        sum += rating
+                                        count++
+                                    }
+                                }
+
+                                if (count > 0) {
+                                    val averageRating = sum / count
+                                    rate = averageRating.toFloat() // Update rate variable with the average rating
+                                }
+                            }
+
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                // Handle possible errors.
+                                println("Error reading ratings: ${databaseError.message}")
+                            }
+                        })
+
+
+                        // add rate button here
+                        var showRateDialog by remember { mutableStateOf(false) } // State to control the visibility of the rate dialog
+                        var userRating by remember { mutableStateOf(1f) } // State to hold the user's rating
+
+                        Button(
+                            onClick = { showRateDialog = true },
+                            shape = RoundedCornerShape(4.dp) // Less rounded corners
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Rate this driver")
+                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
+                                Icon(
+                                    painter = painterResource(id = R.drawable.rate),
+                                    contentDescription = "Rate Icon",
+                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
+                                )
+                            }
+                        }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         Spacer(modifier = Modifier.height(25.dp))
-
-
                         // comment section
                         Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
                         Spacer(modifier = Modifier.height(2.dp))
@@ -2648,7 +2714,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             items(comments.reversed()) { comment ->
                                 Box(
                                     modifier = Modifier
-                                        .background(Color.Gray.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp))
+                                        .background(
+                                            Color.Gray.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(10.dp)
+                                        )
                                         .padding(10.dp)
                                         .fillMaxWidth()
                                 ) {
@@ -2678,10 +2747,56 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             }
                         }
 
-
-
-
                         Spacer(modifier = Modifier.height(100.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                                                // Rate dialog
+                        if (showRateDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showRateDialog = false },
+                                title = { Text("Rate this driver") },
+                                text = {
+                                    Column {
+                                        Text(
+                                            text="Select a rating from 0 to 5",
+                                            modifier= Modifier.padding(bottom = 6.dp)
+                                        )
+
+                                        StarRatingBar(
+                                            maxStars = 5,
+                                            rating = 1f,
+                                            onRatingChanged = { newRating ->
+                                                userRating = newRating
+                                            }
+                                        )
+
+                                        Text(
+                                            text = "Selected rating: ${userRating}",
+                                            modifier = Modifier.padding(top = 6.dp)
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        showRateDialog = false
+                                        // Add the rating to the Firebase database
+                                        val database = FirebaseDatabase.getInstance()
+                                        val ratingRef = database.getReference("rating").child(driverId)
+                                        val key = ratingRef.push().key
+                                        if (key != null) {
+                                            ratingRef.child(key).setValue(mapOf("rate" to userRating))
+                                        }
+                                    }) {
+                                        Text("OK")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showRateDialog = false }) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            )
+                        }
                         if (showDialog) {       //dialog to add comment
                                 AlertDialog(
                                     onDismissRequest = { showDialog = false },
@@ -2789,6 +2904,45 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
         }
     }
 
+}
+
+@Composable
+fun StarRatingBar(
+    maxStars: Int = 5,
+    rating: Float,
+    onRatingChanged: (Float) -> Unit
+) {
+    val density = LocalDensity.current.density
+    val starSize = (12f * density).dp
+    val starSpacing = (0.5f * density).dp
+
+    Row(
+        modifier = Modifier.selectableGroup(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in 1..maxStars) {
+            val isSelected = i <= rating
+            val icon = if (isSelected) Icons.Filled.Star else Icons.Default.Star
+            val iconTintColor = if (isSelected) Color(0xFFFFC700) else Color(0x20FFFFFF)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTintColor,
+                modifier = Modifier
+                    .selectable(
+                        selected = isSelected,
+                        onClick = {
+                            onRatingChanged(i.toFloat())
+                        }
+                    )
+                    .width(starSize).height(starSize)
+            )
+
+            if (i < maxStars) {
+                Spacer(modifier = Modifier.width(starSpacing))
+            }
+        }
+    }
 }
 
 @Composable
