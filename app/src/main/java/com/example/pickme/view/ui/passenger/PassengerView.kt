@@ -2764,7 +2764,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                         StarRatingBar(
                                             maxStars = 5,
-                                            rating = 1f,
+                                            rating = userRating,
                                             onRatingChanged = { newRating ->
                                                 userRating = newRating
                                             }
