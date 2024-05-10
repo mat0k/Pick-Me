@@ -43,6 +43,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -118,7 +119,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.GenericTypeIndicator
 
 
 data class BottomNavigationItem(
@@ -1214,4 +1215,153 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
             }
         }
     }
+
+    
+                                        // rate and comment section
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    val driverId = viewModel.sharedPref.getString("lastUserId", null)
+    var rate by remember {
+        mutableStateOf(0f)
+    }
+    Column (
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp, top = 100.dp),
+        // .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        if(!driverId.isNullOrEmpty()) {
+            // rate
+
+
+            Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(2.dp))
+            HorizontalDivider() // Separator
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if(rate== 0f){
+                Text(
+                    text = "Rate: "
+                )
+                CircularProgressIndicator(
+                    modifier = Modifier.size(25.dp),
+                )
+            }
+            else {
+                Text(
+                    text = "Rate: ${"%.1f".format(rate)}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            // get the rate from firebase, adding it as fun in view model didn't work
+            val database = FirebaseDatabase.getInstance()
+            driverId?.let { database.getReference("rating").child(it) }
+                ?.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        var sum = 0.0
+                        var count = 0
+
+                        for (ratingSnapshot in dataSnapshot.children) {
+                            val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
+                            if (rating != null) {
+                                sum += rating
+                                count++
+                            }
+                        }
+
+                        if (count > 0) {
+                            val averageRating = sum / count
+                            rate =
+                                averageRating.toFloat() // Update rate variable with the average rating
+                        }
+                    }
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        // Handle possible errors.
+                        println("Error reading ratings: ${databaseError.message}")
+                    }
+                })
+
+            Spacer(modifier = Modifier.height(25.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // comments section
+
+            Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(2.dp))
+            HorizontalDivider() // Separator
+
+            Spacer(modifier = Modifier.height(10.dp))
+            // Fetch comments from Firebase
+            val comments = remember { mutableStateListOf<Map<String, String>>() }
+            LaunchedEffect(Unit) {
+                val commentsRef = database.getReference("comments")
+                commentsRef.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        comments.clear()
+                        dataSnapshot.children.mapNotNullTo(comments) {
+                            it.getValue(object : GenericTypeIndicator<Map<String, String>>() {})
+                        }
+                    }
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        // Handle possible errors.
+                    }
+                })
+            }
+            // Display comments in a LazyColumn
+            LazyColumn {
+                items(comments.reversed()) { comment ->
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                Color.Gray.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(10.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "${comment["passengerName"]}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "${comment["commentDate"]}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                            Text(
+                                text = "${comment["comment"]}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 80.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+               // Text(text = "driver id : $driverId")      // on finish
+                CircularProgressIndicator(
+                    modifier = Modifier.size(60.dp),
+                )
+            }
+        }
+    }
+
 }
