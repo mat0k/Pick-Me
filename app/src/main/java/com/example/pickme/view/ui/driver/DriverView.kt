@@ -1,5 +1,6 @@
 package com.example.pickme.view.ui.driver
 
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +45,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,9 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -125,7 +126,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
-import java.util.Locale
 
 
 data class BottomNavigationItem(
@@ -287,7 +287,6 @@ fun HomeScreen(navController: NavHostController) {
     }
 }
 
-
 @Composable
 fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
     Card(
@@ -394,6 +393,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     if (startingTitle != "Starting point") {
         enableConfirmation1 = true
     }
+
+    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
 
     val passengerViewModel = PassengerViewModel()
     Column(
@@ -706,9 +707,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-
-
-            ) {
+        ) {
 
             Text(text = "Driver Verified")
             Checkbox(
@@ -741,7 +740,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     val time = formattedTime
                     val tripDistance = tripViewModel.distance.value
                     val verified = isDriverVerified
-                    val rate = 4
+                    val driverId = sharedPref.getString("lastUserId", null)
 
                     // Create a new trip object
                     val trip = mapOf(
@@ -755,7 +754,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "time" to time,
                         "tripDistance" to tripDistance,
                         "verified" to verified,
-                        "rate" to rate
+                        "id" to driverId
                     )
 
                     // Add the trip to the database
@@ -763,13 +762,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
                                 .show()
-                            //    tripViewModel.tripTitle.value= ""
-                            //    tripTitle= ""
-                            //    tripViewModel.seats.value= 0
-                            //    seats= 0
-                            //  isButtonClicked1= false
                             isButtonClicked2 = false
-                            //   enableConfirmation1= false
                             enableConfirmation2 = false
                         }
                         .addOnFailureListener {
@@ -828,7 +821,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             enableConfirmation2 = true
             isButtonClicked2 = true
             val dateAndTimeField = "$formattedDate, $formattedTime"
-            tripViewModel.setDateAndTime(dateAndTimeField)
+            tripViewModel.setTripDateAndTime(dateAndTimeField)
         }
     }
 
@@ -890,12 +883,14 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
     val showDialog = remember { mutableStateOf(false) }
     val places = remember { mutableStateListOf<Place>() }
 
-    if (mainButtonState == "Confirm Starting") {
+    var isLoading by remember { mutableStateOf(false) }
+
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
+        isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha = 1f
         })
     }
 
@@ -922,7 +917,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm Starting") {
+            if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -961,6 +956,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                             mainButtonState = "Set Starting location"
                             tripDistance = 0.0
                             distanceAlpha = 0.5f
+                            isLoading = false
                         },
                         modifier = Modifier
                             .weight(0.1f)
@@ -1004,6 +1000,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 mainButtonState = "Set Target location"
                                 tripDistance = 0.0
                                 distanceAlpha = 0.5f
+                                isLoading = false
                             }
                         },
                         modifier = Modifier
@@ -1018,7 +1015,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
 
             }
-            Row(
+            Row(                                // distance row
                 modifier = Modifier
                     .alpha(distanceAlpha)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
@@ -1032,6 +1029,14 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                if (isLoading && tripDistance == 0.0) {
+                    distanceAlpha = 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                } else if (tripDistance != 0.0) {
+                    distanceAlpha = 1f
+                }
             }
         }
         // center marker
@@ -1218,17 +1223,25 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     } else if (mainButtonState == "Confirm Starting") {
 
-                        tripViewModel.setPickUpTitle(pickUpTitle)
-                        tripViewModel.setTargetTitle(targetTitle)
+                        if (pickUpLatLng == targetLatLng) {
+                            Toast.makeText(
+                                context,
+                                "Pick up and target locations are the same",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            tripViewModel.setPickUpTitle(pickUpTitle)
+                            tripViewModel.setTargetTitle(targetTitle)
 
-                        tripViewModel.setPickUpLatLng(pickUpLatLng)
-                        tripViewModel.setTargetLatLng(targetLatLng)
+                            tripViewModel.setPickUpLatLng(pickUpLatLng)
+                            tripViewModel.setTargetLatLng(targetLatLng)
 
-                        tripViewModel.setDistance(tripDistance)
-                        navController.navigate("setTrips")
+                            tripViewModel.setDistance(tripDistance)
+                            navController.navigate("setTrips")
 
-                        Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                            .show()  //confirmation
+                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                .show()  //confirmation
+                        }
                     }
 
                 }) {
@@ -1306,6 +1319,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     }
                 }
                 LoginDialog(context)
+                Spacer(modifier = Modifier.height(25.dp))
             }
         }
         if (confirmDialog.value) {

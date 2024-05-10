@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
 
 class PickUpViewModel : ViewModel() {
+
+    // data for pick up
     val pickUpTitle: MutableState<String> = mutableStateOf("")
     val targetTitle: MutableState<String> = mutableStateOf("")
 
@@ -16,6 +18,7 @@ class PickUpViewModel : ViewModel() {
 
     val dateAndTime: MutableState<String> = mutableStateOf("")
 
+    // data for preview pick up
     val prevPickUpTitle:   MutableState<String> = mutableStateOf("")
     val prevTargetTitle:   MutableState<String> = mutableStateOf("")
     val prevPickUPLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(0.0,0.0))
