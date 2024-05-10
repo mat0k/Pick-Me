@@ -166,6 +166,7 @@ class RegisterViewModel : ViewModel() {
         if (role.intValue == 0) {
             viewModelScope.launch {
                 registerPassenger(context)
+
             }
         } else {
             viewModelScope.launch {

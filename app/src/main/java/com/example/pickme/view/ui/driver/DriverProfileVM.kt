@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.driver
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.pickme.data.model.User
@@ -16,10 +17,10 @@ class DriverProfileVMFactory(private val context: Context): ViewModelProvider.Fa
     }
 }
 class DriverProfileVM(val context: Context): ViewModel() {
-    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val sharedPref: SharedPreferences = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val currentId = sharedPref.getString("lastUserId", "") ?: ""
 
-    val userDatabaseHelper = UserDatabaseHelper(context)
+    private val userDatabaseHelper = UserDatabaseHelper(context)
     val users: List<User> = userDatabaseHelper.getAllUsers()
 
 }

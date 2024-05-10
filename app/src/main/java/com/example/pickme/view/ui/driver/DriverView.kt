@@ -13,6 +13,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,16 +30,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,15 +54,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -86,6 +94,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.Passenger
+import com.example.pickme.data.model.PickUp
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.view.ui.passenger.SearchLocationDialog
 import com.example.pickme.view.ui.login.LoginViewModel
@@ -119,6 +129,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
+import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
 
 
@@ -196,19 +207,125 @@ class DriverView : ComponentActivity() {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Home screen",
-            fontSize = 20.sp
+    val showBottomSheet = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val viewModelFactory = remember { HomeScreenVMFactory(context) }
+    val viewModel = viewModel<HomeScreenVM>(factory = viewModelFactory)
+    val pickUps = viewModel.pickUps.observeAsState(initial = emptyList())
+    val filteredPickUps = viewModel.filterPickUps(context, pickUps.value)
+    val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(title = {
+                Text("Home")
+            },
+                actions = {
+                    IconButton(onClick = {
+                        showBottomSheet.value = true
+                    }) {
+                        Icon(Icons.Filled.FilterAlt, contentDescription = "Filter")
+                    }
+                }
+            )
+        }
+    ) { it ->
+        LazyColumn(
+            modifier = Modifier.padding(it),
         )
+        {
+            items(filteredPickUps) { pickUp ->
+                val passenger =
+                    viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
+                PickUpCard(pickUp, passenger) {
+
+                }
+            }
+        }
+        if (showBottomSheet.value) {
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = { showBottomSheet.value = false }
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        "Working Hours: ${
+                            LocalTime.of(
+                                viewModel.workingHoursRange.value.start.toInt(),
+                                0
+                            ).format(formatter)
+                        } - ${
+                            LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0)
+                                .format(formatter)
+                        }"
+                    )
+                    RangeSlider(
+                        value = viewModel.workingHoursRange.value,
+                        onValueChange = { range -> viewModel.workingHoursRange.value = range },
+                        valueRange = 0f..23f,
+                        steps = 24,
+                        onValueChangeFinished = {
+                            viewModel.saveFilters(context)
+                        }
+                    )
+                    Text(String.format(Locale.ENGLISH, "Radius: %.1f km", viewModel.radius.floatValue))
+                    Slider(
+                        value = viewModel.radius.floatValue,
+                        onValueChange = {
+                            viewModel.radius.floatValue = it
+                            viewModel.saveFilters(context)
+                        },
+                        valueRange = 1f..10f,
+                        steps = 8
+                    )
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(onClick = onClick), // Moved .clickable to Card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = pickUp.dateAndTime,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Start: ${pickUp.pickUpTitle}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Destination: ${pickUp.targetTitle}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Distance: ${pickUp.distance} km",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+            Text(
+                text = "Passenger: ${passenger?.name} ${passenger?.surname}",
+                style = MaterialTheme.typography.bodyMedium
+            ) // Default text style
+        }
     }
 }
 
@@ -363,9 +480,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     modifier = Modifier.weight(0.85f)
                 ) {
 
-                    Column(
-                        //   modifier = Modifier.padding(16.dp)
-                    ) {
+                    Column {
                         Box(                        // pick up location box
                             modifier = Modifier
                                 .padding(start = 4.dp, end = 4.dp, top = 4.dp)
@@ -647,7 +762,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "id" to driverId
                     )
 
-                    // Add the trip to the database
+                    // Add trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
@@ -1152,7 +1267,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    var isEditing by remember { mutableStateOf(false) }
+    val isEditing by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val viewModelFactory = DriverProfileVMFactory(context)
     val viewModel = viewModel<DriverProfileVM>(factory = viewModelFactory)
@@ -1161,19 +1276,17 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
     }
     val loginViewModel = viewModel<LoginViewModel>(factory = loginViewModelFactory)
 
-    var sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState()
+    val confirmDialog = remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = { Text("Profile") },
                 actions = {
                     if (!isEditing) {
                         IconButton(onClick = {
-                            viewModel.sharedPref.edit().clear().apply()
-                            Intent(context, MainActivity::class.java).also {
-                                context.startActivity(it)
-                            }
+                            confirmDialog.value = true
                         }) {
-                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                         }
                         IconButton(onClick = {
                             showBottomSheet = true
@@ -1214,9 +1327,34 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 Spacer(modifier = Modifier.height(25.dp))
             }
         }
+        if (confirmDialog.value) {
+            AlertDialog(
+                title = {Text("Log Out")},
+                text = {Text("Are you sure you want to log out?")},
+                onDismissRequest = { confirmDialog.value = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmDialog.value = false
+                            viewModel.sharedPref.edit().clear().apply()
+                            Intent(context, MainActivity::class.java).also {
+                                context.startActivity(it)
+                            }
+                        }
+                    ) {
+                        Text("Yes")
+                    }
+
+            },
+                dismissButton = {
+                    TextButton(onClick = { confirmDialog.value = false }) {
+                        Text("Cancel")
+                    }
+                })
+        }
     }
 
-    
+
                                         // rate and comment section
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     val driverId = viewModel.sharedPref.getString("lastUserId", null)

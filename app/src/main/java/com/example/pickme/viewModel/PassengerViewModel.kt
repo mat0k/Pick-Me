@@ -66,9 +66,8 @@ class PassengerViewModel {
         val distance = earthRadius * c
 
         // Format the distance to two decimal places
-        return String.format("%.2f", distance).toDouble()}
-
-
+        return String.format("%.2f", distance).toDouble()
+    }
 
 
     fun reverseGeocode(latLng: LatLng, context: Context): String? {
@@ -83,7 +82,8 @@ class PassengerViewModel {
                 val address = addresses[0]
                 val addressLine = address.getAddressLine(0) ?: ""
                 val streetName = address.thoroughfare ?: ""
-                val fullAddress = if (streetName.isNotEmpty()) "$streetName, $addressLine" else addressLine
+                val fullAddress =
+                    if (streetName.isNotEmpty()) "$streetName, $addressLine" else addressLine
 
                 // Split the full address by commas
                 val parts = fullAddress.split(",")
@@ -119,17 +119,29 @@ class PassengerViewModel {
     }
 
 
-
-
     fun getCurrentLocation(
         context: Context,
         onLocationReceived: (Double, Double) -> Unit,
         function: () -> Unit
     ) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             // Request location permissions
-            ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                0
+            )
         } else {
             // Permissions already granted, get the location
             fusedLocationClient.lastLocation
@@ -138,11 +150,10 @@ class PassengerViewModel {
                     //  Log.i("xxxx", "Location: ${location?.latitude}, ${location?.longitude}")
                     location?.let {
                         onLocationReceived(it.latitude, it.longitude)
-                    }?: WhenItIsNull(context)
+                    } ?: WhenItIsNull(context)
                 }
         }
     }
-
 
 
     fun isNetworkAvailable(context: Context): Boolean {
@@ -171,7 +182,7 @@ class PassengerViewModel {
     }
 
 
-    fun ShowWifiProblemDialog(context: Context){
+    fun ShowWifiProblemDialog(context: Context) {
         val dialogBuilder = AlertDialog.Builder(context)
         dialogBuilder.apply {
             setTitle("Wifi Information")
@@ -185,17 +196,16 @@ class PassengerViewModel {
     }
 
 
-
     @Composable
     fun InfoDialog(pickUpViewModel: PickUpViewModel, context: Context) {
 
-        val text= "Pickup Title: ${pickUpViewModel.pickUpTitle.value} \n" +
+        val text = "Pickup Title: ${pickUpViewModel.pickUpTitle.value} \n" +
                 "Target Title: ${pickUpViewModel.targetTitle.value} \n" +
                 "Pickup Latitude: ${pickUpViewModel.pickUpLatLng.value.latitude}\n" +
                 "Pickup Longitude: ${pickUpViewModel.pickUpLatLng.value.longitude}\n" +
                 "Target Latitude: ${pickUpViewModel.targetLatLng.value.latitude}\n" +
                 "Target Longitude: ${pickUpViewModel.targetLatLng.value.longitude}\n" +
-                "Distance: ${pickUpViewModel.distance.value} Km\n"+
+                "Distance: ${pickUpViewModel.distance.value} Km\n" +
                 "Date and Time: ${pickUpViewModel.dateAndTime.value}"
 
         val dialogBuilder = AlertDialog.Builder(context)
@@ -212,14 +222,22 @@ class PassengerViewModel {
 
 
     fun filterTrips(
-        trips: List<Map<String, Any>>, isDriverVerified: Boolean, formattedDate: String, minRating: Int, seats: Int, searchRadius: Int, time: String ,timeRange: Int, tripViewModel: TripViewModel
+        trips: List<Map<String, Any>>,
+        isDriverVerified: Boolean,
+        formattedDate: String,
+        minRating: Int,
+        seats: Int,
+        searchRadius: Int,
+        time: String,
+        timeRange: Int,
+        tripViewModel: TripViewModel
     ): List<Map<String, Any>> {
         // Convert the input time string to a LocalTime object
         val formatter = DateTimeFormatter.ofPattern("hh:mm a")
         val inputTime = LocalTime.parse(time, formatter)
-        val startLatLng= tripViewModel.tripStartLatLng.value
+        val startLatLng = tripViewModel.tripStartLatLng.value
         //val targetLatLng= tripViewModel.tripDestLatLng.value
-        val passViewModel= PassengerViewModel()
+        val passViewModel = PassengerViewModel()
 
         return trips.filter { trip ->
             val tripDate = trip["date"] as? String ?: ""
@@ -249,7 +267,7 @@ class PassengerViewModel {
                     && (tripDate == formattedDate)
                     && (driverRating >= minRating)
                     && (tripSeats >= seats)
-                    && (timeRange == 0 || (minutesDiff in -timeRange*60..timeRange*60)) // Convert timeRange from hours to minutes
+                    && (timeRange == 0 || (minutesDiff in -timeRange * 60..timeRange * 60)) // Convert timeRange from hours to minutes
                     && (searchRadius == 6 || distance <= searchRadius)
         }
     }
@@ -289,7 +307,8 @@ class PassengerViewModel {
                 val path = ArrayList<LatLng>()
 
                 for (i in 0 until respObj.routes[0].legs[0].steps.size) {
-                    val decodedPoints = decodePolyline(respObj.routes[0].legs[0].steps[i].polyline.points)
+                    val decodedPoints =
+                        decodePolyline(respObj.routes[0].legs[0].steps[i].polyline.points)
                     path.addAll(decodedPoints)
                 }
 
@@ -302,7 +321,7 @@ class PassengerViewModel {
                 path
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.i("xxxx","error  $e")
+                Log.i("xxxx", "error  $e")
                 emptyList<LatLng>()
             }
 
@@ -319,9 +338,6 @@ class PassengerViewModel {
         }
         return distance
     }
-
-
-
 
 
     fun decodePolyline(encoded: String): List<LatLng> {
@@ -353,7 +369,7 @@ class PassengerViewModel {
             val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
             lng += dlng
 
-            val latLng = LatLng((lat.toDouble() / 1E5),(lng.toDouble() / 1E5))
+            val latLng = LatLng((lat.toDouble() / 1E5), (lng.toDouble() / 1E5))
             poly.add(latLng)
         }
         return poly

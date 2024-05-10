@@ -4,6 +4,7 @@ import OTPViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
@@ -55,6 +58,7 @@ import com.example.pickme.R
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.view.ui.driver.DriverView
 import com.example.pickme.view.ui.passenger.PassengerView
+import com.example.pickme.view.ui.passenger.UserProfileRow
 
 class LoginView : ComponentActivity() {
     private lateinit var registerViewModel: RegisterViewModel
@@ -98,6 +102,8 @@ fun LoginScreen(navController: NavController) {
     val viewModelFactory = remember { LoginViewModelFactory(context) }
     val viewModel = viewModel<LoginViewModel>(factory = viewModelFactory)
     var loggingIn by remember { mutableStateOf(false) }
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val networkInfo = connectivityManager.activeNetworkInfo
 
     LaunchedEffect(key1 = true) {
         viewModel.loginResult.collect { loginResult ->
@@ -120,6 +126,7 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if(networkInfo != null && networkInfo.isConnected) {
         Text(
             text = stringResource(R.string.login),
             fontSize = 36.sp,
@@ -197,8 +204,20 @@ fun LoginScreen(navController: NavController) {
             if (loggingIn) {
                 CircularProgressIndicator()
             }
+        }}
+        else {
+            Text("No internet connection", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
         }
-
+        if(viewModel.loggedInUsers.isNotEmpty()) {
+           Text("Logged in users:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+           LazyColumn {
+               items(viewModel.loggedInUsers) { user ->
+                   UserProfileRow(user = user, selected = false) {
+                       viewModel.loginAsUser(user)
+                   }
+               }
+           }
+        }
     }
 }
 
@@ -434,18 +453,33 @@ fun OTP(
         if (otpViewModel.isLoading.value) {
             CircularProgressIndicator()
         } else {
-            Button(
-                onClick = {
-                    otpViewModel.verifyOTP { verificationSuccessful ->
-                        if (verificationSuccessful) {
-                            registerViewModel.register(activity)
-                            navController.navigate("login")
+            Row {
+                Button(
+                    onClick = {
+                        otpViewModel.authenticate(
+                            "+961 ${registerViewModel.phoneNumber.value}",
+                            activity
+                        ) {
                         }
-                    }
-                },
-                enabled = otpViewModel.otp.value.length == 6
-            ) {
-                Text("Verify")
+                    },
+                    enabled = otpViewModel.isResendEnabled.value
+                ) {
+                    Text("Resend OTP")
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(
+                    onClick = {
+                        otpViewModel.verifyOTP { verificationSuccessful ->
+                            if (verificationSuccessful) {
+                                registerViewModel.register(activity)
+                                navController.navigate("login")
+                            }
+                        }
+                    },
+                    enabled = otpViewModel.otp.value.length == 6
+                ) {
+                    Text("Verify")
+                }
             }
         }
     }

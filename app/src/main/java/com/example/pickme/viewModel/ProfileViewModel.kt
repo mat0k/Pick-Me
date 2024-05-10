@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.User
-import com.example.pickme.data.model.UserDatabaseHelper
 import com.example.pickme.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
@@ -35,7 +34,6 @@ class ProfileViewModel(val context: Context) : ViewModel() {
     var photoChanged = mutableStateOf(false)
     private var newPhotoUrl = mutableStateOf("")
     private val authRepository = AuthRepository()
-    val users = MutableLiveData<List<User>>()
     val currentPassengerId = sharedPref.getString("lastUserId", "") ?: ""
 
     fun saveProfileData() {
@@ -60,8 +58,7 @@ class ProfileViewModel(val context: Context) : ViewModel() {
 
     fun loadProfileData() {
         viewModelScope.launch {
-            val id = sharedPref.getString("lastUserId", "") ?: ""
-            val passenger = authRepository.getPassengerData(id)
+            val passenger = authRepository.getPassengerData(currentPassengerId)
             if (passenger != null) {
                 name.value = passenger.name
                 surname.value = passenger.surname

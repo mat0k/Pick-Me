@@ -36,6 +36,7 @@ class LoginViewModel(private val context: Context) : ViewModel() {
         private set
     var password by mutableStateOf("")
     var role by mutableIntStateOf(0)
+    val loggedInUsers = userDatabaseHelper.getAllUsers()
     val loginResult = MutableStateFlow<Boolean?>(null)
     fun inputsFilled(): Boolean {
         return phoneNumber.isNotEmpty() && password.isNotEmpty()

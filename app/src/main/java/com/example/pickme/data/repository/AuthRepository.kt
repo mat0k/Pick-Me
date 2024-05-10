@@ -7,7 +7,9 @@ import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
+import com.onesignal.OneSignal
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -16,7 +18,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class AuthRepository() {
+class AuthRepository {
     private val database = FirebaseDatabase.getInstance()
 
     private fun hashPassword(password: String): String {
@@ -34,17 +36,18 @@ class AuthRepository() {
                 return Result.failure(Exception("A passenger account with this phone number already exists."))
             }
         }
-
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
         val passengerObject = mapOf(
-            "id" to myRef.push().key,
+            "id" to uuid,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to hashPassword(passenger.password),
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber,
+            "token" to ""
         )
-        myRef.push().setValue(passengerObject)
         return Result.success(Unit)
     }
 
@@ -55,15 +58,14 @@ class AuthRepository() {
         for (dataSnapshot in data.children) {
             val passenger = dataSnapshot.getValue(Passenger::class.java)
             if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
+
                 val user = User(
                     id = dataSnapshot.key ?: "",
                     role = 0, // Assuming role 0 is for passengers
                     photoUrl = passenger.photoUrl,
                     firstName = passenger.name,
-                    lastName = passenger.surname
+                    lastName = passenger.surname,
                 )
-                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
-                user.token = tokenResult?.token
                 return Result.success(user)
             }
         }
@@ -77,16 +79,16 @@ class AuthRepository() {
         for (dataSnapshot in data.children) {
             val driver = dataSnapshot.getValue(Driver::class.java)
             if (driver?.phone == phone && driver.password == hashPassword(password)) {
+                // Get the OneSignal user ID
+                OneSignal.User.pushSubscription.id
+
                 val user = User(
                     id = dataSnapshot.key ?: "",
                     role = 1, // Assuming role 1 is for drivers
                     photoUrl = driver.photo,
                     firstName = driver.name,
-                    lastName = driver.surname
+                    lastName = driver.surname,
                 )
-                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
-                user.token = tokenResult?.token
-                Log.d("AuthRepository", "loginAsDriver: $user")
                 return Result.success(user)
             }
         }
@@ -120,8 +122,10 @@ class AuthRepository() {
                 return Result.failure(Exception("A driver account with this phone number already exists."))
             }
         }
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
         val driverObject = mapOf(
-            "id" to myRef.push().key,
+            "id" to uuid,
             "name" to driver.name,
             "surname" to driver.surname,
             "password" to hashPassword(driver.password),
@@ -131,21 +135,25 @@ class AuthRepository() {
             "photo" to driver.photo,
             "driverLicense" to driver.driverLicense,
             "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
+            "token" to ""
         )
-        myRef.push().setValue(driverObject)
+        myRef.child(uuid).setValue(driverObject)
         return Result.success(Unit)
     }
 
     suspend fun updatePassenger(passenger: Passenger): Result<Unit> {
-        val myRef = database.getReference("Passengers").child(passenger.id)
+        val uuid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
+        val myRef = database.getReference("Passengers").child(uuid)
         val passengerObject = mapOf(
-            "id" to passenger.id,
+            "id" to uuid,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to passenger.password,
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
-            "emergencyNumber" to passenger.emergencyNumber
+            "emergencyNumber" to passenger.emergencyNumber,
+            "token" to passenger.token
         )
         myRef.updateChildren(passengerObject).await()
         return Result.success(Unit)
@@ -177,4 +185,5 @@ class AuthRepository() {
         val data = myRef.get().await()
         return data.getValue(Passenger::class.java)
     }
+
 }

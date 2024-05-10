@@ -8,5 +8,6 @@ data class Passenger(
    val phone: String = "",
    val photoUrl: String = "",
    val emergencyNumber: String = "",
-   val role: Int = 0
+   val role: Int = 0,
+   val token: String? = null
 )
