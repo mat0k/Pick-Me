@@ -3004,52 +3004,13 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             }
                         })
 
-
-                        // add rate button here
-                        var showRateDialog by remember { mutableStateOf(false) } // State to control the visibility of the rate dialog
-                        var userRating by remember { mutableStateOf(1f) } // State to hold the user's rating
-
-                        Button(
-                            onClick = { showRateDialog = true },
-                            shape = RoundedCornerShape(4.dp) // Less rounded corners
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Rate this driver")
-                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
-                                Icon(
-                                    painter = painterResource(id = R.drawable.rate),
-                                    contentDescription = "Rate Icon",
-                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
-                                )
-                            }
-                        }
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         Spacer(modifier = Modifier.height(25.dp))
-                        // comment section
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        // comments section
+
                         Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
                         Spacer(modifier = Modifier.height(2.dp))
                         HorizontalDivider() // Separator
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        var comment by remember { mutableStateOf("") } // State to hold the comment text
-                        var showDialog by remember { mutableStateOf(false) } // State to control the visibility of the dialog
-
-                        Button(
-                            onClick = { showDialog = true },
-                            shape = RoundedCornerShape(4.dp) // Less rounded corners
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Add a new comment")
-                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
-                                Icon(
-                                    painter = painterResource(id = R.drawable.comment),
-                                    contentDescription = "Comment Icon",
-                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
                         // Fetch comments from Firebase
@@ -3108,102 +3069,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         Spacer(modifier = Modifier.height(100.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                                                // Rate dialog
-                        if (showRateDialog) {
-                            AlertDialog(
-                                onDismissRequest = { showRateDialog = false },
-                                title = { Text("Rate this driver") },
-                                text = {
-                                    Column {
-                                        Text(
-                                            text="Select a rating from 0 to 5",
-                                            modifier= Modifier.padding(bottom = 6.dp)
-                                        )
-
-                                        StarRatingBar(
-                                            maxStars = 5,
-                                            rating = userRating,
-                                            onRatingChanged = { newRating ->
-                                                userRating = newRating
-                                            }
-                                        )
-
-                                        Text(
-                                            text = "Selected rating: ${userRating}",
-                                            modifier = Modifier.padding(top = 6.dp)
-                                        )
-                                    }
-                                },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        showRateDialog = false
-                                        // Add the rating to the Firebase database
-                                        val database = FirebaseDatabase.getInstance()
-                                        val ratingRef = database.getReference("rating").child(driverId)
-                                        val key = ratingRef.push().key
-                                        if (key != null) {
-                                            ratingRef.child(key).setValue(mapOf("rate" to userRating))
-                                        }
-                                    }) {
-                                        Text("OK")
-                                    }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showRateDialog = false }) {
-                                        Text("Cancel")
-                                    }
-                                }
-                            )
-                        }
-                        if (showDialog) {       //dialog to add comment
-                                AlertDialog(
-                                    onDismissRequest = { showDialog = false },
-                                    title = { Text("Add a new comment") },
-                                    text = {
-                                        OutlinedTextField(
-                                            value = comment,
-                                            onValueChange = { comment = it },
-                                            label = { Text("Enter your comment") }
-                                        )
-                                    },
-                                    confirmButton = {
-                                        Button(
-                                            onClick = {
-                                                if (comment.isNotBlank()) {
-                                                    // Get a reference to the Firebase Database
-                                                    val database = FirebaseDatabase.getInstance()
-
-                                                    // Get a reference to the "comments" node
-                                                    val commentsRef = database.getReference("comments")
-
-                                                    // Create a new comment object
-                                                    val newComment = mapOf(
-                                                        "DriverId" to driverId,
-                                                        "passengerName" to (viewModel.name.value+" "+viewModel.surname.value),
-                                                        "comment" to comment,
-                                                        "commentDate" to LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                                                    )
-
-                                                    // Push the new comment to the "comments" node
-                                                    commentsRef.push().setValue(newComment)
-                                                    comment = ""
-                                                    showDialog = false
-                                                }
-                                                else{
-                                                    Toast.makeText(context, "Please enter a comment", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        ) {
-                                            Text("Add")
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(onClick = { showDialog = false }) {
-                                            Text("Cancel")
-                                        }
-                                    }
-                                )
-                        }
                     }
                 } else {
                     Text(text = "No data to preview")
