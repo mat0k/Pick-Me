@@ -36,23 +36,29 @@ class PickUpRepository {
         )
         myRef.child(pickUpObject["id"] as String).setValue(pickUpObject)
     }
-
     private fun mapToPickUp(map: Map<String, Any>): PickUp {
-        val pickUpLatLngMap = map["pickUpLatLng"] as Map<String, Double>
-        val targetLatLngMap = map["targetLatLng"] as Map<String, Double>
+        val pickUpLatLngMap = map["pickUpLatLng"] as Map<String, Any>
+        val targetLatLngMap = map["targetLatLng"] as Map<String, Any>
+
+        val pickUpLat = (pickUpLatLngMap["latitude"] as Number).toDouble()
+        val pickUpLng = (pickUpLatLngMap["longitude"] as Number).toDouble()
+
+        val targetLat = (targetLatLngMap["latitude"] as Number).toDouble()
+        val targetLng = (targetLatLngMap["longitude"] as Number).toDouble()
+
+        val distance = (map["distance"] as Number).toDouble()
 
         return PickUp(
             id = map["id"] as String,
             passengerId = map["passengerId"] as String,
             pickUpTitle = map["pickUpTitle"] as String,
             targetTitle = map["targetTitle"] as String,
-            pickUpLatLng = LatLng(pickUpLatLngMap["latitude"]!!, pickUpLatLngMap["longitude"]!!),
-            targetLatLng = LatLng(targetLatLngMap["latitude"]!!, targetLatLngMap["longitude"]!!),
-            distance = map["distance"] as Double,
+            pickUpLatLng = LatLng(pickUpLat, pickUpLng),
+            targetLatLng = LatLng(targetLat, targetLng),
+            distance = distance,
             dateAndTime = map["dateAndTime"] as String
         )
     }
-
 
     fun getLivePickUps(): LiveData<List<PickUp>> {
         val myRef = database.getReference("PickUps")

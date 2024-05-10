@@ -760,7 +760,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         "id" to driverId
                     )
 
-                    // Add the trip to the database
+                    // Add trip to the database
                     myRef.push().setValue(trip)
                         .addOnSuccessListener {
                             Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
