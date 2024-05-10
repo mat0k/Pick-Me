@@ -1651,13 +1651,14 @@ fun PickUpPreview(
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-
-    passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
-        setPolylinePoints(decodedPolyline)
-    }, { distance ->
-        tripDistance = "%.2f".format(distance).toDouble()
-        distanceAlpha = 0.9f
-    })
+    if(false) {
+        passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+            setPolylinePoints(decodedPolyline)
+        }, { distance ->
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha = 0.9f
+        })
+    }
 
     val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
     val zoomLevel = when {
@@ -2267,6 +2268,7 @@ fun SearchScreen(navController: NavHostController, tripViewModel: TripViewModel)
 
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
@@ -2731,24 +2733,24 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             steps = 5,
                         )
                     }
-                  /*  Row(                      // don't filter according to rate
-                        // minimum rating
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Text("Minimum Driver Rating: $minDriverRating")
-                        Slider(
-                            modifier = Modifier
-                                .width(200.dp),
-                            value = minDriverRating.toFloat(),
-                            onValueChange = { minDriverRating = it.toInt() },
-                            valueRange = 0f..5f, // allow rating from 0 to 5
-                            steps = 5,
-                        )
+                    /*  Row(                      // don't filter according to rate
+                          // minimum rating
+                          modifier = Modifier
+                              .fillMaxWidth(),
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.Center,
+                      ) {
+                          Text("Minimum Driver Rating: $minDriverRating")
+                          Slider(
+                              modifier = Modifier
+                                  .width(200.dp),
+                              value = minDriverRating.toFloat(),
+                              onValueChange = { minDriverRating = it.toInt() },
+                              valueRange = 0f..5f, // allow rating from 0 to 5
+                              steps = 5,
+                          )
 
-                       *//* StarRatingBar(
+                         *//* StarRatingBar(
                             maxStars = 5,
                             rating = minDriverRating.toFloat(),
                             onRatingChanged = { newRating ->
@@ -2943,7 +2945,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(10.dp),
-                           // .verticalScroll(rememberScrollState()),
+                        // .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
 
                     ) {
@@ -2978,7 +2980,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(text = " ${driver?.firstName} ${driver?.lastName}",
-                                 modifier = Modifier.padding(end = 8.dp),
+                                modifier = Modifier.padding(end = 8.dp),
                                 fontSize = 20.sp
                             )
                         }
@@ -2987,14 +2989,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         // Other data
                         Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
-                       // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
+                        // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
                         Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
 
                         Spacer(modifier = Modifier.height(22.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // rate
                         var rate by remember {
-                           mutableStateOf(0f)
+                            mutableStateOf(0f)
                         }
 
                         Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
@@ -3683,7 +3685,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     if (false) {                                                                                   // remove false
         passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
             setPolylinePoints1(decodedPolyline)
-        }, { distance -> // remove false
+        }, { distance -> //
             tripDistance = "%.2f".format(distance).toDouble()
             distanceAlpha = 1f
         })
@@ -3692,131 +3694,131 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
             setPolylinePoints2(decodedPolyline)
         }, { distance ->
         })
+    }
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = startLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = destLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+            Marker(
+                state = MarkerState(position = tripStartLatLng),
+                title = "Searched Trip Start Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+            )
+            // Searched trip destination location marker
+            Marker(
+                state = MarkerState(position = tripDestLatLng),
+                title = "Searched Trip Destination Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+            )
+            Polyline(
+                points = polylinePoints1,
+                color = colorResource(id = R.color.polyline_color_1),
 
-        Box(
+                )
+            Polyline(
+                points = polylinePoints2,
+                color = colorResource(id = R.color.polyline_color_2),
+
+                )
+
+        }
+        Row(
+            modifier = Modifier
+                .alpha(distanceAlpha)
+                .padding(start = 15.dp, end = 15.dp, top = 30.dp)
+                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            if (tripDistance == 0.0) {
+                distanceAlpha = 1f
+                CircularProgressIndicator(
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+        }
+        // Add a button that navigates back to the search page
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(0.dp) // Add padding to adjust the button position
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
         ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPosition,
-                properties = properties,
-                uiSettings = uiSetting.copy(zoomControlsEnabled = false)
-            ) {
-                // Start location marker
-                Marker(
-                    state = MarkerState(position = startLatLng),
-                    title = "Start Location",
-                    visible = true
-                )
-                // Destination location marker
-                Marker(
-                    state = MarkerState(position = destLatLng),
-                    title = "Destination Location",
-                    visible = true
-                )
-                Marker(
-                    state = MarkerState(position = tripStartLatLng),
-                    title = "Searched Trip Start Location",
-                    visible = true,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-                )
-                // Searched trip destination location marker
-                Marker(
-                    state = MarkerState(position = tripDestLatLng),
-                    title = "Searched Trip Destination Location",
-                    visible = true,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-                )
-                Polyline(
-                    points = polylinePoints1,
-                    color = colorResource(id = R.color.polyline_color_1),
-
-                    )
-                Polyline(
-                    points = polylinePoints2,
-                    color = colorResource(id = R.color.polyline_color_2),
-
-                    )
-
-            }
             Row(
-                modifier = Modifier
-                    .alpha(distanceAlpha)
-                    .padding(start = 15.dp, end = 15.dp, top = 30.dp)
-                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.Start
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                if (tripDistance == 0.0) {
-                    distanceAlpha = 1f
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-            }
-            // Add a button that navigates back to the search page
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(55.dp)
-                            .padding(5.dp)
-                            .alpha(0.9f),
-                        shape = RoundedCornerShape(15.dp),
-                        onClick = {
-                            navController.navigate("searchTrips")
-                        }
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.back),
-                                contentDescription = "location Icon",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        navController.navigate("searchTrips")
                     }
-
-                    Button(
-                        modifier = Modifier
-                            .weight(3f)
-                            .height(55.dp)
-                            .padding(5.dp)
-                            .alpha(0.9f),
-                        shape = RoundedCornerShape(15.dp),
-                        onClick = {
-
-                            navController.navigate("searchTrips")
-                        }
-                    ) {
-                        Text(
-                            text = "Book Trip",
-                            fontSize = 22.sp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.back),
+                            contentDescription = "location Icon",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
+                }
+
+                Button(
+                    modifier = Modifier
+                        .weight(3f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+
+                        navController.navigate("searchTrips")
+                    }
+                ) {
+                    Text(
+                        text = "Book Trip",
+                        fontSize = 22.sp
+                    )
                 }
             }
         }
     }
 }
+
 
 // not used
 @Composable
