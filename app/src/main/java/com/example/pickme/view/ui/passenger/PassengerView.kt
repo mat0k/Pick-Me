@@ -255,6 +255,7 @@ fun HomeScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PickUps(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
@@ -585,6 +586,10 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         LaunchedEffect(Unit) {
             localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
         }
+        var showPreviewBottomSheet by remember {
+            mutableStateOf(false)
+        }
+        val sheetState = rememberModalBottomSheetState()
 
         LazyColumn(
             modifier = Modifier
@@ -608,16 +613,17 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                      //  verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = localPickUp.dateAndTime,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                fontSize = 17.sp,
+                                fontSize = 20.sp,
                                 color = Color.Black,
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = localPickUp.pickUpTitle,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -631,15 +637,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 color = Color.Black,
                             )
                         }
+
+                                                    // icons column
                         Column {
-                            IconButton(
-                                onClick = { showDeleteConfirm.value = localPickUp }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.delete_icon),
-                                    contentDescription = "Delete"
-                                )
-                            }
                             IconButton(
                                 onClick = {
                                     pickUpViewModel.setPrevPickUpTitle(localPickUp.pickUpTitle)
@@ -656,12 +656,369 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 }
                             ) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.preview_icon),
+                                    painter = painterResource(id = R.drawable.search_location1),
                                     contentDescription = "Preview"
                                 )
                             }
+
+                            IconButton(
+                                onClick = {
+                                    // here now
+                                    showPreviewBottomSheet= true
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.preview_icon),
+                                    contentDescription = "preview"
+                                )
+                            }
+
+
+                            IconButton(
+                                onClick = { showDeleteConfirm.value = localPickUp }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.delete_icon),
+                                    contentDescription = "Delete"
+                                )
+                            }
+
+
                         }
                     }
+                        val driverId= "-NxE0w3fwQDamTzQEFqo"      // driver id locally
+
+                    if (showPreviewBottomSheet) {          // bottom sheet
+                        ModalBottomSheet(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .heightIn(min = 700.dp),
+                            onDismissRequest = {
+                                showPreviewBottomSheet = false
+                            },
+                            sheetState = sheetState
+                        ) {
+                            var driver by remember { mutableStateOf<DriverData?>(null) }
+                            val viewModelFactory = remember {
+                                ProfileViewModelFactory(context)
+                            }
+                            val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
+                            viewModel.loadProfileData()
+
+
+                            if (driverId != "empty") {
+
+                                LaunchedEffect(driverId) {
+                                    driver = passengerViewModel.getDriverInfo(driverId)
+                                }
+                                if (driver != null) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(10.dp),
+                                        // .verticalScroll(rememberScrollState()),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+
+                                    ) {
+                                        // url of both images to preview:
+                                        val photoUrl= driver?.photo
+                                        val carPhotoUrl= driver?.carPhoto
+                                        // Text(text = "Photo URL: ${driver?.photo}")
+                                        //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
+
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(100.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Gray), // image box
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            // You can add your image here later
+                                            AsyncImage(
+                                                model = photoUrl, // Use the photoUrl directly
+                                                contentDescription = "Profile Picture",
+                                                modifier = Modifier
+                                                    .size(100.dp)
+                                                    .scale(1.2f)
+                                            )
+                                        }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(text = " ${driver?.firstName} ${driver?.lastName}",
+                                                modifier = Modifier.padding(end = 8.dp),
+                                                fontSize = 20.sp
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        // Other data
+                                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
+                                        // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
+                                        Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
+
+                                        Spacer(modifier = Modifier.height(22.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                        // rate
+                                        var rate by remember {
+                                            mutableStateOf(0f)
+                                        }
+
+                                        Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        HorizontalDivider() // Separator
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Text(text = "Rate: ${"%.1f".format(rate)}", style = MaterialTheme.typography.bodyLarge)
+
+                                        // get the rate from firebase, adding it as fun in view model didn't work
+                                        val database = FirebaseDatabase.getInstance()
+                                        val ratingRef = database.getReference("rating").child(driverId)
+                                        ratingRef.addValueEventListener(object : ValueEventListener {
+                                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                                var sum = 0.0
+                                                var count = 0
+
+                                                for (ratingSnapshot in dataSnapshot.children) {
+                                                    val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
+                                                    if (rating != null) {
+                                                        sum += rating
+                                                        count++
+                                                    }
+                                                }
+
+                                                if (count > 0) {
+                                                    val averageRating = sum / count
+                                                    rate = averageRating.toFloat() // Update rate variable with the average rating
+                                                }
+                                            }
+
+                                            override fun onCancelled(databaseError: DatabaseError) {
+                                                // Handle possible errors.
+                                                println("Error reading ratings: ${databaseError.message}")
+                                            }
+                                        })
+
+
+                                        // add rate button here
+                                        var showRateDialog by remember { mutableStateOf(false) } // State to control the visibility of the rate dialog
+                                        var userRating by remember { mutableStateOf(1f) } // State to hold the user's rating
+
+                                        Button(
+                                            onClick = { showRateDialog = true },
+                                            shape = RoundedCornerShape(4.dp) // Less rounded corners
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Rate this driver")
+                                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.rate),
+                                                    contentDescription = "Rate Icon",
+                                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
+                                                )
+                                            }
+                                        }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                        Spacer(modifier = Modifier.height(25.dp))
+                                        // comment section
+                                        Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        HorizontalDivider() // Separator
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        var comment by remember { mutableStateOf("") } // State to hold the comment text
+                                        var showDialog by remember { mutableStateOf(false) } // State to control the visibility of the dialog
+
+                                        Button(
+                                            onClick = { showDialog = true },
+                                            shape = RoundedCornerShape(4.dp) // Less rounded corners
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Add a new comment")
+                                                Spacer(Modifier.width(12.dp)) // Add some spacing between the text and the icon
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.comment),
+                                                    contentDescription = "Comment Icon",
+                                                    modifier = Modifier.size(20.dp) // Adjust the size as needed
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        // Fetch comments from Firebase
+                                        val comments = remember { mutableStateListOf<Map<String, String>>() }
+                                        LaunchedEffect(Unit) {
+                                            val database = FirebaseDatabase.getInstance()
+                                            val commentsRef = database.getReference("comments")
+                                            commentsRef.addValueEventListener(object : ValueEventListener {
+                                                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                                    comments.clear()
+                                                    dataSnapshot.children.mapNotNullTo(comments) { it.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) }
+                                                }
+                                                override fun onCancelled(databaseError: DatabaseError) {
+                                                    // Handle possible errors.
+                                                }
+                                            })
+                                        }
+                                        // Display comments in a LazyColumn
+                                        LazyColumn {
+                                            items(comments.reversed()) { comment ->
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(
+                                                            Color.Gray.copy(alpha = 0.5f),
+                                                            shape = RoundedCornerShape(10.dp)
+                                                        )
+                                                        .padding(10.dp)
+                                                        .fillMaxWidth()
+                                                ) {
+                                                    Column {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween
+                                                        ) {
+                                                            Text(
+                                                                text = "${comment["passengerName"]}",
+                                                                style = MaterialTheme.typography.bodyMedium
+                                                            )
+                                                            Text(
+                                                                text = "${comment["commentDate"]}",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                textAlign = TextAlign.End
+                                                            )
+                                                        }
+                                                        Text(
+                                                            text = "${comment["comment"]}",
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            modifier = Modifier.padding(top = 8.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(10.dp))
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(100.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                                        // Rate dialog
+                                        if (showRateDialog) {
+                                            AlertDialog(
+                                                onDismissRequest = { showRateDialog = false },
+                                                title = { Text("Rate this driver") },
+                                                text = {
+                                                    Column {
+                                                        Text(
+                                                            text="Select a rating from 0 to 5",
+                                                            modifier= Modifier.padding(bottom = 6.dp)
+                                                        )
+
+                                                        StarRatingBar(
+                                                            maxStars = 5,
+                                                            rating = userRating,
+                                                            onRatingChanged = { newRating ->
+                                                                userRating = newRating
+                                                            }
+                                                        )
+
+                                                        Text(
+                                                            text = "Selected rating: ${userRating}",
+                                                            modifier = Modifier.padding(top = 6.dp)
+                                                        )
+                                                    }
+                                                },
+                                                confirmButton = {
+                                                    Button(onClick = {
+                                                        showRateDialog = false
+                                                        // Add the rating to the Firebase database
+                                                        val database = FirebaseDatabase.getInstance()
+                                                        val ratingRef = database.getReference("rating").child(driverId)
+                                                        val key = ratingRef.push().key
+                                                        if (key != null) {
+                                                            ratingRef.child(key).setValue(mapOf("rate" to userRating))
+                                                        }
+                                                    }) {
+                                                        Text("OK")
+                                                    }
+                                                },
+                                                dismissButton = {
+                                                    TextButton(onClick = { showRateDialog = false }) {
+                                                        Text("Cancel")
+                                                    }
+                                                }
+                                            )
+                                        }
+                                        if (showDialog) {       //dialog to add comment
+                                            AlertDialog(
+                                                onDismissRequest = { showDialog = false },
+                                                title = { Text("Add a new comment") },
+                                                text = {
+                                                    OutlinedTextField(
+                                                        value = comment,
+                                                        onValueChange = { comment = it },
+                                                        label = { Text("Enter your comment") }
+                                                    )
+                                                },
+                                                confirmButton = {
+                                                    Button(
+                                                        onClick = {
+                                                            if (comment.isNotBlank()) {
+                                                                // Get a reference to the Firebase Database
+                                                                val database = FirebaseDatabase.getInstance()
+
+                                                                // Get a reference to the "comments" node
+                                                                val commentsRef = database.getReference("comments")
+
+                                                                // Create a new comment object
+                                                                val newComment = mapOf(
+                                                                    "DriverId" to driverId,
+                                                                    "passengerName" to (viewModel.name.value+" "+viewModel.surname.value),
+                                                                    "comment" to comment,
+                                                                    "commentDate" to LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                                )
+
+                                                                // Push the new comment to the "comments" node
+                                                                commentsRef.push().setValue(newComment)
+                                                                comment = ""
+                                                                showDialog = false
+                                                            }
+                                                            else{
+                                                                Toast.makeText(context, "Please enter a comment", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        }
+                                                    ) {
+                                                        Text("Add")
+                                                    }
+                                                },
+                                                dismissButton = {
+                                                    TextButton(onClick = { showDialog = false }) {
+                                                        Text("Cancel")
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Text(text = "No data to preview")
+                                }
+
+                            } else {
+                                Text(text = "No data to preview ")
+                            }
+                        }
+                    }
+
+
+
+
 
                     val itemToDelete = showDeleteConfirm.value
                     if (itemToDelete != null) {
@@ -694,8 +1051,9 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
             }
         }
 
-
     }
+
+
 
 
     if (showDialog.value) {
@@ -1937,7 +2295,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var searchRadius by remember { mutableStateOf(1) } // default radius is 1 km
     var isDriverVerified by remember { mutableStateOf(false) }
-    var minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
+    val minDriverRating by remember { mutableStateOf(0) } // default minimum rating is 0
     var minAvailableSeats by remember { mutableStateOf(1) } // default minimum available seats is 1
 
     var showSearch by remember { mutableStateOf(false) }
@@ -2345,7 +2703,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             steps = 5,
                         )
                     }
-                    Row(
+                  /*  Row(                      // don't filter according to rate
                         // minimum rating
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -2361,15 +2719,15 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             valueRange = 0f..5f, // allow rating from 0 to 5
                             steps = 5,
                         )
-                        // here now
-                       /* StarRatingBar(
+
+                       *//* StarRatingBar(
                             maxStars = 5,
                             rating = minDriverRating.toFloat(),
                             onRatingChanged = { newRating ->
                                 minDriverRating = newRating.toInt()
                             }
-                        )*/
-                    }
+                        )*//*
+                    }*/
 
                 }
             }
@@ -2764,7 +3122,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                         StarRatingBar(
                                             maxStars = 5,
-                                            rating = 1f,
+                                            rating = userRating,
                                             onRatingChanged = { newRating ->
                                                 userRating = newRating
                                             }
@@ -2935,7 +3293,8 @@ fun StarRatingBar(
                             onRatingChanged(i.toFloat())
                         }
                     )
-                    .width(starSize).height(starSize)
+                    .width(starSize)
+                    .height(starSize)
             )
 
             if (i < maxStars) {
