@@ -3155,135 +3155,135 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
             distanceAlpha = 1f
         })
 
-    passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
-        setPolylinePoints2(decodedPolyline)
-    }, { distance ->
-    })
+        passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
+            setPolylinePoints2(decodedPolyline)
+        }, { distance ->
+        })
 
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(0.dp) // Add padding to adjust the button position
-    ) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPosition,
-            properties = properties,
-            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
-        ) {
-            // Start location marker
-            Marker(
-                state = MarkerState(position = startLatLng),
-                title = "Start Location",
-                visible = true
-            )
-            // Destination location marker
-            Marker(
-                state = MarkerState(position = destLatLng),
-                title = "Destination Location",
-                visible = true
-            )
-            Marker(
-                state = MarkerState(position = tripStartLatLng),
-                title = "Searched Trip Start Location",
-                visible = true,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-            )
-            // Searched trip destination location marker
-            Marker(
-                state = MarkerState(position = tripDestLatLng),
-                title = "Searched Trip Destination Location",
-                visible = true,
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-            )
-            Polyline(
-                points = polylinePoints1,
-                color = colorResource(id = R.color.polyline_color_1),
-
-                )
-            Polyline(
-                points = polylinePoints2,
-                color = colorResource(id = R.color.polyline_color_2),
-
-                )
-
-        }
-        Row(
-            modifier = Modifier
-                .alpha(distanceAlpha)
-                .padding(start = 15.dp, end = 15.dp, top = 30.dp)
-                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Text(
-                text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            if (tripDistance == 0.0) {
-                distanceAlpha = 1f
-                CircularProgressIndicator(
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-        }
-        // Add a button that navigates back to the search page
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
+                .padding(0.dp) // Add padding to adjust the button position
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPosition,
+                properties = properties,
+                uiSettings = uiSetting.copy(zoomControlsEnabled = false)
             ) {
-                Button(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(55.dp)
-                        .padding(5.dp)
-                        .alpha(0.9f),
-                    shape = RoundedCornerShape(15.dp),
-                    onClick = {
-                        navController.navigate("searchTrips")
-                    }
+                // Start location marker
+                Marker(
+                    state = MarkerState(position = startLatLng),
+                    title = "Start Location",
+                    visible = true
+                )
+                // Destination location marker
+                Marker(
+                    state = MarkerState(position = destLatLng),
+                    title = "Destination Location",
+                    visible = true
+                )
+                Marker(
+                    state = MarkerState(position = tripStartLatLng),
+                    title = "Searched Trip Start Location",
+                    visible = true,
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+                )
+                // Searched trip destination location marker
+                Marker(
+                    state = MarkerState(position = tripDestLatLng),
+                    title = "Searched Trip Destination Location",
+                    visible = true,
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+                )
+                Polyline(
+                    points = polylinePoints1,
+                    color = colorResource(id = R.color.polyline_color_1),
+
+                    )
+                Polyline(
+                    points = polylinePoints2,
+                    color = colorResource(id = R.color.polyline_color_2),
+
+                    )
+
+            }
+            Row(
+                modifier = Modifier
+                    .alpha(distanceAlpha)
+                    .padding(start = 15.dp, end = 15.dp, top = 30.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                if (tripDistance == 0.0) {
+                    distanceAlpha = 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
+            }
+            // Add a button that navigates back to the search page
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.back),
-                            contentDescription = "location Icon",
-                            modifier = Modifier.size(24.dp)
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            navController.navigate("searchTrips")
+                        }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "location Icon",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Button(
+                        modifier = Modifier
+                            .weight(3f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+
+                            navController.navigate("searchTrips")
+                        }
+                    ) {
+                        Text(
+                            text = "Book Trip",
+                            fontSize = 22.sp
                         )
                     }
-                }
-
-                Button(
-                    modifier = Modifier
-                        .weight(3f)
-                        .height(55.dp)
-                        .padding(5.dp)
-                        .alpha(0.9f),
-                    shape = RoundedCornerShape(15.dp),
-                    onClick = {
-
-                        navController.navigate("searchTrips")
-                    }
-                ) {
-                    Text(
-                        text = "Book Trip",
-                        fontSize = 22.sp
-                    )
                 }
             }
         }
     }
 }
-
 
 // not used
 @Composable

@@ -69,7 +69,8 @@ class HomeScreenVM(context: Context) : ViewModel() {
                 it.pickUpLatLng
             )
         } ?: 0.0
-        pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue)
+        pickUpTime in startWorkingTime..endWorkingTime
+                 && (distance <= radius.floatValue)
     }
 }
 
