@@ -206,9 +206,11 @@ class DriverView : ComponentActivity() {
 @Composable
 fun HomeScreen(navController: NavHostController) {
     val context = LocalContext.current
+
     val showBottomSheet = remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    val viewModel = viewModel<HomeScreenVM>()
+    val viewModelFactory = remember { HomeScreenVMFactory(context) }
+    val viewModel = viewModel<HomeScreenVM>(factory = viewModelFactory)
     val pickUps = viewModel.pickUps.observeAsState(initial = emptyList())
     val filteredPickUps = viewModel.filterPickUps(context, pickUps.value)
     val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
@@ -265,14 +267,15 @@ fun HomeScreen(navController: NavHostController) {
                         valueRange = 0f..23f,
                         steps = 24,
                         onValueChangeFinished = {
-
+                            viewModel.saveFilters(context)
                         }
                     )
-                    Text(String.format(Locale.ENGLISH, "Radius: %.1f", viewModel.radius.floatValue))
+                    Text(String.format(Locale.ENGLISH, "Radius: %.1f km", viewModel.radius.floatValue))
                     Slider(
                         value = viewModel.radius.floatValue,
                         onValueChange = {
                             viewModel.radius.floatValue = it
+                            viewModel.saveFilters(context)
                         },
                         valueRange = 1f..10f,
                         steps = 8

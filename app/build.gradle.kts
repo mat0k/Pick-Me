@@ -96,6 +96,7 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+    implementation(libs.androidx.work.runtime.ktx)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.maps.platform)
@@ -121,5 +122,6 @@ dependencies {
     implementation(libs.accompanist.insets)
     implementation(libs.material.icons.extended)
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.onesignal)
 }
 

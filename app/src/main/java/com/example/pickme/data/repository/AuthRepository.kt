@@ -7,7 +7,9 @@ import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
+import com.onesignal.OneSignal
 import kotlinx.coroutines.tasks.await
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -46,7 +48,6 @@ class AuthRepository {
             "emergencyNumber" to passenger.emergencyNumber,
             "token" to ""
         )
-        myRef.child(uuid).setValue(passengerObject)
         return Result.success(Unit)
     }
 
@@ -57,17 +58,14 @@ class AuthRepository {
         for (dataSnapshot in data.children) {
             val passenger = dataSnapshot.getValue(Passenger::class.java)
             if (passenger?.phone == phone && passenger.password == hashPassword(password)) {
+
                 val user = User(
                     id = dataSnapshot.key ?: "",
                     role = 0, // Assuming role 0 is for passengers
                     photoUrl = passenger.photoUrl,
                     firstName = passenger.name,
-                    lastName = passenger.surname
+                    lastName = passenger.surname,
                 )
-                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
-                user.token = tokenResult?.token
-
-                myRef.child(user.id).child("token").setValue(user.token)
                 return Result.success(user)
             }
         }
@@ -81,16 +79,16 @@ class AuthRepository {
         for (dataSnapshot in data.children) {
             val driver = dataSnapshot.getValue(Driver::class.java)
             if (driver?.phone == phone && driver.password == hashPassword(password)) {
+                // Get the OneSignal user ID
+                OneSignal.User.pushSubscription.id
+
                 val user = User(
                     id = dataSnapshot.key ?: "",
                     role = 1, // Assuming role 1 is for drivers
                     photoUrl = driver.photo,
                     firstName = driver.name,
-                    lastName = driver.surname
+                    lastName = driver.surname,
                 )
-                val tokenResult = FirebaseAuth.getInstance().currentUser?.getIdToken(false)?.await()
-                user.token = tokenResult?.token
-                myRef.child(user.id).child("token").setValue(user.token)
                 return Result.success(user)
             }
         }
@@ -154,7 +152,8 @@ class AuthRepository {
             "password" to passenger.password,
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
-            "emergencyNumber" to passenger.emergencyNumber
+            "emergencyNumber" to passenger.emergencyNumber,
+            "token" to passenger.token
         )
         myRef.updateChildren(passengerObject).await()
         return Result.success(Unit)
