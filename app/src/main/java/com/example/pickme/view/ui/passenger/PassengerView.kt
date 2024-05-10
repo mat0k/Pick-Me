@@ -705,7 +705,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
                             viewModel.loadProfileData()
 
-
                             if (driverId != "empty") {
 
                                 LaunchedEffect(driverId) {
@@ -1007,7 +1006,14 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         }
                                     }
                                 } else {
-                                    Text(text = "No data to preview")
+                                    Column(
+                                        modifier= Modifier.fillMaxSize().padding(top=40.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(60.dp),
+                                            )
+                                    }
                                 }
 
                             } else {
@@ -3206,7 +3212,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     }
                 } else {
-                    Text(text = "No data to preview")
+                    Column(
+                        modifier= Modifier.fillMaxSize().padding(top=40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(60.dp),
+                        )
+                    }
                 }
 
             } else {
