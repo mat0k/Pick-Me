@@ -569,6 +569,10 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         dateAndTime = pickUpViewModel.dateAndTime.value,
                         passengerId = id
                     )
+                    // locally
+                    val dbHelper= LocalPickUpDbHelper(context)
+                    dbHelper.insertLocalPickUp(localPickUp)
+                    // to firebase
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
                     resetTitles()
