@@ -131,6 +131,7 @@ import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
+import com.example.pickme.data.repository.OneSignalNotificationSender
 
 
 data class BottomNavigationItem(
@@ -243,7 +244,9 @@ fun HomeScreen(navController: NavHostController) {
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
-
+                    val sender = OneSignalNotificationSender()
+                    val recipientPlayerIds = listOf("RECIPIENT_PLAYER_ID_1") // Player IDs of the recipients
+                    sender.sendNotification("Test Pickup Accept", recipientPlayerIds)
                 }
             }
         }
@@ -275,7 +278,13 @@ fun HomeScreen(navController: NavHostController) {
                             viewModel.saveFilters(context)
                         }
                     )
-                    Text(String.format(Locale.ENGLISH, "Radius: %.1f km", viewModel.radius.floatValue))
+                    Text(
+                        String.format(
+                            Locale.ENGLISH,
+                            "Radius: %.1f km",
+                            viewModel.radius.floatValue
+                        )
+                    )
                     Slider(
                         value = viewModel.radius.floatValue,
                         onValueChange = {
@@ -1329,8 +1338,8 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
         }
         if (confirmDialog.value) {
             AlertDialog(
-                title = {Text("Log Out")},
-                text = {Text("Are you sure you want to log out?")},
+                title = { Text("Log Out") },
+                text = { Text("Are you sure you want to log out?") },
                 onDismissRequest = { confirmDialog.value = false },
                 confirmButton = {
                     TextButton(
@@ -1345,7 +1354,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                         Text("Yes")
                     }
 
-            },
+                },
                 dismissButton = {
                     TextButton(onClick = { confirmDialog.value = false }) {
                         Text("Cancel")

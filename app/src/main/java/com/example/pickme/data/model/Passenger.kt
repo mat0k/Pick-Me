@@ -9,5 +9,5 @@ data class Passenger(
    val photoUrl: String = "",
    val emergencyNumber: String = "",
    val role: Int = 0,
-   val token: String? = null
+   val oneSignalId: String? = null
 )

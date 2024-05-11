@@ -7,7 +7,6 @@ import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.onesignal.OneSignal
 import kotlinx.coroutines.tasks.await
@@ -46,8 +45,10 @@ class AuthRepository {
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber,
-            "token" to ""
+            "oneSignalToken" to ""
         )
+
+        myRef.child(uuid).setValue(passengerObject)
         return Result.success(Unit)
     }
 
@@ -66,6 +67,9 @@ class AuthRepository {
                     firstName = passenger.name,
                     lastName = passenger.surname,
                 )
+                val oneSignalUserId = OneSignal.User.pushSubscription.id
+                val driverRef = myRef.child(user.id)
+                driverRef.child("oneSignalId").setValue(oneSignalUserId)
                 return Result.success(user)
             }
         }
@@ -80,7 +84,7 @@ class AuthRepository {
             val driver = dataSnapshot.getValue(Driver::class.java)
             if (driver?.phone == phone && driver.password == hashPassword(password)) {
                 // Get the OneSignal user ID
-                OneSignal.User.pushSubscription.id
+                val oneSignalUserId = OneSignal.User.pushSubscription.id
 
                 val user = User(
                     id = dataSnapshot.key ?: "",
@@ -89,6 +93,8 @@ class AuthRepository {
                     firstName = driver.name,
                     lastName = driver.surname,
                 )
+                val driverRef = myRef.child(user.id)
+                driverRef.child("oneSignalId").setValue(oneSignalUserId)
                 return Result.success(user)
             }
         }
@@ -134,8 +140,7 @@ class AuthRepository {
             "carPhoto" to driver.carPhoto,
             "photo" to driver.photo,
             "driverLicense" to driver.driverLicense,
-            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
-            "token" to ""
+            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate)
         )
         myRef.child(uuid).setValue(driverObject)
         return Result.success(Unit)
@@ -153,7 +158,7 @@ class AuthRepository {
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
             "emergencyNumber" to passenger.emergencyNumber,
-            "token" to passenger.token
+            "oneSignalUserId" to passenger.oneSignalId
         )
         myRef.updateChildren(passengerObject).await()
         return Result.success(Unit)
