@@ -566,7 +566,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             pickUpViewModel.targetLatLng.value.longitude
                         ),
                         distance = pickUpViewModel.distance.value,
-                        dateAndTime = pickUpViewModel.dateAndTime.value
+                        dateAndTime = pickUpViewModel.dateAndTime.value,
+                        passengerId = id
                     )
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
@@ -582,7 +583,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
         val databaseHelper = LocalPickUpDbHelper(context)
         LaunchedEffect(Unit) {
-            localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
+            id?.let { databaseHelper.getAllLocalPickUps(it) }?.let { localPickUpList.addAll(it) }
         }
         var showPreviewBottomSheet by remember {
             mutableStateOf(false)

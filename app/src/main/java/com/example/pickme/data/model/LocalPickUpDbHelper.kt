@@ -21,6 +21,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val COLUMN_TARGET_LNG = "target_lng"
         private const val COLUMN_DISTANCE = "distance"
         private const val COLUMN_DATE_AND_TIME = "date_and_time"
+        private const val COLUMN_PASSENGER_ID = "passenger_id"
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -57,11 +58,11 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         return db.insert(TABLE_NAME, null, contentValues)
     }
 
-    fun getAllLocalPickUps(): List<LocalPickUp> {
+    fun getAllLocalPickUps(passengerId: String): List<LocalPickUp> {
         val localPickUpList = mutableListOf<LocalPickUp>()
-        val selectQuery = "SELECT * FROM $TABLE_NAME"
+        val selectQuery = "SELECT * FROM $TABLE_NAME WHERE $COLUMN_PASSENGER_ID = ?"
         val db = this.readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
+        val cursor = db.rawQuery(selectQuery, arrayOf(passengerId))
 
         if (cursor.moveToFirst()) {
             do {
@@ -82,7 +83,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                         LatLng(pickUpLat, pickUpLng),
                         LatLng(targetLat, targetLng),
                         distance,
-                        dateAndTime
+                        dateAndTime,
+                        passengerId
                     )
                 )
             } while (cursor.moveToNext())

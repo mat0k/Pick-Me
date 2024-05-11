@@ -9,5 +9,6 @@ data class LocalPickUp(
     val pickUpLatLng: LatLng,
     val targetLatLng: LatLng,
     val distance: Double,
-    val dateAndTime: String
+    val dateAndTime: String,
+    val passengerId: String? = null
 )
