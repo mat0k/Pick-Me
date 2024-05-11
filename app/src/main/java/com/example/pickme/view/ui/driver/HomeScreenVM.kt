@@ -55,23 +55,23 @@ class HomeScreenVM(context: Context) : ViewModel() {
     }
 
     fun filterPickUps(context: Context, pickUps: List<PickUp>): List<PickUp> {
-    getCurrentLocation(context)
-    val passengerViewModel = PassengerViewModel()
-    val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a", Locale.ENGLISH)
-    val startWorkingTime = LocalTime.of(workingHoursRange.value.start.toInt(), 0)
-    val endWorkingTime = LocalTime.of(workingHoursRange.value.endInclusive.toInt(), 0)
-    return pickUps.filter {
-        val dateTime = LocalDateTime.parse(it.dateAndTime, formatter)
-        val pickUpTime = dateTime.toLocalTime()
-        val distance = currentLocation.value?.let { currentLocation ->
-            passengerViewModel.calculateDistance(
-                currentLocation,
-                it.pickUpLatLng
-            )
-        } ?: 0.0
-        pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue)
+        getCurrentLocation(context)
+        val passengerViewModel = PassengerViewModel()
+        val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a", Locale.ENGLISH)
+        val startWorkingTime = LocalTime.of(workingHoursRange.value.start.toInt(), 0).toSecondOfDay() / 60
+        val endWorkingTime = LocalTime.of(workingHoursRange.value.endInclusive.toInt(), 0).toSecondOfDay() / 60
+        return pickUps.filter {
+            val dateTime = LocalDateTime.parse(it.dateAndTime, formatter)
+            val pickUpTime = dateTime.toLocalTime().toSecondOfDay() / 60
+            val distance = currentLocation.value?.let { currentLocation ->
+                passengerViewModel.calculateDistance(
+                    currentLocation,
+                    it.pickUpLatLng
+                )
+            } ?: 0.0
+            pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue)
+        }
     }
-}
 
     private fun getCurrentLocation(context: Context) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)

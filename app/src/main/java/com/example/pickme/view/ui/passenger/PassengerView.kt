@@ -567,11 +567,13 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         ),
                         distance = pickUpViewModel.distance.value,
                         dateAndTime = pickUpViewModel.dateAndTime.value,
-                        passengerId = id
-                    )
+                        passengerId = id,
+                        driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
+                    )                                               // driver id locally
                     // locally
                     val dbHelper= LocalPickUpDbHelper(context)
                     dbHelper.insertLocalPickUp(localPickUp)
+
                     // to firebase
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
@@ -689,7 +691,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                         }
                     }
-                        val driverId= "-NxE0w3fwQDamTzQEFqo"      // driver id locally
+                        val driverId= "1l6hXRpLbsblhphc42mwfNLYqsP2"      // driver id locally
 
                     if (showPreviewBottomSheet) {          // bottom sheet
                         ModalBottomSheet(

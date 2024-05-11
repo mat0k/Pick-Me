@@ -9,7 +9,7 @@ import com.google.android.gms.maps.model.LatLng
 class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 5
         private const val DATABASE_NAME = "local_pickups.db"
         private const val TABLE_NAME = "local_pickups"
         private const val COLUMN_ID = "id"
@@ -22,8 +22,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val COLUMN_DISTANCE = "distance"
         private const val COLUMN_DATE_AND_TIME = "date_and_time"
         private const val COLUMN_PASSENGER_ID = "passenger_id"
+        private const val COLUMN_DRIVER_ID = "driver_id"
     }
-
     override fun onCreate(db: SQLiteDatabase?) {
         val createTableQuery = "CREATE TABLE $TABLE_NAME (" +
                 "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -35,7 +35,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 "$COLUMN_TARGET_LNG REAL, " +
                 "$COLUMN_DISTANCE REAL, " +
                 "$COLUMN_DATE_AND_TIME TEXT, " +
-                "$COLUMN_PASSENGER_ID TEXT)"
+                "$COLUMN_PASSENGER_ID TEXT, " +
+                "$COLUMN_DRIVER_ID TEXT)"
         db?.execSQL(createTableQuery)
     }
 
@@ -56,6 +57,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
             put(COLUMN_DISTANCE, localPickUp.distance)
             put(COLUMN_DATE_AND_TIME, localPickUp.dateAndTime)
             put(COLUMN_PASSENGER_ID, localPickUp.passengerId)
+            put(COLUMN_DRIVER_ID, localPickUp.driverId) // Include driverId in the insert
         }
         return db.insert(TABLE_NAME, null, contentValues)
     }
@@ -77,6 +79,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 val targetLng = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TARGET_LNG))
                 val distance = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_DISTANCE))
                 val dateAndTime = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE_AND_TIME))
+                val driverId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DRIVER_ID)) // Retrieve driverId
                 localPickUpList.add(
                     LocalPickUp(
                         id,
@@ -86,7 +89,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                         LatLng(targetLat, targetLng),
                         distance,
                         dateAndTime,
-                        passengerId
+                        passengerId,
+                        driverId // Include driverId in the LocalPickUp object
                     )
                 )
             } while (cursor.moveToNext())
@@ -95,7 +99,6 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         cursor.close()
         return localPickUpList
     }
-
     fun deleteLocalPickUp(id: Int): Int {
         val db = this.writableDatabase
         return db.delete(TABLE_NAME, "$COLUMN_ID=?", arrayOf(id.toString()))
