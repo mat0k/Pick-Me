@@ -4,7 +4,6 @@ package com.example.pickme.view.ui.driver
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -46,7 +45,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -400,10 +398,32 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     if (startingTitle != "Starting point") {
         enableConfirmation1 = true
     }
-
-    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-
     val passengerViewModel = PassengerViewModel()
+
+    val database = Firebase.database
+    val myRef = database.getReference("Trips")
+    val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val driverId = sharedPref.getString("lastUserId", null)
+    var isVerified = false
+    var enableConfirm= false
+
+    if(passengerViewModel.isNetworkAvailable(context)) {
+        enableConfirm= true
+    val driverRef = database.getReference("Drivers").child(driverId ?: "")
+    driverRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            isVerified = dataSnapshot.child("verified").getValue(Boolean::class.java) ?: false
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            println("Error reading driver verification status: ${databaseError.message}")
+        }
+    })
+    }
+    else{
+        passengerViewModel.ShowWifiProblemDialog(context)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -616,8 +636,6 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 .heightIn(max = 50.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-
-
             ) {
             if (isButtonClicked2) { // calender
                 Box(
@@ -705,26 +723,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
-        var isDriverVerified by remember {
-            mutableStateOf(false)
-        }
-        Row(
-            //verified driver      will be removed late
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
 
-            Text(text = "Driver Verified")
-            Checkbox(
-                checked = isDriverVerified,
-                onCheckedChange = { isDriverVerified = it }
-            )
-        }
-
-        val database = Firebase.database
-        val myRef = database.getReference("Trips")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -737,45 +736,57 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 shape = RoundedCornerShape(15.dp),
                 enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
-                    val title = tripTitle
-                    val tripSeats = seats
-                    val starting = startingTitle
-                    val end = destinationTitle
-                    val startingLatLng = tripViewModel.tripStartLatLng.value
-                    val destinationLatLng = tripViewModel.tripDestLatLng.value
-                    val date = formattedDate
-                    val time = formattedTime
-                    val tripDistance = tripViewModel.distance.value
-                    val verified = isDriverVerified
-                    val driverId = sharedPref.getString("lastUserId", null)
 
-                    // Create a new trip object
-                    val trip = mapOf(
-                        "title" to title,
-                        "seats" to tripSeats,
-                        "starting" to starting,
-                        "end" to end,
-                        "startingLatLng" to startingLatLng,
-                        "destinationLatLng" to destinationLatLng,
-                        "date" to date,
-                        "time" to time,
-                        "tripDistance" to tripDistance,
-                        "verified" to verified,
-                        "id" to driverId
-                    )
+                    if(passengerViewModel.isNetworkAvailable(context) && enableConfirm) {
+                        val title = tripTitle
+                        val tripSeats = seats
+                        val starting = startingTitle
+                        val end = destinationTitle
+                        val startingLatLng = tripViewModel.tripStartLatLng.value
+                        val destinationLatLng = tripViewModel.tripDestLatLng.value
+                        val date = formattedDate
+                        val time = formattedTime
+                        val tripDistance = tripViewModel.distance.value
 
-                    // Add trip to the database
-                    myRef.push().setValue(trip)
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Trip added successfully", Toast.LENGTH_SHORT)
-                                .show()
-                            isButtonClicked2 = false
-                            enableConfirmation2 = false
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
-                        }
 
+                        // val driverId = sharedPref.getString("lastUserId", null
+
+                        // Create a new trip object
+                        val trip = mapOf(
+                            "title" to title,
+                            "seats" to tripSeats,
+                            "starting" to starting,
+                            "end" to end,
+                            "startingLatLng" to startingLatLng,
+                            "destinationLatLng" to destinationLatLng,
+                            "date" to date,
+                            "time" to time,
+                            "tripDistance" to tripDistance,
+                            "verified" to isVerified,
+                            "id" to driverId
+                        )
+
+                        // Add trip to the database
+                        myRef.push().setValue(trip)
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    context,
+                                    "Trip added successfully",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                                isButtonClicked2 = false
+                                enableConfirmation2 = false
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+
+
+                    }else{
+                        passengerViewModel.ShowWifiProblemDialog(context)
+                    }
                 }) {
                 Text(
                     text = "Confirmation",

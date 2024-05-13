@@ -596,7 +596,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         }
         val sheetState = rememberModalBottomSheetState()
 
-        LazyColumn(
+        LazyColumn(                                       // here now
             modifier = Modifier
                 .fillMaxSize()
                 .padding(10.dp)
@@ -628,15 +628,16 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 fontSize = 20.sp,
                                 color = Color.Black,
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = localPickUp.pickUpTitle,
+                                text = "Pick up: ${localPickUp.pickUpTitle}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontSize = 14.sp,
                                 color = Color.Black,
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = localPickUp.targetTitle,
+                                text = "Destination: ${localPickUp.targetTitle}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontSize = 14.sp,
                                 color = Color.Black,
@@ -668,7 +669,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                             IconButton(
                                 onClick = {
-                                    // here now
+
                                     showPreviewBottomSheet= true
                                 }
                             ) {
