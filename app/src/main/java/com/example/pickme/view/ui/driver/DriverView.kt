@@ -1438,6 +1438,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
             HorizontalDivider() // Separator
 
             Spacer(modifier = Modifier.height(10.dp))
+
             // Fetch comments from Firebase
             val comments = remember { mutableStateListOf<Map<String, String>>() }
             LaunchedEffect(Unit) {
@@ -1456,6 +1457,9 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                 })
             }
             // Display comments in a LazyColumn
+            var noComments by remember {
+                mutableStateOf(true)
+            }
             LazyColumn {
                 items(comments.reversed()) { comment ->
                     Box(
@@ -1468,25 +1472,35 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                             .fillMaxWidth()
                     ) {
                         Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                            if (comment["DriverId"] == driverId) {
+                                noComments= false
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "${comment["passengerName"]}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = "${comment["commentDate"]}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
                                 Text(
-                                    text = "${comment["passengerName"]}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = "${comment["commentDate"]}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.End
+                                    text = "${comment["comment"]}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(top = 8.dp)
                                 )
                             }
-                            Text(
-                                text = "${comment["comment"]}",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
+                            if(noComments){
+                                Text(
+                                    text = "No Comments yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(10.dp))

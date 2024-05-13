@@ -566,8 +566,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             pickUpViewModel.targetLatLng.value.longitude
                         ),
                         distance = pickUpViewModel.distance.value,
-                        dateAndTime = pickUpViewModel.dateAndTime.value
-                    )
+                        dateAndTime = pickUpViewModel.dateAndTime.value,
+                        passengerId = id,
+                        driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
+                    )                                               // driver id locally
+                    // locally
+                    val dbHelper= LocalPickUpDbHelper(context)
+                    dbHelper.insertLocalPickUp(localPickUp)
+
+                    // to firebase
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
                     resetTitles()
@@ -582,7 +589,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
         val databaseHelper = LocalPickUpDbHelper(context)
         LaunchedEffect(Unit) {
-            localPickUpList.addAll(databaseHelper.getAllLocalPickUps())
+            id?.let { databaseHelper.getAllLocalPickUps(it) }?.let { localPickUpList.addAll(it) }
         }
         var showPreviewBottomSheet by remember {
             mutableStateOf(false)
@@ -684,7 +691,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                         }
                     }
-                        val driverId= "-NxE0w3fwQDamTzQEFqo"      // driver id locally
+                        val driverId= "1l6hXRpLbsblhphc42mwfNLYqsP2"      // driver id locally
 
                     if (showPreviewBottomSheet) {          // bottom sheet
                         ModalBottomSheet(
@@ -3059,6 +3066,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             })
                         }
                         // Display comments in a LazyColumn
+                        var noComments by remember {
+                            mutableStateOf(true)
+                        }
                         LazyColumn {
                             items(comments.reversed()) { comment ->
                                 Box(
@@ -3071,25 +3081,35 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                         .fillMaxWidth()
                                 ) {
                                     Column {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
+                                        if (comment["DriverId"] == driverId) {
+                                            noComments= false
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = "${comment["passengerName"]}",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                                Text(
+                                                    text = "${comment["commentDate"]}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    textAlign = TextAlign.End
+                                                )
+                                            }
                                             Text(
-                                                text = "${comment["passengerName"]}",
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
-                                            Text(
-                                                text = "${comment["commentDate"]}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                textAlign = TextAlign.End
+                                                text = "${comment["comment"]}",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.padding(top = 8.dp)
                                             )
                                         }
-                                        Text(
-                                            text = "${comment["comment"]}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(top = 8.dp)
-                                        )
+                                        if(noComments){
+                                            Text(
+                                                text = "No Comments yet",
+                                                style = MaterialTheme.typography.bodyMedium,
+
+                                                )
+                                        }
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(10.dp))
