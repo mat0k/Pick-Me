@@ -4,6 +4,7 @@ package com.example.pickme.view.ui.driver
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1513,6 +1515,28 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     modifier = Modifier.size(60.dp),
                 )
             }
+        }
+
+        //Emergency call
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        Spacer(modifier = Modifier.height(25.dp))
+        Text(text = "Emergency Call", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(2.dp))
+        HorizontalDivider() // Separator
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(onClick = {
+        /*    val dialIntent = Intent(Intent.ACTION_DIAL)
+            dialIntent.data = Uri.parse("tel:${viewModel.emergencyNumber.value}")
+            context.startActivity(dialIntent)*/
+        }) {
+            Icon(
+                painter = painterResource(id = R.drawable.siren),
+                contentDescription = "Emergency Call Icon",
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp)) // Add some spacing between the icon and the text
+            Text("Call Emergency Number")
         }
     }
 
