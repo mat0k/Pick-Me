@@ -1,6 +1,7 @@
 package com.example.pickme.view.ui.driver
 
 
+import UpdatePickupsWorker
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -92,6 +93,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.Passenger
@@ -219,8 +222,7 @@ fun HomeScreen(navController: NavHostController) {
     val sheetState = rememberModalBottomSheetState()
     val viewModelFactory = remember { HomeScreenVMFactory(context) }
     val viewModel = viewModel<HomeScreenVM>(factory = viewModelFactory)
-    val pickUps = viewModel.pickUps.observeAsState(initial = emptyList())
-    val filteredPickUps = viewModel.filterPickUps(context, pickUps.value)
+    val pickUps: List<PickUp> by viewModel.pickUps.observeAsState(initial = emptyList())
     val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
     Scaffold(
@@ -242,7 +244,7 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier.padding(it),
         )
         {
-            items(filteredPickUps) { pickUp ->
+            items(pickUps) { pickUp ->
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
