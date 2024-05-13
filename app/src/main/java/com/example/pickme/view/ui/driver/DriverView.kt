@@ -142,9 +142,11 @@ data class BottomNavigationItem(
 
 class DriverView : ComponentActivity() {
     private val tripViewModel: TripViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val updatePickupsWorkRequest = OneTimeWorkRequestBuilder<UpdatePickupsWorker>().build()
+        WorkManager.getInstance(this).enqueue(updatePickupsWorkRequest)
         setContent {
             PickMeUpTheme {
                 val items = listOf(

@@ -1,6 +1,9 @@
 package com.example.pickme
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import com.example.pickme.notifications.PickupsNotificationService
 
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
@@ -19,5 +22,19 @@ class MyApp: Application() {
         CoroutineScope(Dispatchers.IO).launch{
             OneSignal.Notifications.requestPermission(true)
         }
-    } 
+
+        createNotificationChannel()
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            PickupsNotificationService.CHANNEL_ID,
+            PickupsNotificationService.CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = PickupsNotificationService.CHANNEL_DESCRIPTION
+        }
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
 }
