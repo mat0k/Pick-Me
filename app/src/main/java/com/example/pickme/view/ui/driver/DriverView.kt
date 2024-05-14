@@ -99,6 +99,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.LocalTripDbHelper
 import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.PickUp
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
@@ -134,6 +135,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
+import com.example.pickme.data.model.Trip
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
 import com.example.pickme.data.repository.OneSignalNotificationSender
@@ -420,29 +422,28 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     val sharedPref = LocalContext.current.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val driverId = sharedPref.getString("lastUserId", null)
     var isVerified = false
-    var enableConfirm= false
+    var enableConfirm = false
 
-    if(passengerViewModel.isNetworkAvailable(context)) {
-        enableConfirm= true
-    val driverRef = database.getReference("Drivers").child(driverId ?: "")
-    driverRef.addListenerForSingleValueEvent(object : ValueEventListener {
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
-            isVerified = dataSnapshot.child("verified").getValue(Boolean::class.java) ?: false
-        }
+    if (passengerViewModel.isNetworkAvailable(context)) {
+        enableConfirm = true
+        val driverRef = database.getReference("Drivers").child(driverId ?: "")
+        driverRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                isVerified = dataSnapshot.child("verified").getValue(Boolean::class.java) ?: false
+            }
 
-        override fun onCancelled(databaseError: DatabaseError) {
-            println("Error reading driver verification status: ${databaseError.message}")
-        }
-    })
-    }
-    else{
+            override fun onCancelled(databaseError: DatabaseError) {
+                println("Error reading driver verification status: ${databaseError.message}")
+            }
+        })
+    } else {
         passengerViewModel.ShowWifiProblemDialog(context)
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start= 16.dp, top= 5.dp, end = 16.dp, bottom = 16.dp),
+            .padding(start = 16.dp, top = 5.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -455,7 +456,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
-                modifier = Modifier.padding(start = 10.dp, top = 16.dp)
+                modifier = Modifier.padding(start = 10.dp, top = 6.dp)
             )
         }
 
@@ -463,7 +464,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             value = tripTitle,
             onValueChange = { tripTitle = it },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(fontSize = 25.sp),
+            textStyle = TextStyle(fontSize = 22.sp),
             label = {
                 Text(
                     "Trip Title",
@@ -472,7 +473,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         )
 
-                // Seats
+        // Seats
 ///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -482,7 +483,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             Text("Seats")
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 IconButton(
                     onClick = { if (seats > 0) seats-- }
@@ -503,27 +504,27 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
-                            // Location
+        // Location
         ///////////////////////////////////////////////////////////////////////////////////////////////
         //Spacer(modifier = Modifier.padding(top = 5.dp))
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 150.dp), // row of two field and location button
+                .heightIn(min = 50.dp, max = 110.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center,
 
             ) {
 
             if (isButtonClicked1) {
                 Box(
-                    modifier = Modifier.weight(0.85f)
+                    modifier = Modifier.weight(0.9f)
                 ) {
 
                     Column {
                         Box(                        // pick up location box
                             modifier = Modifier
-                                .padding(start = 4.dp, end = 4.dp, top = 4.dp)
+                                .padding(start = 4.dp, end = 4.dp, top = 0.dp)
                                 .background(
                                     color = Color.White,
                                     shape = RoundedCornerShape(8.dp)
@@ -533,7 +534,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                                     color = Color.Black,
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .padding(8.dp)
+                                .padding(2.dp)
                         ) {
                             // row for pick up location and cancel button
                             Row(
@@ -552,7 +553,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         Box(                    //target location box
                             modifier = Modifier
-                                .padding(start = 4.dp, end = 4.dp, top = 8.dp)
+                                .padding(start = 4.dp, end = 4.dp, top = 4.dp)
                                 .background(
                                     color = Color.White,
                                     shape = RoundedCornerShape(8.dp)
@@ -562,7 +563,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                                     color = Color.Black,
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .padding(8.dp)
+                                .padding(2.dp)
                         ) {
                             // row for pick up location and cancel button
                             Row(
@@ -581,9 +582,9 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
                 Box(                    //cancel button box
                     modifier = Modifier
-                        .weight(0.15f)
+                        .weight(0.1f)
                         .fillMaxSize()
-                        .heightIn(max = 120.dp),
+                        .heightIn(max = 110.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Button(
@@ -615,7 +616,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                 Button(
                     modifier = Modifier
-                        .size(width = 220.dp, height = 50.dp),
+                        .size(width = 210.dp, height = 45.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
                         if (tripTitle.isNotEmpty()) {
@@ -645,7 +646,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
-                            // Date
+        // Date
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
         Row(
@@ -654,14 +655,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 .heightIn(max = 50.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-            ) {
+        ) {
             if (isButtonClicked2) { // calender
                 Box(
-                    modifier = Modifier.weight(0.85f)
+                    modifier = Modifier.weight(0.9f)
                 ) {
                     Box(                        // pick up location box
                         modifier = Modifier
-                            .padding(start = 4.dp, end = 12.dp, top = 15.dp)
+                            .padding(start = 4.dp, end = 12.dp, top = 2.dp)
                             .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                             .border(
                                 width = 1.dp,
@@ -687,7 +688,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
                 Box(                    //cancel button box
                     modifier = Modifier
-                        .weight(0.15f)
+                        .weight(0.1f)
                         .fillMaxSize()
                         .heightIn(max = 80.dp),
                     contentAlignment = Alignment.Center
@@ -721,7 +722,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                 Button(
                     modifier = Modifier
-                        .size(width = 220.dp, height = 50.dp),
+                        .size(width = 210.dp, height = 45.dp),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
                         dateDialogState.show()
@@ -742,7 +743,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         }
 
-                        //confirmation
+        // Confirmation
 ///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -751,12 +752,12 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         ) {
             Button(
                 modifier = Modifier
-                    .size(width = 220.dp, height = 50.dp),
+                    .size(width = 200.dp, height = 40.dp),
                 shape = RoundedCornerShape(15.dp),
                 enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
 
-                    if(passengerViewModel.isNetworkAvailable(context) && enableConfirm) {
+                    if (passengerViewModel.isNetworkAvailable(context) && enableConfirm) {
                         val title = tripTitle
                         val tripSeats = seats
                         val starting = startingTitle
@@ -785,12 +786,12 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                             "id" to driverId
                         )
 
-                        // Add trip to the database
+                        // Add trip to the fire database
                         myRef.push().setValue(trip)
                             .addOnSuccessListener {
                                 Toast.makeText(
                                     context,
-                                    "Trip added successfully",
+                                    "Trip added",
                                     Toast.LENGTH_SHORT
                                 )
                                     .show()
@@ -801,9 +802,30 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                                 Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT)
                                     .show()
                             }
+                        // local data base
+                        // local data base
+                        val trip2 = driverId?.let {
+                            Trip(
+                                id = "0",
+                                driverId = it,
+                                title = title,
+                                seats = seats,
+                                starting = starting,
+                                end = end,
+                                startingLatLng = startingLatLng,
+                                destinationLatLng = destinationLatLng,
+                                date = date,
+                                time = time,
+                                tripDistance = tripDistance,
+                                verified = isVerified,
+                            )
+                        }
+                        val dbHelper = LocalTripDbHelper(context)
+                        if (trip2 != null) {
+                            dbHelper.insertTrip(trip2)
+                        }
 
-
-                    }else{
+                    } else {
                         passengerViewModel.ShowWifiProblemDialog(context)
                     }
                 }) {
@@ -811,6 +833,31 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                     text = "Confirmation",
                     fontSize = 20.sp
                 )
+            }
+        }
+
+        // History
+///////////////////////////////////////////////////////////////////////////////////////////////
+            // here now
+        val dbHelper = LocalTripDbHelper(context)
+        val trips = remember { mutableStateOf(dbHelper.getAllTrips()) }
+
+        LazyColumn {
+            items(trips.value) { trip ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(2.dp)
+                        .background(Color.Gray.copy(alpha = 0.7f), shape = RoundedCornerShape(12.dp)),
+                  //  elevation = 0.dp
+                ) {
+                    Column(modifier = Modifier.padding(7.dp)) {
+                        Text(text = "${trip.date} At ${trip.time}", style = MaterialTheme.typography.headlineSmall)
+                        Text(text = "Starting: ${trip.starting}")
+                        Text(text = "Destination: ${trip.end}")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
 

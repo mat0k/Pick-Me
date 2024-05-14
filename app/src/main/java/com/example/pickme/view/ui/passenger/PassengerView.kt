@@ -596,7 +596,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
         }
         val sheetState = rememberModalBottomSheetState()
 
-        LazyColumn(                                       // here now
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(10.dp)
