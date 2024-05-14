@@ -4,7 +4,9 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import com.google.android.gms.maps.model.LatLng
+import java.util.UUID
 
 class LocalTripDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -52,29 +54,30 @@ class LocalTripDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_N
         onCreate(db)
     }
 
-    fun insertTrip(trip: Trip): Long {
+    fun insertTrip(localTrip: LocalTrip): Long {
         val db = this.writableDatabase
         val contentValues = ContentValues().apply {
-            put(COLUMN_ID, trip.id)
-            put(COLUMN_DRIVER_ID, trip.driverId)
-            put(COLUMN_TITLE, trip.title)
-            put(COLUMN_SEATS, trip.seats)
-            put(COLUMN_STARTING, trip.starting)
-            put(COLUMN_END, trip.end)
-            put(COLUMN_STARTING_LAT, trip.startingLatLng.latitude)
-            put(COLUMN_STARTING_LNG, trip.startingLatLng.longitude)
-            put(COLUMN_DESTINATION_LAT, trip.destinationLatLng.latitude)
-            put(COLUMN_DESTINATION_LNG, trip.destinationLatLng.longitude)
-            put(COLUMN_DATE, trip.date)
-            put(COLUMN_TIME, trip.time)
-            put(COLUMN_TRIP_DISTANCE, trip.tripDistance)
-            put(COLUMN_VERIFIED, if (trip.verified) 1 else 0)
+            // Generate a unique ID for each trip
+            put(COLUMN_ID, UUID.randomUUID().toString())
+            put(COLUMN_DRIVER_ID, localTrip.driverId)
+            put(COLUMN_TITLE, localTrip.title)
+            put(COLUMN_SEATS, localTrip.seats)
+            put(COLUMN_STARTING, localTrip.starting)
+            put(COLUMN_END, localTrip.end)
+            put(COLUMN_STARTING_LAT, localTrip.startingLatLng.latitude)
+            put(COLUMN_STARTING_LNG, localTrip.startingLatLng.longitude)
+            put(COLUMN_DESTINATION_LAT, localTrip.destinationLatLng.latitude)
+            put(COLUMN_DESTINATION_LNG, localTrip.destinationLatLng.longitude)
+            put(COLUMN_DATE, localTrip.date)
+            put(COLUMN_TIME, localTrip.time)
+            put(COLUMN_TRIP_DISTANCE, localTrip.tripDistance)
+            put(COLUMN_VERIFIED, if (localTrip.verified) 1 else 0)
         }
         return db.insert(TABLE_NAME, null, contentValues)
     }
 
-    fun getAllTrips(): List<Trip> {
-        val tripList = mutableListOf<Trip>()
+    fun getAllTrips(): List<LocalTrip> {
+        val localTripList = mutableListOf<LocalTrip>()
         val selectQuery = "SELECT * FROM $TABLE_NAME"
         val db = this.readableDatabase
         val cursor = db.rawQuery(selectQuery, null)
@@ -96,8 +99,8 @@ class LocalTripDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_N
                 val tripDistance = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TRIP_DISTANCE))
                 val verified = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_VERIFIED)) == 1
 
-                tripList.add(
-                    Trip(
+                localTripList.add(
+                    LocalTrip(
                         id,
                         driverId,
                         title,
@@ -112,11 +115,13 @@ class LocalTripDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_N
                         verified
                     )
                 )
+                Log.i("TripsDB", "Trip: $id, $driverId, $title, $seats, $starting, $end, $startingLat, $startingLng, $destinationLat, $destinationLng, $date, $time, $tripDistance, $verified")
+
             } while (cursor.moveToNext())
         }
 
         cursor.close()
-        return tripList
+        return localTripList
     }
 
     fun deleteTrip(id: String): Int {

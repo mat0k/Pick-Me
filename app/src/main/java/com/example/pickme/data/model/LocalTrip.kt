@@ -1,6 +1,6 @@
 package com.example.pickme.data.model
 
-data class Trip(
+data class LocalTrip(
     val id: String = "",
     val driverId: String,
     val title: String,

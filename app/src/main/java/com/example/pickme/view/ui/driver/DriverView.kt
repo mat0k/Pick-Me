@@ -99,6 +99,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pickme.MainActivity
 import com.example.pickme.R
+import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalTripDbHelper
 import com.example.pickme.data.model.Passenger
 import com.example.pickme.data.model.PickUp
@@ -135,7 +136,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
-import com.example.pickme.data.model.Trip
+import com.example.pickme.data.model.LocalTrip
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
 import com.example.pickme.data.repository.OneSignalNotificationSender
@@ -423,6 +424,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     val driverId = sharedPref.getString("lastUserId", null)
     var isVerified = false
     var enableConfirm = false
+
+    val dbHelper = LocalTripDbHelper(context)
+
+    val showDialog = remember { mutableStateOf(false) }
+    val tripToDelete = remember { mutableStateOf<LocalTrip?>(null) }
+
+    var trips by remember { mutableStateOf(listOf<LocalTrip>()) }
+
 
     if (passengerViewModel.isNetworkAvailable(context)) {
         enableConfirm = true
@@ -804,8 +813,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                             }
                         // local data base
                         // local data base
-                        val trip2 = driverId?.let {
-                            Trip(
+                        val localTrip = driverId?.let {
+                            LocalTrip(
                                 id = "0",
                                 driverId = it,
                                 title = title,
@@ -820,9 +829,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                                 verified = isVerified,
                             )
                         }
-                        val dbHelper = LocalTripDbHelper(context)
-                        if (trip2 != null) {
-                            dbHelper.insertTrip(trip2)
+                        if (localTrip != null) {
+                            dbHelper.insertTrip(localTrip)
                         }
 
                     } else {
@@ -839,28 +847,106 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
         // History
 ///////////////////////////////////////////////////////////////////////////////////////////////
             // here now
-        val dbHelper = LocalTripDbHelper(context)
-        val trips = remember { mutableStateOf(dbHelper.getAllTrips()) }
-
+        LaunchedEffect(Unit) {
+            trips = dbHelper.getAllTrips()
+        }
+        trips = dbHelper.getAllTrips()
+        Log.i("xxxx","trips: $trips")
         LazyColumn {
-            items(trips.value) { trip ->
+            items(trips) { trip ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(2.dp)
-                        .background(Color.Gray.copy(alpha = 0.7f), shape = RoundedCornerShape(12.dp)),
-                  //  elevation = 0.dp
+                        .background(
+                            Color.Gray.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
                 ) {
-                    Column(modifier = Modifier.padding(7.dp)) {
-                        Text(text = "${trip.date} At ${trip.time}", style = MaterialTheme.typography.headlineSmall)
-                        Text(text = "Starting: ${trip.starting}")
-                        Text(text = "Destination: ${trip.end}")
+                    Row(
+                        modifier= Modifier
+                            .fillMaxSize()
+                            .padding(5.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(7.dp)
+                                .weight(1f)  // Add weight modifier here
+                        ) {
+                            Text(text = "${trip.date} At ${trip.time}", style = MaterialTheme.typography.headlineSmall)
+                            Text(text = "Starting: ${trip.starting}")
+                            Text(text = "Destination: ${trip.end}")
+                            Text(text = "seats: ${trip.seats}")
+
+                        }
+
+                        Column { // icons column
+                            IconButton(
+                                onClick = {  }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.search_location1),
+                                    contentDescription = "Preview"
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.preview_icon),
+                                    contentDescription = "preview"
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    tripToDelete.value = trip
+                                    showDialog.value = true                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.delete_icon),
+                                    contentDescription = "Delete"
+                                )
+                            }
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
 
+
+    if (showDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDialog.value = false },
+            title = { Text("Delete Trip") },
+            text = { Text("Are you sure you want to delete this trip?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Delete the trip here
+                        dbHelper.deleteTrip(tripToDelete.value!!.id)
+                        // Remove the trip from the list
+                        trips = trips.filter { it.id != tripToDelete.value!!.id }
+
+
+                        // Dismiss the dialog
+                        showDialog.value = false
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog.value = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     MaterialDialog(
@@ -1195,7 +1281,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                    Log.d("xxxx", "Place added: ${place.title}")
+                                  //  Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
