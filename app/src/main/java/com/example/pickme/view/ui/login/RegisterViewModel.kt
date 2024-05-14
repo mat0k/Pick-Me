@@ -145,6 +145,7 @@ class RegisterViewModel : ViewModel() {
             firstName.value,
             lastName.value,
             phoneNumber.value,
+            emergencyNumber.value,
             password.value,
             carPlate.value,
             authRepository.uploadImageToFirebase(carPhoto.value),

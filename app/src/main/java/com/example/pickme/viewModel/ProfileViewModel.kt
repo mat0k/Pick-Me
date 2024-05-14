@@ -51,6 +51,7 @@ class ProfileViewModel(val context: Context) : ViewModel() {
                 password = currentPassenger?.password ?: "",
                 photoUrl = newPhotoUrl.value,
                 emergencyNumber = emergencyNumber.value
+
             )
             authRepository.updatePassenger(updatedPassenger)
         }

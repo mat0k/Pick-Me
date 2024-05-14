@@ -35,9 +35,11 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -47,6 +49,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -245,7 +249,8 @@ fun HomeScreen(navController: NavHostController) {
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
                     val sender = OneSignalNotificationSender()
-                    val recipientPlayerIds = listOf("RECIPIENT_PLAYER_ID_1") // Player IDs of the recipients
+                    val recipientPlayerIds =
+                        listOf("RECIPIENT_PLAYER_ID_1") // Player IDs of the recipients
                     sender.sendNotification("Test Pickup Accept", recipientPlayerIds)
                 }
             }
@@ -1293,7 +1298,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProfileScreen(navController: NavHostController, context: Context) {
-    val isEditing by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val viewModelFactory = DriverProfileVMFactory(context)
     val viewModel = viewModel<DriverProfileVM>(factory = viewModelFactory)
@@ -1322,6 +1327,40 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (!isEditing) {
+                FloatingActionButton(
+                    onClick = {
+                        isEditing = true
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                }
+            } else {
+                Column {
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.saveProfileData()
+                            isEditing = false
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(Icons.Filled.Save, contentDescription = "Save")
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.loadProfileData()
+                            isEditing = false
+                        },
+                        containerColor = MaterialTheme.colorScheme.error
+                    ) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Cancel")
+                    }
+                }
+            }
         }
     ) {
         if (showBottomSheet) {
@@ -1378,190 +1417,243 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     }
                 })
         }
-    }
+
+        LaunchedEffect(Unit) {
+            viewModel.loadProfileData()
+        }
+
+        // rate and comment section
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        val driverId = viewModel.sharedPref.getString("lastUserId", null)
+        var rate by remember {
+            mutableStateOf(0f)
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp, top = 100.dp),
+            // .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (!isEditing) {
+                if (!driverId.isNullOrEmpty()) {
+                    Text(
+                        text = "Name: ${viewModel.name.value} ${viewModel.surname.value}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Phone: ${viewModel.phone.value}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    // rate
 
 
-                                        // rate and comment section
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    val driverId = viewModel.sharedPref.getString("lastUserId", null)
-    var rate by remember {
-        mutableStateOf(0f)
-    }
-    Column (
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp, top = 100.dp),
-        // .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        if(!driverId.isNullOrEmpty()) {
-            // rate
+                    Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    HorizontalDivider() // Separator
+                    Spacer(modifier = Modifier.height(8.dp))
 
-
-            Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(2.dp))
-            HorizontalDivider() // Separator
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if(rate== 0f){
-                Text(
-                    text = "Rate: "
-                )
-                CircularProgressIndicator(
-                    modifier = Modifier.size(25.dp),
-                )
-            }
-            else {
-                Text(
-                    text = "Rate: ${"%.1f".format(rate)}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            // get the rate from firebase, adding it as fun in view model didn't work
-            val database = FirebaseDatabase.getInstance()
-            driverId?.let { database.getReference("rating").child(it) }
-                ?.addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        var sum = 0.0
-                        var count = 0
-
-                        for (ratingSnapshot in dataSnapshot.children) {
-                            val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
-                            if (rating != null) {
-                                sum += rating
-                                count++
-                            }
-                        }
-
-                        if (count > 0) {
-                            val averageRating = sum / count
-                            rate =
-                                averageRating.toFloat() // Update rate variable with the average rating
-                        }
+                    if (rate == 0f) {
+                        Text(
+                            text = "Rate: "
+                        )
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(25.dp),
+                        )
+                    } else {
+                        Text(
+                            text = "Rate: ${"%.1f".format(rate)}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
+                    // get the rate from firebase, adding it as fun in view model didn't work
+                    val database = FirebaseDatabase.getInstance()
+                    driverId?.let { database.getReference("rating").child(it) }
+                        ?.addValueEventListener(object : ValueEventListener {
+                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                var sum = 0.0
+                                var count = 0
 
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        // Handle possible errors.
-                        println("Error reading ratings: ${databaseError.message}")
-                    }
-                })
-
-            Spacer(modifier = Modifier.height(25.dp))
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // comments section
-
-            Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(2.dp))
-            HorizontalDivider() // Separator
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Fetch comments from Firebase
-            val comments = remember { mutableStateListOf<Map<String, String>>() }
-            LaunchedEffect(Unit) {
-                val commentsRef = database.getReference("comments")
-                commentsRef.addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        comments.clear()
-                        dataSnapshot.children.mapNotNullTo(comments) {
-                            it.getValue(object : GenericTypeIndicator<Map<String, String>>() {})
-                        }
-                    }
-
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        // Handle possible errors.
-                    }
-                })
-            }
-            // Display comments in a LazyColumn
-            var noComments by remember {
-                mutableStateOf(true)
-            }
-            LazyColumn {
-                items(comments.reversed()) { comment ->
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                Color.Gray.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                            .padding(10.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Column {
-                            if (comment["DriverId"] == driverId) {
-                                noComments= false
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "${comment["passengerName"]}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = "${comment["commentDate"]}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        textAlign = TextAlign.End
-                                    )
+                                for (ratingSnapshot in dataSnapshot.children) {
+                                    val rating =
+                                        ratingSnapshot.child("rate").getValue(Double::class.java)
+                                    if (rating != null) {
+                                        sum += rating
+                                        count++
+                                    }
                                 }
-                                Text(
-                                    text = "${comment["comment"]}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            }
-                            if(noComments){
-                                Text(
-                                    text = "No Comments yet",
-                                    style = MaterialTheme.typography.bodyMedium,
 
-                                )
+                                if (count > 0) {
+                                    val averageRating = sum / count
+                                    rate =
+                                        averageRating.toFloat() // Update rate variable with the average rating
+                                }
                             }
+
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                // Handle possible errors.
+                                println("Error reading ratings: ${databaseError.message}")
+                            }
+                        })
+
+                    Spacer(modifier = Modifier.height(25.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    // comments section
+
+                    Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    HorizontalDivider() // Separator
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Fetch comments from Firebase
+                    val comments = remember { mutableStateListOf<Map<String, String>>() }
+                    LaunchedEffect(Unit) {
+                        val commentsRef = database.getReference("comments")
+                        commentsRef.addValueEventListener(object : ValueEventListener {
+                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                comments.clear()
+                                dataSnapshot.children.mapNotNullTo(comments) {
+                                    it.getValue(object :
+                                        GenericTypeIndicator<Map<String, String>>() {})
+                                }
+                            }
+
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                // Handle possible errors.
+                            }
+                        })
+                    }
+                    // Display comments in a LazyColumn
+                    var noComments by remember {
+                        mutableStateOf(true)
+                    }
+                    LazyColumn {
+                        items(comments.reversed()) { comment ->
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        Color.Gray.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    .padding(10.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                Column {
+                                    if (comment["DriverId"] == driverId) {
+                                        noComments = false
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "${comment["passengerName"]}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "${comment["commentDate"]}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                textAlign = TextAlign.End
+                                            )
+                                        }
+                                        Text(
+                                            text = "${comment["comment"]}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
+                                    if (noComments) {
+                                        Text(
+                                            text = "No Comments yet",
+                                            style = MaterialTheme.typography.bodyMedium,
+
+                                            )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-            }
 
-            Spacer(modifier = Modifier.height(100.dp))
+                    Spacer(modifier = Modifier.height(100.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 80.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-               // Text(text = "driver id : $driverId")      // on finish
-                CircularProgressIndicator(
-                    modifier = Modifier.size(60.dp),
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 80.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Text(text = "driver id : $driverId")      // on finish
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(60.dp),
+                        )
+                    }
+                }
+
+                //Emergency call
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                Spacer(modifier = Modifier.height(25.dp))
+                Text(text = "Emergency Call", style = MaterialTheme.typography.headlineMedium)
+                Spacer(modifier = Modifier.height(2.dp))
+                HorizontalDivider() // Separator
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(onClick = {
+                    val dialIntent = Intent(Intent.ACTION_DIAL)
+                    dialIntent.data = Uri.parse("tel:${viewModel.emergencyNumber.value}")
+                    context.startActivity(dialIntent)
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.siren),
+                        contentDescription = "Emergency Call Icon",
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp)) // Add some spacing between the icon and the text
+                    Text("Call Emergency Number")
+                }
+            } else {
+                OutlinedTextField(
+                    value = viewModel.name.value,
+                    onValueChange = {
+                        viewModel.name.value = it
+                    },
+                    label = {
+                        Text("Name")
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = viewModel.surname.value,
+                    onValueChange = {
+                        viewModel.surname.value = it
+                    },
+                    label = {
+                        Text("Surname")
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = viewModel.phone.value,
+                    onValueChange = {
+                        viewModel.phone.value = it
+                    },
+                    label = {
+                        Text("Phone")
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = viewModel.emergencyNumber.value,
+                    onValueChange = {
+                        viewModel.emergencyNumber.value = it
+                    },
+                    label = {
+                        Text("Emergency Number")
+                    }
                 )
             }
         }
-
-        //Emergency call
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Spacer(modifier = Modifier.height(25.dp))
-        Text(text = "Emergency Call", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(2.dp))
-        HorizontalDivider() // Separator
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(onClick = {
-        /*    val dialIntent = Intent(Intent.ACTION_DIAL)
-            dialIntent.data = Uri.parse("tel:${viewModel.emergencyNumber.value}")
-            context.startActivity(dialIntent)*/
-        }) {
-            Icon(
-                painter = painterResource(id = R.drawable.siren),
-                contentDescription = "Emergency Call Icon",
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp)) // Add some spacing between the icon and the text
-            Text("Call Emergency Number")
-        }
     }
-
 }

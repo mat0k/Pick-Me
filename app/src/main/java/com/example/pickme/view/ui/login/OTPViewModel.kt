@@ -70,6 +70,7 @@ class OTPViewModel : ViewModel() {
     fun verifyOTP(onVerified: (Boolean) -> Unit) {
         isLoading.value = true
         val credential = PhoneAuthProvider.getCredential(storedVerificationId, otp.value)
+        otp.value = ""
         signInWithPhoneAuthCredential(credential) { result ->
             isLoading.value = false
             if (result) {
