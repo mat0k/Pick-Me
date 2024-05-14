@@ -846,12 +846,10 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
         // History
 ///////////////////////////////////////////////////////////////////////////////////////////////
-            // here now
+
         LaunchedEffect(Unit) {
             trips = dbHelper.getAllTrips()
         }
-        trips = dbHelper.getAllTrips()
-        Log.i("xxxx","trips: $trips")
         LazyColumn {
             items(trips) { trip ->
                 Card(
@@ -892,6 +890,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                             IconButton(
                                 onClick = {
+                                    // here now
                                 }
                             ) {
                                 Icon(
