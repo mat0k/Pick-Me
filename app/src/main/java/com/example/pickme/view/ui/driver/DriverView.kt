@@ -427,7 +427,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(start= 16.dp, top= 5.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -457,6 +457,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         )
 
+                // Seats
+///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -486,13 +488,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
+                            // Location
         ///////////////////////////////////////////////////////////////////////////////////////////////
-        Spacer(modifier = Modifier.padding(top = 5.dp))
+        //Spacer(modifier = Modifier.padding(top = 5.dp))
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 160.dp), // row of two field and location button
+                .heightIn(min = 50.dp, max = 150.dp), // row of two field and location button
             horizontalArrangement = Arrangement.Center,
 
             ) {
@@ -627,7 +630,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                 }
             }
         }
-
+                            // Date
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
         Row(
@@ -724,12 +727,13 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         }
 
-
+                        //confirmation
+///////////////////////////////////////////////////////////////////////////////////////////////
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
-        ) {                                     //confirmation
+        ) {
             Button(
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
