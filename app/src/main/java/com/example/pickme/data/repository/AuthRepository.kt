@@ -140,18 +140,17 @@ class AuthRepository {
             "carPhoto" to driver.carPhoto,
             "photo" to driver.photo,
             "driverLicense" to driver.driverLicense,
-            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate)
+            "verified" to checkDriverLicenseAndCarPlate(driver.driverLicense, driver.carPlate),
+            "emergencyNumber" to driver.emergencyNumber
         )
         myRef.child(uuid).setValue(driverObject)
         return Result.success(Unit)
     }
 
     suspend fun updatePassenger(passenger: Passenger): Result<Unit> {
-        val uuid = FirebaseAuth.getInstance().currentUser?.uid
-            ?: return Result.failure(Exception("User not logged in"))
-        val myRef = database.getReference("Passengers").child(uuid)
+        val myRef = database.getReference("Passengers").child(passenger.id)
         val passengerObject = mapOf(
-            "id" to uuid,
+            "id" to passenger.id,
             "name" to passenger.name,
             "surname" to passenger.surname,
             "password" to passenger.password,
@@ -161,6 +160,24 @@ class AuthRepository {
             "oneSignalUserId" to passenger.oneSignalId
         )
         myRef.updateChildren(passengerObject).await()
+        return Result.success(Unit)
+    }
+
+    suspend fun updateDriver(driver: Driver): Result<Unit> {
+        val myRef = database.getReference("Drivers").child(driver.id)
+        val driverObject = mapOf(
+            "id" to driver.id,
+            "name" to driver.name,
+            "surname" to driver.surname,
+            "password" to driver.password,
+            "phone" to driver.phone,
+            "carPlate" to driver.carPlate,
+            "carPhoto" to driver.carPhoto,
+            "photo" to driver.photo,
+            "driverLicense" to driver.driverLicense,
+            "verified" to driver.verified
+        )
+        myRef.updateChildren(driverObject).await()
         return Result.success(Unit)
     }
 
@@ -191,4 +208,9 @@ class AuthRepository {
         return data.getValue(Passenger::class.java)
     }
 
+    suspend fun getDriverData(id: String): Driver? {
+        val myRef = database.getReference("Drivers").child(id)
+        val data = myRef.get().await()
+        return data.getValue(Driver::class.java)
+    }
 }
