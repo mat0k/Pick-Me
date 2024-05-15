@@ -58,7 +58,8 @@ class LocalTripDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_N
         val db = this.writableDatabase
         val contentValues = ContentValues().apply {
             // Generate a unique ID for each trip
-            put(COLUMN_ID, UUID.randomUUID().toString())
+           // put(COLUMN_ID, UUID.randomUUID().toString())
+            put(COLUMN_ID, localTrip.id)
             put(COLUMN_DRIVER_ID, localTrip.driverId)
             put(COLUMN_TITLE, localTrip.title)
             put(COLUMN_SEATS, localTrip.seats)

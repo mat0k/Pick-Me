@@ -432,7 +432,6 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var trips by remember { mutableStateOf(listOf<LocalTrip>()) }
 
-
     if (passengerViewModel.isNetworkAvailable(context)) {
         enableConfirm = true
         val driverRef = database.getReference("Drivers").child(driverId ?: "")
@@ -780,59 +779,62 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                         // val driverId = sharedPref.getString("lastUserId", null
 
-                        // Create a new trip object
-                        val trip = mapOf(
-                            "title" to title,
-                            "seats" to tripSeats,
-                            "starting" to starting,
-                            "end" to end,
-                            "startingLatLng" to startingLatLng,
-                            "destinationLatLng" to destinationLatLng,
-                            "date" to date,
-                            "time" to time,
-                            "tripDistance" to tripDistance,
-                            "verified" to isVerified,
-                            "id" to driverId
-                        )
+                        // Generate a unique key for the new trip
+                        val tripKey = myRef.push().key
 
-                        // Add trip to the fire database
-                        myRef.push().setValue(trip)
-                            .addOnSuccessListener {
-                                Toast.makeText(
-                                    context,
-                                    "Trip added",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                                isButtonClicked2 = false
-                                enableConfirmation2 = false
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        // local data base
-                        // local data base
-                        val localTrip = driverId?.let {
-                            LocalTrip(
-                                id = "0",
-                                driverId = it,
-                                title = title,
-                                seats = seats,
-                                starting = starting,
-                                end = end,
-                                startingLatLng = startingLatLng,
-                                destinationLatLng = destinationLatLng,
-                                date = date,
-                                time = time,
-                                tripDistance = tripDistance,
-                                verified = isVerified,
+                        // Check if the key is not null
+                        if (tripKey != null) {
+                            // Create a new trip object
+                            val trip = mapOf(
+                                "title" to title,
+                                "seats" to tripSeats,
+                                "starting" to starting,
+                                "end" to end,
+                                "startingLatLng" to startingLatLng,
+                                "destinationLatLng" to destinationLatLng,
+                                "date" to date,
+                                "time" to time,
+                                "tripDistance" to tripDistance,
+                                "verified" to isVerified,
+                                "id" to driverId
                             )
-                        }
-                        if (localTrip != null) {
-                            dbHelper.insertTrip(localTrip)
-                        }
 
+                            // Add trip to the Firebase database using the unique key
+                            myRef.child(tripKey).setValue(trip)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        context,
+                                        "Trip added",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    isButtonClicked2 = false
+                                    enableConfirmation2 = false
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
+                                }
+
+                            // Save the trip locally
+                            val localTrip = driverId?.let {
+                                LocalTrip(
+                                    id = tripKey, // Use the unique key as the trip ID
+                                    driverId = it,
+                                    title = title,
+                                    seats = seats,
+                                    starting = starting,
+                                    end = end,
+                                    startingLatLng = startingLatLng,
+                                    destinationLatLng = destinationLatLng,
+                                    date = date,
+                                    time = time,
+                                    tripDistance = tripDistance,
+                                    verified = isVerified,
+                                )
+                            }
+                            if (localTrip != null) {
+                                dbHelper.insertTrip(localTrip)
+                            }
+                        }
                     } else {
                         passengerViewModel.ShowWifiProblemDialog(context)
                     }
@@ -875,6 +877,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                             Text(text = "Starting: ${trip.starting}")
                             Text(text = "Destination: ${trip.end}")
                             Text(text = "seats: ${trip.seats}")
+                       //     Text(text = "id: ${trip.id}")
 
                         }
 
@@ -901,8 +904,10 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
 
                             IconButton(
                                 onClick = {
+                                    // delete locally and from fire base
                                     tripToDelete.value = trip
-                                    showDialog.value = true                                }
+                                    showDialog.value = true
+                                }
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.delete_icon),
@@ -930,6 +935,17 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                         // Remove the trip from the list
                         trips = trips.filter { it.id != tripToDelete.value!!.id }
 
+                        // Delete on Firebase
+                        val tripRef = database.getReference("Trips").child(tripToDelete.value!!.id)
+                        tripRef.removeValue().addOnSuccessListener {
+                            Toast.makeText(
+                                context,
+                                "Trip deleted successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }.addOnFailureListener { e ->
+                            Toast.makeText(context, "Failed to delete trip: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
 
                         // Dismiss the dialog
                         showDialog.value = false
@@ -947,6 +963,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             }
         )
     }
+
+
 
     MaterialDialog(
         dialogState = dateDialogState,
