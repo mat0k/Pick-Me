@@ -12,6 +12,4 @@ data class PickUp(
     val dateAndTime: String = "",
     val passengerId: String = "",
     val driverId : String = ""
-) {
-    constructor() : this("", "", "", LatLng(0.0, 0.0), LatLng(0.0, 0.0), 0.0, "", "", "")
-}
+)

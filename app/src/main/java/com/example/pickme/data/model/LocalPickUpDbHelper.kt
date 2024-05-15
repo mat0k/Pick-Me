@@ -34,8 +34,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 "$COLUMN_TARGET_LAT REAL, " +
                 "$COLUMN_TARGET_LNG REAL, " +
                 "$COLUMN_DISTANCE REAL, " +
-                "$COLUMN_DATE_AND_TIME TEXT), " +
-                "$COLUMN_DRIVER_ID"
+                "$COLUMN_DATE_AND_TIME TEXT, " +
+                "$COLUMN_DRIVER_ID TEXT)"
         db?.execSQL(createTableQuery)
     }
 
