@@ -11,4 +11,5 @@ data class PickUp(
     val distance: Double = 0.0,
     val dateAndTime: String = "",
     val passengerId: String = "",
+    val driverId : String = ""
 )

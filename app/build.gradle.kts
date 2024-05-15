@@ -10,7 +10,6 @@ android {
     signingConfigs {
         getByName("debug") {
             storeFile = file("C:\\Users\\user\\keystore.jks")
-
             storePassword = "mohammad"
             keyAlias = "key0"
             keyPassword = "mohammad"

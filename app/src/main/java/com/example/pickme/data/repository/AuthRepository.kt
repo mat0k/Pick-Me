@@ -156,8 +156,7 @@ class AuthRepository {
             "password" to passenger.password,
             "phone" to passenger.phone,
             "photoUrl" to passenger.photoUrl,
-            "emergencyNumber" to passenger.emergencyNumber,
-            "oneSignalUserId" to passenger.oneSignalId
+            "emergencyNumber" to passenger.emergencyNumber
         )
         myRef.updateChildren(passengerObject).await()
         return Result.success(Unit)

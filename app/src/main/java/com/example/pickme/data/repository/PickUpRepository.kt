@@ -32,7 +32,8 @@ class PickUpRepository {
             ),
             "distance" to pickUp.distance,
             "dateAndTime" to pickUp.dateAndTime,
-            "passengerId" to passengerId
+            "passengerId" to passengerId,
+            "driverId" to ""
         )
         myRef.child(pickUpObject["id"] as String).setValue(pickUpObject)
     }

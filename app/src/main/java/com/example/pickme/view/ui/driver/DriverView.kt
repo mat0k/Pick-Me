@@ -1,6 +1,6 @@
 package com.example.pickme.view.ui.driver
 
-
+import com.example.pickme.PickUpService
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -155,6 +155,7 @@ class DriverView : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        startService(Intent(this, PickUpService::class.java))
         setContent {
             PickMeUpTheme {
                 val items = listOf(
@@ -227,8 +228,7 @@ fun HomeScreen(navController: NavHostController) {
     val sheetState = rememberModalBottomSheetState()
     val viewModelFactory = remember { HomeScreenVMFactory(context) }
     val viewModel = viewModel<HomeScreenVM>(factory = viewModelFactory)
-    val pickUps = viewModel.pickUps.observeAsState(initial = emptyList())
-    val filteredPickUps = viewModel.filterPickUps(context, pickUps.value)
+    val pickUps: List<PickUp> by viewModel.pickUps.observeAsState(initial = emptyList())
     val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
     Scaffold(
@@ -250,7 +250,7 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier.padding(it),
         )
         {
-            items(filteredPickUps) { pickUp ->
+            items(pickUps) { pickUp ->
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(pickUp, passenger) {
