@@ -887,14 +887,8 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                         }
 
                         Column { // icons column
-                            IconButton(
-                                onClick = {  }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.search_location1),
-                                    contentDescription = "Preview"
-                                )
-                            }
+
+                            // preview trip
                             IconButton(
                                 onClick = {
                                     // here now
@@ -909,8 +903,16 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                     } else {
                                         passengerViewModel.ShowWifiProblemDialog(context)
                                     }
-
-
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.search_location1),
+                                    contentDescription = "Preview"
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    // here now
                                 }
                             ) {
                                 Icon(
@@ -918,7 +920,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                     contentDescription = "preview"
                                 )
                             }
-
+                                // preview passengers in that trip
                             IconButton(
                                 onClick = {
                                     // delete locally and from fire base
