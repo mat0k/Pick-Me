@@ -1405,7 +1405,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                    Log.d("xxxx", "Place added: ${place.title}")
+                                //    Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
@@ -2817,6 +2817,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     val database = FirebaseDatabase.getInstance()
                     val myRef = database.getReference("Trips")
 
+
                     val postListener = object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val allTrips = mutableListOf<Map<String, Any>>()
@@ -2825,7 +2826,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 val trip = postSnapshot.getValue(object :
                                     GenericTypeIndicator<Map<String, Any>>() {})
                                 if (trip != null) {
-                                    allTrips.add(trip)
+                                    // Create a new mutable map and copy the contents of the original map into it
+                                    val mutableTrip = trip.toMutableMap()
+                                    // Add the trip id to the mutable map
+                                    mutableTrip["tripId"] = postSnapshot.key ?: ""
+                                    // Add the mutable map to the allTrips list
+                                    allTrips.add(mutableTrip)
                                 }
                             }
                             // Filter the trips
@@ -2847,8 +2853,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            Toast.makeText(context, "Failed to load trips.", Toast.LENGTH_SHORT)
-                                .show()
+                            // Handle possible errors.
                         }
                     }
                     myRef.addValueEventListener(postListener)
@@ -2882,6 +2887,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
+                            Text(
+                                text = "id: ${trip["tripId"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
@@ -2917,6 +2926,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
 
                                         if (passengerViewModel.isNetworkAvailable(context)) {
+                                            tripViewModel.setSelectedTripId(trip["tripId"] as? String ?: "")
                                             navController.navigate("mapView3")
                                         } else {
                                             passengerViewModel.ShowWifiProblemDialog(context)
@@ -3538,7 +3548,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                    Log.d("xxxx", "Place added: ${place.title}")
+                                  //  Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
@@ -3730,6 +3740,10 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         mutableStateOf(0.5f)
     }
 
+    val context= LocalContext.current
+    val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+    val passengerId = sharedPref.getString("lastUserId", "")
+
     if (false) {                                                                                   // remove false
         passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
             setPolylinePoints1(decodedPolyline)
@@ -3845,7 +3859,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                         }
                     }
 
-                    Button(
+                    Button( // book trip
                         modifier = Modifier
                             .weight(3f)
                             .height(55.dp)
@@ -3853,9 +3867,16 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                             .alpha(0.9f),
                         shape = RoundedCornerShape(15.dp),
                         onClick = {
-
+                                // here now
+                              //  Log.i("xxxx","booked trip id: ${tripViewModel.selectedTripId.value}")
+                            val tripId= tripViewModel.selectedTripId.value
+                            val database = FirebaseDatabase.getInstance()
+                            val tripsRef = database.getReference("Trips")
+                            val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                            passengersIdsRef.push().setValue(passengerId)
                             navController.navigate("searchTrips")
                         }
+
                     ) {
                         Text(
                             text = "Book Trip",

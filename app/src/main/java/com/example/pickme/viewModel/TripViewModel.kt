@@ -27,6 +27,7 @@ class TripViewModel : ViewModel() {
 
     val pickedDate: MutableState<LocalDate> = mutableStateOf(LocalDate.now())
 
+    val selectedTripId: MutableState<String> = mutableStateOf("")
     fun setTripTitle(title: String){
         tripTitle.value = title
     }
@@ -58,5 +59,8 @@ class TripViewModel : ViewModel() {
     }
     fun setFormattedDate(date: LocalDate){
         pickedDate.value = date
+    }
+    fun setSelectedTripId(id: String){
+        selectedTripId.value = id
     }
 }
