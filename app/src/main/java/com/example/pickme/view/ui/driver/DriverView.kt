@@ -367,6 +367,7 @@ fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel,p
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pickUpViewModel: PickUpViewModel) {
 
@@ -436,6 +437,12 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
     val tripToDelete = remember { mutableStateOf<LocalTrip?>(null) }
 
     var trips by remember { mutableStateOf(listOf<LocalTrip>()) }
+
+    var showBottomSheet by remember {
+        mutableStateOf(false)
+    }
+    val sheetState = rememberModalBottomSheetState()
+
 
     if (passengerViewModel.isNetworkAvailable(context)) {
         enableConfirm = true
@@ -891,7 +898,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                             // preview trip
                             IconButton(
                                 onClick = {
-                                    // here now
+
                                     pickUpViewModel.setPrevPickUpTitle(trip.starting)
                                     pickUpViewModel.setPrevTargetTitle(trip.end)
                                     pickUpViewModel.setPrevPickUPLatLng(trip.startingLatLng)
@@ -910,15 +917,82 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                     contentDescription = "Preview"
                                 )
                             }
+                            val passengers = mutableListOf<String>()
                             IconButton(
                                 onClick = {
-                                    // here now
+                                    val tripId = trip.id
+                                    val tripsRef = database.getReference("Trips")
+                                    val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                                    val passengersRef = database.getReference("Passengers")
+
+                                    // Retrieve the passengerIds
+                                    passengersIdsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                            val passengerIds = dataSnapshot.children.mapNotNull { it.getValue(String::class.java) }
+
+                                            // Retrieve the names and phone numbers of the passengers
+                                            passengerIds.forEach { passengerId ->
+                                                passengersRef.child(passengerId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                                        val name = dataSnapshot.child("name").getValue(String::class.java) ?: ""
+                                                        val surname = dataSnapshot.child("surname").getValue(String::class.java) ?: ""
+                                                        val phoneNumber = dataSnapshot.child("phoneNumber").getValue(String::class.java) ?: ""
+                                                        passengers.add("$name $surname, Phone: $phoneNumber")
+
+                                                        // Check if all passengers have been retrieved
+                                                        if (passengers.size == passengerIds.size) {
+                                                            // All passengers have been retrieved, show the bottom sheet
+                                                            showBottomSheet = true
+                                                        }
+                                                    }
+
+                                                    override fun onCancelled(databaseError: DatabaseError) {
+                                                        // Handle possible errors.
+                                                    }
+                                                })
+                                            }
+                                        }
+
+                                        override fun onCancelled(databaseError: DatabaseError) {
+                                            // Handle possible errors.
+                                        }
+                                    })
                                 }
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.preview_icon),
                                     contentDescription = "preview"
                                 )
+                            }
+
+                            if(showBottomSheet){
+                                // Show the bottom sheet here
+                                ModalBottomSheet(
+                                    modifier = Modifier
+                                        .padding(10.dp)
+                                        .heightIn(min = 700.dp),
+                                    sheetState = sheetState,
+                                    onDismissRequest = { showBottomSheet = false }
+                                ) {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        item {
+                                            Text(
+                                                text = "Passengers",
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(16.dp)
+                                            )
+                                        }   // here now
+                                        items(passengers) { passenger ->
+                                        /*    Text(
+                                                text = "${passenger["name"].toString()} ${passenger["surname"].toString()}, Phone: ${passenger["phone"].toString()}",
+                                                modifier = Modifier.padding(16.dp)
+                                            )*/
+                                        }
+                                    }
+                                }
                             }
                                 // preview passengers in that trip
                             IconButton(
