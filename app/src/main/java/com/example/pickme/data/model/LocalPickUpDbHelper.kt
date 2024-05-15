@@ -21,6 +21,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val COLUMN_TARGET_LNG = "target_lng"
         private const val COLUMN_DISTANCE = "distance"
         private const val COLUMN_DATE_AND_TIME = "date_and_time"
+        private const val COLUMN_DRIVER_ID = "driver_id"
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -33,7 +34,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 "$COLUMN_TARGET_LAT REAL, " +
                 "$COLUMN_TARGET_LNG REAL, " +
                 "$COLUMN_DISTANCE REAL, " +
-                "$COLUMN_DATE_AND_TIME TEXT)"
+                "$COLUMN_DATE_AND_TIME TEXT), " +
+                "$COLUMN_DRIVER_ID"
         db?.execSQL(createTableQuery)
     }
 
@@ -53,6 +55,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
             put(COLUMN_TARGET_LNG, localPickUp.targetLatLng.longitude)
             put(COLUMN_DISTANCE, localPickUp.distance)
             put(COLUMN_DATE_AND_TIME, localPickUp.dateAndTime)
+            put(COLUMN_DRIVER_ID, localPickUp.driverId)
         }
         return db.insert(TABLE_NAME, null, contentValues)
     }
@@ -74,6 +77,7 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 val targetLng = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TARGET_LNG))
                 val distance = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_DISTANCE))
                 val dateAndTime = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE_AND_TIME))
+                val driverId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DRIVER_ID))
                 localPickUpList.add(
                     LocalPickUp(
                         id,
@@ -82,7 +86,8 @@ class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                         LatLng(pickUpLat, pickUpLng),
                         LatLng(targetLat, targetLng),
                         distance,
-                        dateAndTime
+                        dateAndTime,
+                        driverId
                     )
                 )
             } while (cursor.moveToNext())

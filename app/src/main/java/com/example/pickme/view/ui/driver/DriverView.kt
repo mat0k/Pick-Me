@@ -1,7 +1,6 @@
 package com.example.pickme.view.ui.driver
 
-
-import UpdatePickupsWorker
+import com.example.pickme.PickUpService
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -93,8 +92,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.Passenger
@@ -147,9 +144,7 @@ class DriverView : ComponentActivity() {
     private val tripViewModel: TripViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val updatePickupsWorkRequest = OneTimeWorkRequestBuilder<UpdatePickupsWorker>().build()
-        WorkManager.getInstance(this).enqueue(updatePickupsWorkRequest)
+        startService(Intent(this, PickUpService::class.java))
         setContent {
             PickMeUpTheme {
                 val items = listOf(

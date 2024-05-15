@@ -11,6 +11,5 @@ data class Driver(
     var photo: String = "", // changed from driverPhotoUrl
     var driverLicense: String = "",
     val role: Int = 1,
-    var verified: Boolean = false,
-    val token: String? = null
+    var verified: Boolean = false
 )

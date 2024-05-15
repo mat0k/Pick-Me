@@ -3,6 +3,7 @@ package com.example.pickme
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.example.pickme.notifications.PickUpAcceptedService
 import com.example.pickme.notifications.PickupsNotificationService
 
 import com.onesignal.OneSignal
@@ -34,7 +35,16 @@ class MyApp: Application() {
         ).apply {
             description = PickupsNotificationService.CHANNEL_DESCRIPTION
         }
+
+        val channel2 = NotificationChannel(
+            PickUpAcceptedService.CHANNEL_ID,
+            PickUpAcceptedService.CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = PickUpAcceptedService.CHANNEL_DESCRIPTION
+        }
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(channel2)
     }
 }
