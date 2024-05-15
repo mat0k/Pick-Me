@@ -9,7 +9,7 @@ import com.google.android.gms.maps.model.LatLng
 class LocalPickUpDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 5
         private const val DATABASE_NAME = "local_pickups.db"
         private const val TABLE_NAME = "local_pickups"
         private const val COLUMN_ID = "id"
