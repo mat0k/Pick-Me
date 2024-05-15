@@ -21,12 +21,12 @@ class TripViewModel : ViewModel() {
     val searchedTripStartLatLng: MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
     val searchedTripDestLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(33.8938,35.5018))
 
-
     val distance:   MutableState<Double> = mutableStateOf(0.0)
 
     val tripDateAndTime: MutableState<String> = mutableStateOf("")
 
     val pickedDate: MutableState<LocalDate> = mutableStateOf(LocalDate.now())
+
     fun setTripTitle(title: String){
         tripTitle.value = title
     }

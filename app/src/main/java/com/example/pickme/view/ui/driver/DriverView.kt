@@ -140,6 +140,7 @@ import com.example.pickme.data.model.LocalTrip
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
 import com.example.pickme.data.repository.OneSignalNotificationSender
+import com.example.pickme.viewModel.PickUpViewModel
 
 
 data class BottomNavigationItem(
@@ -150,6 +151,7 @@ data class BottomNavigationItem(
 
 class DriverView : ComponentActivity() {
     private val tripViewModel: TripViewModel by viewModels()
+    private val pickUpViewModel: PickUpViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -197,7 +199,7 @@ class DriverView : ComponentActivity() {
                         Box(modifier = Modifier.padding(innerPadding)) {
                             NavHost(navController = navController, startDestination = "home") {
                                 composable("trips") {
-                                    TripsScreen(navController, tripViewModel)
+                                    TripsScreen(navController, tripViewModel,pickUpViewModel)
                                 }
                                 composable("home") {
                                     HomeScreen(navController)
@@ -348,22 +350,25 @@ fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
 }
 
 @Composable
-fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel) {
+fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel,pickUpViewModel: PickUpViewModel) {
 
     val navController = rememberNavController()
-
+    val context= LocalContext.current
     NavHost(navController = navController, startDestination = "setTrips") {
         composable("setTrips") {
-            SetTrips(navController, tripViewModel)
+            SetTrips(navController, tripViewModel, pickUpViewModel)
         }
         composable("mapView") {
             MapView(navController, tripViewModel)
+        }
+        composable("pickUpPreview") {
+            PickUpPreview(context, navController, pickUpViewModel)
         }
     }
 }
 
 @Composable
-fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
+fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pickUpViewModel: PickUpViewModel) {
 
     val context = LocalContext.current
     var tripTitle by remember { mutableStateOf(tripViewModel.tripTitle.value) }
@@ -890,10 +895,22 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
                                     contentDescription = "Preview"
                                 )
                             }
-
                             IconButton(
                                 onClick = {
                                     // here now
+                                    pickUpViewModel.setPrevPickUpTitle(trip.starting)
+                                    pickUpViewModel.setPrevTargetTitle(trip.end)
+                                    pickUpViewModel.setPrevPickUPLatLng(trip.startingLatLng)
+                                    pickUpViewModel.setPrevTargetLatLng(trip.destinationLatLng)
+                                    pickUpViewModel.setPrevDistance(trip.tripDistance)
+
+                                    if (passengerViewModel.isNetworkAvailable(context)) {
+                                        navController.navigate("pickUpPreview")
+                                    } else {
+                                        passengerViewModel.ShowWifiProblemDialog(context)
+                                    }
+
+
                                 }
                             ) {
                                 Icon(
@@ -1009,6 +1026,230 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel) {
             isButtonClicked2 = true
             val dateAndTimeField = "$formattedDate, $formattedTime"
             tripViewModel.setTripDateAndTime(dateAndTimeField)
+        }
+    }
+
+}
+
+@Composable
+fun PickUpPreview(
+    context: Context,
+    navController: NavHostController,
+    pickUpViewModel: PickUpViewModel
+) {
+
+    val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
+    val targetLatLng = pickUpViewModel.prevTargetLatLng.value
+
+    val passengerViewModel = PassengerViewModel()
+    val midPoint = passengerViewModel.calculateMidPoint(pickUpLatLng, targetLatLng)
+
+    val (polylinePoints, setPolylinePoints) = remember { mutableStateOf(emptyList<LatLng>()) }
+
+    var tripDistance by remember {
+        mutableStateOf(0.0)
+    }
+    var distanceAlpha by remember {
+        mutableStateOf(0.5f)
+    }
+    if(false) {
+        passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+            setPolylinePoints(decodedPolyline)
+        }, { distance ->
+            tripDistance = "%.2f".format(distance).toDouble()
+            distanceAlpha = 0.9f
+        })
+    }
+
+    val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
+    val zoomLevel = when {
+        distance <= 5 -> 13f
+        distance <= 10 -> 12f
+        distance <= 20 -> 11.5f
+        distance <= 40 -> 10.5f
+        distance <= 80 -> 10f
+        distance <= 100 -> 9f
+        else -> 8f
+    }
+
+    val uiSetting by remember { mutableStateOf(MapUiSettings()) }
+    val properties by remember {
+        mutableStateOf(MapProperties(mapType = MapType.NORMAL))
+    }
+
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
+    }
+
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = pickUpLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = targetLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+            Polyline(
+                points = polylinePoints,
+                color = colorResource(id = R.color.polyline_color_1),
+            )
+        }
+        // Add a button that navigates back to the search page
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 15.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for pick up location and cancel button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pick Up: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevPickUpTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            //display target details
+            Box(
+                modifier = Modifier
+                    .alpha(0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                // row for target location and cancel button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Target: ",
+                        textAlign = TextAlign.Right,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = pickUpViewModel.prevTargetTitle.value,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            Row(                     // distance row
+                modifier = Modifier
+                    .alpha(distanceAlpha)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+                    .alpha(0.9f),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Distance: ",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                if (tripDistance == 0.0) {
+                    distanceAlpha = 1f
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp)
+                    )
+                } else {
+                    Text(
+                        text = "$tripDistance",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0.9f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                            navController.navigate("setTrips")
+                        }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "location Icon",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Button(
+                        modifier = Modifier
+                            .weight(3f)
+                            .height(55.dp)
+                            .padding(5.dp)
+                            .alpha(0f),
+                        shape = RoundedCornerShape(15.dp),
+                        onClick = {
+                         //   navController.navigate("setTrips")
+                        }
+                    ) {
+                       /* Text(
+                            text = "Order Trip",
+                            fontSize = 22.sp
+                        )*/
+                    }
+                }
+            }
         }
     }
 
