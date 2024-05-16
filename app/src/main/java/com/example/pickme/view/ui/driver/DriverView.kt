@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -81,6 +82,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -97,6 +99,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
 import com.example.pickme.R
 import com.example.pickme.data.model.LocalPickUp
@@ -200,7 +203,7 @@ class DriverView : ComponentActivity() {
                         Box(modifier = Modifier.padding(innerPadding)) {
                             NavHost(navController = navController, startDestination = "home") {
                                 composable("trips") {
-                                    TripsScreen(navController, tripViewModel,pickUpViewModel)
+                                    TripsScreen(navController, tripViewModel, pickUpViewModel)
                                 }
                                 composable("home") {
                                     HomeScreen(navController)
@@ -350,10 +353,14 @@ fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
 }
 
 @Composable
-fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel,pickUpViewModel: PickUpViewModel) {
+fun TripsScreen(
+    navController: NavHostController,
+    tripViewModel: TripViewModel,
+    pickUpViewModel: PickUpViewModel
+) {
 
     val navController = rememberNavController()
-    val context= LocalContext.current
+    val context = LocalContext.current
     NavHost(navController = navController, startDestination = "setTrips") {
         composable("setTrips") {
             SetTrips(navController, tripViewModel, pickUpViewModel)
@@ -369,7 +376,11 @@ fun TripsScreen(navController: NavHostController, tripViewModel: TripViewModel,p
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pickUpViewModel: PickUpViewModel) {
+fun SetTrips(
+    navController: NavHostController,
+    tripViewModel: TripViewModel,
+    pickUpViewModel: PickUpViewModel
+) {
 
     val context = LocalContext.current
     var tripTitle by remember { mutableStateOf(tripViewModel.tripTitle.value) }
@@ -443,7 +454,9 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
     }
     val sheetState = rememberModalBottomSheetState()
 
-
+    var isLoading by remember {
+        mutableStateOf(true)
+    }
     if (passengerViewModel.isNetworkAvailable(context)) {
         enableConfirm = true
         val driverRef = database.getReference("Drivers").child(driverId ?: "")
@@ -823,7 +836,11 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                     enableConfirmation2 = false
                                 }
                                 .addOnFailureListener {
-                                    Toast.makeText(context, "Failed to add trip", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to add trip",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
 
                             // Save the trip locally
@@ -876,7 +893,7 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                         ),
                 ) {
                     Row(
-                        modifier= Modifier
+                        modifier = Modifier
                             .fillMaxSize()
                             .padding(5.dp)
                     ) {
@@ -885,11 +902,14 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                 .padding(7.dp)
                                 .weight(1f)  // Add weight modifier here
                         ) {
-                            Text(text = "${trip.date} At ${trip.time}", style = MaterialTheme.typography.headlineSmall)
+                            Text(
+                                text = "${trip.date} At ${trip.time}",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
                             Text(text = "Starting: ${trip.starting}")
                             Text(text = "Destination: ${trip.end}")
                             Text(text = "seats: ${trip.seats}")
-                       //     Text(text = "id: ${trip.id}")
+                            //     Text(text = "id: ${trip.id}")
 
                         }
 
@@ -917,13 +937,16 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                     contentDescription = "Preview"
                                 )
                             }
-                            val passengers = mutableListOf<String>()
+
+                            val passengers = remember { mutableStateOf(mutableListOf<Passenger>()) }
                             IconButton(
                                 onClick = {
                                     val tripId = trip.id
                                     val tripsRef = database.getReference("Trips")
-                                    val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                                    val passengersIdsRef =
+                                        tripsRef.child(tripId).child("passengersIds")
                                     val passengersRef = database.getReference("Passengers")
+                                    showBottomSheet = true
 
                                     // Retrieve the passengerIds
                                     passengersIdsRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -936,13 +959,15 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                                                         val name = dataSnapshot.child("name").getValue(String::class.java) ?: ""
                                                         val surname = dataSnapshot.child("surname").getValue(String::class.java) ?: ""
-                                                        val phoneNumber = dataSnapshot.child("phoneNumber").getValue(String::class.java) ?: ""
-                                                        passengers.add("$name $surname, Phone: $phoneNumber")
+                                                        val phoneNumber = dataSnapshot.child("phone").getValue(String::class.java) ?: ""
+                                                        val emergencyNb = dataSnapshot.child("emergencyNumber").getValue(String::class.java) ?: ""
+                                                        val photoUrl = dataSnapshot.child("photoUrl").getValue(String::class.java) ?: ""
+                                                        passengers.value.add(Passenger(name= name, surname = surname, phone = phoneNumber, emergencyNumber = emergencyNb, photoUrl = photoUrl))
 
                                                         // Check if all passengers have been retrieved
-                                                        if (passengers.size == passengerIds.size) {
+                                                        if (passengers.value.size == passengerIds.size) {
                                                             // All passengers have been retrieved, show the bottom sheet
-                                                            showBottomSheet = true
+                                                            isLoading= false
                                                         }
                                                     }
 
@@ -972,29 +997,97 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                         .padding(10.dp)
                                         .heightIn(min = 700.dp),
                                     sheetState = sheetState,
-                                    onDismissRequest = { showBottomSheet = false }
+                                    onDismissRequest = {
+                                        showBottomSheet = false }
                                 ) {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        item {
-                                            Text(
-                                                text = "Passengers",
-                                                fontSize = 24.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(16.dp)
+                                    if (isLoading) {
+                                        Text(
+                                        text = "Passengers",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                        Column(
+                                            modifier= Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ){
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(80.dp).padding(16.dp)
                                             )
-                                        }   // here now
-                                        items(passengers) { passenger ->
-                                        /*    Text(
-                                                text = "${passenger["name"].toString()} ${passenger["surname"].toString()}, Phone: ${passenger["phone"].toString()}",
-                                                modifier = Modifier.padding(16.dp)
-                                            )*/
+                                        }
+
+                                    } else {
+                                        LazyColumn(
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            item {
+                                                Text(
+                                                    text = "Passengers",
+                                                    fontSize = 24.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(16.dp)
+                                                )
+                                            }
+                                                items(passengers.value) { passenger ->
+                                                    Card(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(8.dp)
+                                                            .background(Color.Gray.copy(alpha = 0.2f)),
+                                                        shape = RoundedCornerShape(20.dp)
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.padding(16.dp)
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .weight(1f)
+                                                                    .size(100.dp)
+                                                                    .background(Color.Gray),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                // You can add your image here later
+                                                                AsyncImage(
+                                                                    model = passenger.photoUrl, // Use the photoUrl directly
+                                                                    contentDescription = "Profile Picture",
+                                                                    modifier = Modifier
+                                                                        .size(100.dp)
+                                                                        .scale(1.2f)
+                                                                )
+                                                            }
+                                                            Spacer(modifier = Modifier.width(16.dp))
+                                                            Column(
+                                                                modifier = Modifier.weight(4f)
+                                                            ) {
+                                                                Text(
+                                                                    text = "${passenger.name} ${passenger.surname}",
+                                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                                        fontSize = 18.sp
+                                                                    )
+                                                                )
+                                                                Text(
+                                                                    text = "Phone: ${passenger.phone}",
+                                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                                        fontSize = 17.sp
+                                                                    )
+                                                                )
+                                                                Text(
+                                                                    text = "Emergency Number: ${passenger.emergencyNumber}",
+                                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                                        fontSize = 17.sp
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
                                         }
                                     }
                                 }
                             }
-                                // preview passengers in that trip
+
+                            // preview passengers in that trip
                             IconButton(
                                 onClick = {
                                     // delete locally and from fire base
@@ -1037,7 +1130,11 @@ fun SetTrips(navController: NavHostController, tripViewModel: TripViewModel, pic
                                 Toast.LENGTH_SHORT
                             ).show()
                         }.addOnFailureListener { e ->
-                            Toast.makeText(context, "Failed to delete trip: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Failed to delete trip: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
 
                         // Dismiss the dialog
@@ -1128,7 +1225,7 @@ fun PickUpPreview(
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-    if(false) {
+    if (false) {
         passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
@@ -1316,13 +1413,13 @@ fun PickUpPreview(
                             .alpha(0f),
                         shape = RoundedCornerShape(15.dp),
                         onClick = {
-                         //   navController.navigate("setTrips")
+                            //   navController.navigate("setTrips")
                         }
                     ) {
-                       /* Text(
-                            text = "Order Trip",
-                            fontSize = 22.sp
-                        )*/
+                        /* Text(
+                             text = "Order Trip",
+                             fontSize = 22.sp
+                         )*/
                     }
                 }
             }
@@ -1604,34 +1701,32 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                     val database = FirebaseDatabase.getInstance()
                     val ref = database.getReference("lebanon_places")
 
-                    Log.d("xxxx", "Database reference obtained")
 
                     val postListener = object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            Log.d("xxxx", "Data change detected")
                             val allPlaces = mutableListOf<Place>()
                             places.clear()
                             for (postSnapshot in dataSnapshot.children) {
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                  //  Log.d("xxxx", "Place added: ${place.title}")
+                                    //  Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
                             places.clear()
                             places.addAll(allPlaces)
-                            Log.d("xxxx", "Places list updated")
+
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            Log.d("xxxx", "Database error: ${databaseError.message}")
+                          //  Log.d("xxxx", "Database error: ${databaseError.message}")
                             Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
                                 .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
-                    Log.d("xxxx", "Listener added to reference")
+                  //  Log.d("xxxx", "Listener added to reference")
                 }
 
             } else {
