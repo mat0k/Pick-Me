@@ -949,32 +949,58 @@ fun SetTrips(
                                     showBottomSheet = true
 
                                     // Retrieve the passengerIds
-                                    passengersIdsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                                    passengersIdsRef.addListenerForSingleValueEvent(object :
+                                        ValueEventListener {
                                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                            val passengerIds = dataSnapshot.children.mapNotNull { it.getValue(String::class.java) }
+                                            val passengerIds = dataSnapshot.children.mapNotNull {
+                                                it.getValue(String::class.java)
+                                            }
 
                                             // Retrieve the names and phone numbers of the passengers
                                             passengerIds.forEach { passengerId ->
-                                                passengersRef.child(passengerId).addListenerForSingleValueEvent(object : ValueEventListener {
-                                                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                                        val name = dataSnapshot.child("name").getValue(String::class.java) ?: ""
-                                                        val surname = dataSnapshot.child("surname").getValue(String::class.java) ?: ""
-                                                        val phoneNumber = dataSnapshot.child("phone").getValue(String::class.java) ?: ""
-                                                        val emergencyNb = dataSnapshot.child("emergencyNumber").getValue(String::class.java) ?: ""
-                                                        val photoUrl = dataSnapshot.child("photoUrl").getValue(String::class.java) ?: ""
-                                                        passengers.value.add(Passenger(name= name, surname = surname, phone = phoneNumber, emergencyNumber = emergencyNb, photoUrl = photoUrl))
+                                                passengersRef.child(passengerId)
+                                                    .addListenerForSingleValueEvent(object :
+                                                        ValueEventListener {
+                                                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                                            val name = dataSnapshot.child("name")
+                                                                .getValue(String::class.java) ?: ""
+                                                            val surname =
+                                                                dataSnapshot.child("surname")
+                                                                    .getValue(String::class.java)
+                                                                    ?: ""
+                                                            val phoneNumber =
+                                                                dataSnapshot.child("phone")
+                                                                    .getValue(String::class.java)
+                                                                    ?: ""
+                                                            val emergencyNb =
+                                                                dataSnapshot.child("emergencyNumber")
+                                                                    .getValue(String::class.java)
+                                                                    ?: ""
+                                                            val photoUrl =
+                                                                dataSnapshot.child("photoUrl")
+                                                                    .getValue(String::class.java)
+                                                                    ?: ""
+                                                            passengers.value.add(
+                                                                Passenger(
+                                                                    name = name,
+                                                                    surname = surname,
+                                                                    phone = phoneNumber,
+                                                                    emergencyNumber = emergencyNb,
+                                                                    photoUrl = photoUrl
+                                                                )
+                                                            )
 
-                                                        // Check if all passengers have been retrieved
-                                                        if (passengers.value.size == passengerIds.size) {
-                                                            // All passengers have been retrieved, show the bottom sheet
-                                                            isLoading= false
+                                                            // Check if all passengers have been retrieved
+                                                            if (passengers.value.size == passengerIds.size) {
+                                                                // All passengers have been retrieved, show the bottom sheet
+                                                                isLoading = false
+                                                            }
                                                         }
-                                                    }
 
-                                                    override fun onCancelled(databaseError: DatabaseError) {
-                                                        // Handle possible errors.
-                                                    }
-                                                })
+                                                        override fun onCancelled(databaseError: DatabaseError) {
+                                                            // Handle possible errors.
+                                                        }
+                                                    })
                                             }
                                         }
 
@@ -990,7 +1016,7 @@ fun SetTrips(
                                 )
                             }
 
-                            if(showBottomSheet){
+                            if (showBottomSheet) {
                                 // Show the bottom sheet here
                                 ModalBottomSheet(
                                     modifier = Modifier
@@ -998,21 +1024,24 @@ fun SetTrips(
                                         .heightIn(min = 700.dp),
                                     sheetState = sheetState,
                                     onDismissRequest = {
-                                        showBottomSheet = false }
+                                        showBottomSheet = false
+                                    }
                                 ) {
                                     if (isLoading) {
                                         Text(
-                                        text = "Passengers",
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
+                                            text = "Passengers",
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(16.dp)
+                                        )
                                         Column(
-                                            modifier= Modifier.fillMaxSize(),
+                                            modifier = Modifier.fillMaxSize(),
                                             horizontalAlignment = Alignment.CenterHorizontally
-                                        ){
+                                        ) {
                                             CircularProgressIndicator(
-                                                modifier = Modifier.size(80.dp).padding(16.dp)
+                                                modifier = Modifier
+                                                    .size(80.dp)
+                                                    .padding(16.dp)
                                             )
                                         }
 
@@ -1028,59 +1057,59 @@ fun SetTrips(
                                                     modifier = Modifier.padding(16.dp)
                                                 )
                                             }
-                                                items(passengers.value) { passenger ->
-                                                    Card(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(8.dp)
-                                                            .background(Color.Gray.copy(alpha = 0.2f)),
-                                                        shape = RoundedCornerShape(20.dp)
+                                            items(passengers.value) { passenger ->
+                                                Card(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(8.dp)
+                                                        .background(Color.Gray.copy(alpha = 0.2f)),
+                                                    shape = RoundedCornerShape(20.dp)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(16.dp)
                                                     ) {
-                                                        Row(
-                                                            modifier = Modifier.padding(16.dp)
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .weight(1f)
+                                                                .size(100.dp)
+                                                                .background(Color.Gray),
+                                                            contentAlignment = Alignment.Center
                                                         ) {
-                                                            Box(
+                                                            // You can add your image here later
+                                                            AsyncImage(
+                                                                model = passenger.photoUrl, // Use the photoUrl directly
+                                                                contentDescription = "Profile Picture",
                                                                 modifier = Modifier
-                                                                    .weight(1f)
                                                                     .size(100.dp)
-                                                                    .background(Color.Gray),
-                                                                contentAlignment = Alignment.Center
-                                                            ) {
-                                                                // You can add your image here later
-                                                                AsyncImage(
-                                                                    model = passenger.photoUrl, // Use the photoUrl directly
-                                                                    contentDescription = "Profile Picture",
-                                                                    modifier = Modifier
-                                                                        .size(100.dp)
-                                                                        .scale(1.2f)
+                                                                    .scale(1.2f)
+                                                            )
+                                                        }
+                                                        Spacer(modifier = Modifier.width(16.dp))
+                                                        Column(
+                                                            modifier = Modifier.weight(4f)
+                                                        ) {
+                                                            Text(
+                                                                text = "${passenger.name} ${passenger.surname}",
+                                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                                    fontSize = 18.sp
                                                                 )
-                                                            }
-                                                            Spacer(modifier = Modifier.width(16.dp))
-                                                            Column(
-                                                                modifier = Modifier.weight(4f)
-                                                            ) {
-                                                                Text(
-                                                                    text = "${passenger.name} ${passenger.surname}",
-                                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                                        fontSize = 18.sp
-                                                                    )
+                                                            )
+                                                            Text(
+                                                                text = "Phone: ${passenger.phone}",
+                                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                                    fontSize = 17.sp
                                                                 )
-                                                                Text(
-                                                                    text = "Phone: ${passenger.phone}",
-                                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                                        fontSize = 17.sp
-                                                                    )
+                                                            )
+                                                            Text(
+                                                                text = "Emergency Number: ${passenger.emergencyNumber}",
+                                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                                    fontSize = 17.sp
                                                                 )
-                                                                Text(
-                                                                    text = "Emergency Number: ${passenger.emergencyNumber}",
-                                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                                        fontSize = 17.sp
-                                                                    )
-                                                                )
-                                                            }
+                                                            )
                                                         }
                                                     }
                                                 }
+                                            }
 
                                         }
                                     }
@@ -1225,14 +1254,14 @@ fun PickUpPreview(
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-    if (false) {
-        passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
-            setPolylinePoints(decodedPolyline)
-        }, { distance ->
-            tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha = 0.9f
-        })
-    }
+
+    passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
+        setPolylinePoints(decodedPolyline)
+    }, { distance ->
+        tripDistance = "%.2f".format(distance).toDouble()
+        distanceAlpha = 0.9f
+    })
+
 
     val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
     val zoomLevel = when {
@@ -1486,7 +1515,7 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -1720,13 +1749,13 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                          //  Log.d("xxxx", "Database error: ${databaseError.message}")
+                            //  Log.d("xxxx", "Database error: ${databaseError.message}")
                             Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
                                 .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
-                  //  Log.d("xxxx", "Listener added to reference")
+                    //  Log.d("xxxx", "Listener added to reference")
                 }
 
             } else {

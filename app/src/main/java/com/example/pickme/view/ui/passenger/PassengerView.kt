@@ -571,7 +571,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
                     )                                               // driver id locally
                     // locally
-                    val dbHelper= LocalPickUpDbHelper(context)
+                    val dbHelper = LocalPickUpDbHelper(context)
                     dbHelper.insertLocalPickUp(localPickUp)
 
                     // to firebase
@@ -618,7 +618,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(5.dp),
-                      //  verticalAlignment = Alignment.CenterVertically,
+                        //  verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -644,7 +644,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             )
                         }
 
-                                                    // icons column
+                        // icons column
                         Column {
                             IconButton(
                                 onClick = {
@@ -670,7 +670,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             IconButton(
                                 onClick = {
 
-                                    showPreviewBottomSheet= true
+                                    showPreviewBottomSheet = true
                                 }
                             ) {
                                 Icon(
@@ -692,7 +692,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                         }
                     }
-                        val driverId= "1l6hXRpLbsblhphc42mwfNLYqsP2"      // driver id locally
+                    val driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2"      // driver id locally
 
                     if (showPreviewBottomSheet) {          // bottom sheet
                         ModalBottomSheet(
@@ -726,8 +726,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                                     ) {
                                         // url of both images to preview:
-                                        val photoUrl= driver?.photo
-                                        val carPhotoUrl= driver?.carPhoto
+                                        val photoUrl = driver?.photo
+                                        val carPhotoUrl = driver?.carPhoto
                                         // Text(text = "Photo URL: ${driver?.photo}")
                                         //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
 
@@ -755,7 +755,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                             horizontalArrangement = Arrangement.Center,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text(text = " ${driver?.firstName} ${driver?.lastName}",
+                                            Text(
+                                                text = " ${driver?.firstName} ${driver?.lastName}",
                                                 modifier = Modifier.padding(end = 8.dp),
                                                 fontSize = 20.sp
                                             )
@@ -764,9 +765,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         Spacer(modifier = Modifier.height(14.dp))
 
                                         // Other data
-                                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
+                                        Text(
+                                            text = "Phone Number: ${driver?.phoneNb}",
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
                                         // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
-                                        Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
+                                        Text(
+                                            text = "Is Verified: ${driver?.isVerified}",
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
 
                                         Spacer(modifier = Modifier.height(22.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -775,23 +782,32 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                             mutableStateOf(0f)
                                         }
 
-                                        Text(text = "Rate", style = MaterialTheme.typography.headlineMedium)
+                                        Text(
+                                            text = "Rate",
+                                            style = MaterialTheme.typography.headlineMedium
+                                        )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         HorizontalDivider() // Separator
                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                        Text(text = "Rate: ${"%.1f".format(rate)}", style = MaterialTheme.typography.bodyLarge)
+                                        Text(
+                                            text = "Rate: ${"%.1f".format(rate)}",
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
 
                                         // get the rate from firebase, adding it as fun in view model didn't work
                                         val database = FirebaseDatabase.getInstance()
-                                        val ratingRef = database.getReference("rating").child(driverId)
-                                        ratingRef.addValueEventListener(object : ValueEventListener {
+                                        val ratingRef =
+                                            database.getReference("rating").child(driverId)
+                                        ratingRef.addValueEventListener(object :
+                                            ValueEventListener {
                                             override fun onDataChange(dataSnapshot: DataSnapshot) {
                                                 var sum = 0.0
                                                 var count = 0
 
                                                 for (ratingSnapshot in dataSnapshot.children) {
-                                                    val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
+                                                    val rating = ratingSnapshot.child("rate")
+                                                        .getValue(Double::class.java)
                                                     if (rating != null) {
                                                         sum += rating
                                                         count++
@@ -800,7 +816,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                                                 if (count > 0) {
                                                     val averageRating = sum / count
-                                                    rate = averageRating.toFloat() // Update rate variable with the average rating
+                                                    rate =
+                                                        averageRating.toFloat() // Update rate variable with the average rating
                                                 }
                                             }
 
@@ -834,7 +851,10 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                         Spacer(modifier = Modifier.height(25.dp))
                                         // comment section
-                                        Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
+                                        Text(
+                                            text = "Comments",
+                                            style = MaterialTheme.typography.headlineMedium
+                                        )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         HorizontalDivider() // Separator
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -859,15 +879,21 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                                         Spacer(modifier = Modifier.height(10.dp))
                                         // Fetch comments from Firebase
-                                        val comments = remember { mutableStateListOf<Map<String, String>>() }
+                                        val comments =
+                                            remember { mutableStateListOf<Map<String, String>>() }
                                         LaunchedEffect(Unit) {
                                             val database = FirebaseDatabase.getInstance()
                                             val commentsRef = database.getReference("comments")
-                                            commentsRef.addValueEventListener(object : ValueEventListener {
+                                            commentsRef.addValueEventListener(object :
+                                                ValueEventListener {
                                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                                                     comments.clear()
-                                                    dataSnapshot.children.mapNotNullTo(comments) { it.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) }
+                                                    dataSnapshot.children.mapNotNullTo(comments) {
+                                                        it.getValue(object :
+                                                            GenericTypeIndicator<Map<String, String>>() {})
+                                                    }
                                                 }
+
                                                 override fun onCancelled(databaseError: DatabaseError) {
                                                     // Handle possible errors.
                                                 }
@@ -922,8 +948,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                 text = {
                                                     Column {
                                                         Text(
-                                                            text="Select a rating from 0 to 5",
-                                                            modifier= Modifier.padding(bottom = 6.dp)
+                                                            text = "Select a rating from 0 to 5",
+                                                            modifier = Modifier.padding(bottom = 6.dp)
                                                         )
 
                                                         StarRatingBar(
@@ -944,18 +970,24 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                     Button(onClick = {
                                                         showRateDialog = false
                                                         // Add the rating to the Firebase database
-                                                        val database = FirebaseDatabase.getInstance()
-                                                        val ratingRef = database.getReference("rating").child(driverId)
+                                                        val database =
+                                                            FirebaseDatabase.getInstance()
+                                                        val ratingRef =
+                                                            database.getReference("rating")
+                                                                .child(driverId)
                                                         val key = ratingRef.push().key
                                                         if (key != null) {
-                                                            ratingRef.child(key).setValue(mapOf("rate" to userRating))
+                                                            ratingRef.child(key)
+                                                                .setValue(mapOf("rate" to userRating))
                                                         }
                                                     }) {
                                                         Text("OK")
                                                     }
                                                 },
                                                 dismissButton = {
-                                                    TextButton(onClick = { showRateDialog = false }) {
+                                                    TextButton(onClick = {
+                                                        showRateDialog = false
+                                                    }) {
                                                         Text("Cancel")
                                                     }
                                                 }
@@ -977,26 +1009,37 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                         onClick = {
                                                             if (comment.isNotBlank()) {
                                                                 // Get a reference to the Firebase Database
-                                                                val database = FirebaseDatabase.getInstance()
+                                                                val database =
+                                                                    FirebaseDatabase.getInstance()
 
                                                                 // Get a reference to the "comments" node
-                                                                val commentsRef = database.getReference("comments")
+                                                                val commentsRef =
+                                                                    database.getReference("comments")
 
                                                                 // Create a new comment object
                                                                 val newComment = mapOf(
                                                                     "DriverId" to driverId,
-                                                                    "passengerName" to (viewModel.name.value+" "+viewModel.surname.value),
+                                                                    "passengerName" to (viewModel.name.value + " " + viewModel.surname.value),
                                                                     "comment" to comment,
-                                                                    "commentDate" to LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                                    "commentDate" to LocalDate.now()
+                                                                        .format(
+                                                                            DateTimeFormatter.ofPattern(
+                                                                                "dd/MM/yyyy"
+                                                                            )
+                                                                        )
                                                                 )
 
                                                                 // Push the new comment to the "comments" node
-                                                                commentsRef.push().setValue(newComment)
+                                                                commentsRef.push()
+                                                                    .setValue(newComment)
                                                                 comment = ""
                                                                 showDialog = false
-                                                            }
-                                                            else{
-                                                                Toast.makeText(context, "Please enter a comment", Toast.LENGTH_SHORT).show()
+                                                            } else {
+                                                                Toast.makeText(
+                                                                    context,
+                                                                    "Please enter a comment",
+                                                                    Toast.LENGTH_SHORT
+                                                                ).show()
                                                             }
                                                         }
                                                     ) {
@@ -1013,12 +1056,14 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                     }
                                 } else {
                                     Column(
-                                        modifier= Modifier.fillMaxSize().padding(top=40.dp),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(top = 40.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(60.dp),
-                                            )
+                                        )
                                     }
                                 }
 
@@ -1027,9 +1072,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             }
                         }
                     }
-
-
-
 
 
                     val itemToDelete = showDeleteConfirm.value
@@ -1177,7 +1219,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -1211,7 +1253,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 visible = targetMarkerState
             )
 
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -1405,7 +1447,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                //    Log.d("xxxx", "Place added: ${place.title}")
+                                    //    Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
@@ -1659,7 +1701,7 @@ fun PickUpPreview(
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-    if(false) {
+    if (false) {
         passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
@@ -2096,7 +2138,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     })
             }
 
-                    //Emergency call
+            //Emergency call
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             Spacer(modifier = Modifier.height(25.dp))
             Text(text = "Emergency Call", style = MaterialTheme.typography.headlineMedium)
@@ -2120,9 +2162,7 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
         }
 
 
-
     }
-
 
 
 }
@@ -2874,23 +2914,23 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 text = "End: ${trip["end"]}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                //       horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Rating: ${trip["rate"]}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = "\tDriver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            Text(
-                                text = "id: ${trip["tripId"]}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            /*            Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            //       horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Rating: ${trip["rate"]}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "\tDriver Verified: ${if (trip["verified"] as? Boolean == true) "Yes" else "No"}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                        Text(
+                                            text = "id: ${trip["id"]}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )*/
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
@@ -2926,7 +2966,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                         tripViewModel.setSearchedTripDestLatLng(tripDestLatLng)
 
                                         if (passengerViewModel.isNetworkAvailable(context)) {
-                                            tripViewModel.setSelectedTripId(trip["tripId"] as? String ?: "")
+                                            tripViewModel.setSelectedTripId(
+                                                trip["tripId"] as? String ?: ""
+                                            )
                                             navController.navigate("mapView3")
                                         } else {
                                             passengerViewModel.ShowWifiProblemDialog(context)
@@ -2995,8 +3037,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                     ) {
                         // url of both images to preview:
-                        val photoUrl= driver?.photo
-                        val carPhotoUrl= driver?.carPhoto
+                        val photoUrl = driver?.photo
+                        val carPhotoUrl = driver?.carPhoto
                         // Text(text = "Photo URL: ${driver?.photo}")
                         //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
 
@@ -3024,7 +3066,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = " ${driver?.firstName} ${driver?.lastName}",
+                            Text(
+                                text = " ${driver?.firstName} ${driver?.lastName}",
                                 modifier = Modifier.padding(end = 8.dp),
                                 fontSize = 20.sp
                             )
@@ -3033,9 +3076,15 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         Spacer(modifier = Modifier.height(14.dp))
 
                         // Other data
-                        Text(text = "Phone Number: ${driver?.phoneNb}", style = MaterialTheme.typography.bodyLarge )
+                        Text(
+                            text = "Phone Number: ${driver?.phoneNb}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                         // Text(text = "Rate: ${driver?.rate}", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Is Verified: ${driver?.isVerified}", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "Is Verified: ${driver?.isVerified}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
 
                         Spacer(modifier = Modifier.height(22.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3049,7 +3098,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         HorizontalDivider() // Separator
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Text(text = "Rate: ${"%.1f".format(rate)}", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "Rate: ${"%.1f".format(rate)}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
 
                         // get the rate from firebase, adding it as fun in view model didn't work
                         val database = FirebaseDatabase.getInstance()
@@ -3060,7 +3112,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 var count = 0
 
                                 for (ratingSnapshot in dataSnapshot.children) {
-                                    val rating = ratingSnapshot.child("rate").getValue(Double::class.java)
+                                    val rating =
+                                        ratingSnapshot.child("rate").getValue(Double::class.java)
                                     if (rating != null) {
                                         sum += rating
                                         count++
@@ -3069,7 +3122,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                 if (count > 0) {
                                     val averageRating = sum / count
-                                    rate = averageRating.toFloat() // Update rate variable with the average rating
+                                    rate =
+                                        averageRating.toFloat() // Update rate variable with the average rating
                                 }
                             }
 
@@ -3096,8 +3150,12 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             commentsRef.addValueEventListener(object : ValueEventListener {
                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                                     comments.clear()
-                                    dataSnapshot.children.mapNotNullTo(comments) { it.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) }
+                                    dataSnapshot.children.mapNotNullTo(comments) {
+                                        it.getValue(object :
+                                            GenericTypeIndicator<Map<String, String>>() {})
+                                    }
                                 }
+
                                 override fun onCancelled(databaseError: DatabaseError) {
                                     // Handle possible errors.
                                 }
@@ -3120,7 +3178,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 ) {
                                     Column {
                                         if (comment["DriverId"] == driverId) {
-                                            noComments= false
+                                            noComments = false
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -3141,7 +3199,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                                 modifier = Modifier.padding(top = 8.dp)
                                             )
                                         }
-                                        if(noComments){
+                                        if (noComments) {
                                             Text(
                                                 text = "No Comments yet",
                                                 style = MaterialTheme.typography.bodyMedium,
@@ -3160,7 +3218,9 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                     }
                 } else {
                     Column(
-                        modifier= Modifier.fillMaxSize().padding(top=40.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 40.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator(
@@ -3321,7 +3381,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng ) {
+    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -3354,7 +3414,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -3548,7 +3608,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                  //  Log.d("xxxx", "Place added: ${place.title}")
+                                    //  Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
@@ -3740,153 +3800,153 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         mutableStateOf(0.5f)
     }
 
-    val context= LocalContext.current
+    val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val passengerId = sharedPref.getString("lastUserId", "")
 
 
-        passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
-            setPolylinePoints1(decodedPolyline)
-        }, { distance -> //
-            tripDistance = "%.2f".format(distance).toDouble()
-            distanceAlpha = 1f
-        })
+    passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
+        setPolylinePoints1(decodedPolyline)
+    }, { distance -> //
+        tripDistance = "%.2f".format(distance).toDouble()
+        distanceAlpha = 1f
+    })
 
-        passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
-            setPolylinePoints2(decodedPolyline)
-        }, { distance ->
-        })
+    passengerViewModel.updatePolyline(tripStartLatLng, tripDestLatLng, { decodedPolyline ->
+        setPolylinePoints2(decodedPolyline)
+    }, { distance ->
+    })
 
 
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(0.dp) // Add padding to adjust the button position
+    ) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPosition,
+            properties = properties,
+            uiSettings = uiSetting.copy(zoomControlsEnabled = false)
+        ) {
+            // Start location marker
+            Marker(
+                state = MarkerState(position = startLatLng),
+                title = "Start Location",
+                visible = true
+            )
+            // Destination location marker
+            Marker(
+                state = MarkerState(position = destLatLng),
+                title = "Destination Location",
+                visible = true
+            )
+            Marker(
+                state = MarkerState(position = tripStartLatLng),
+                title = "Searched Trip Start Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+            )
+            // Searched trip destination location marker
+            Marker(
+                state = MarkerState(position = tripDestLatLng),
+                title = "Searched Trip Destination Location",
+                visible = true,
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+            )
+            Polyline(
+                points = polylinePoints1,
+                color = colorResource(id = R.color.polyline_color_1),
+
+                )
+            Polyline(
+                points = polylinePoints2,
+                color = colorResource(id = R.color.polyline_color_2),
+
+                )
+
+        }
+        Row(
+            modifier = Modifier
+                .alpha(distanceAlpha)
+                .padding(start = 15.dp, end = 15.dp, top = 30.dp)
+                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            if (tripDistance == 0.0) {
+                distanceAlpha = 1f
+                CircularProgressIndicator(
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+        }
+        // Add a button that navigates back to the search page
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(0.dp) // Add padding to adjust the button position
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
         ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPosition,
-                properties = properties,
-                uiSettings = uiSetting.copy(zoomControlsEnabled = false)
-            ) {
-                // Start location marker
-                Marker(
-                    state = MarkerState(position = startLatLng),
-                    title = "Start Location",
-                    visible = true
-                )
-                // Destination location marker
-                Marker(
-                    state = MarkerState(position = destLatLng),
-                    title = "Destination Location",
-                    visible = true
-                )
-                Marker(
-                    state = MarkerState(position = tripStartLatLng),
-                    title = "Searched Trip Start Location",
-                    visible = true,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-                )
-                // Searched trip destination location marker
-                Marker(
-                    state = MarkerState(position = tripDestLatLng),
-                    title = "Searched Trip Destination Location",
-                    visible = true,
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
-                )
-                Polyline(
-                    points = polylinePoints1,
-                    color = colorResource(id = R.color.polyline_color_1),
-
-                    )
-                Polyline(
-                    points = polylinePoints2,
-                    color = colorResource(id = R.color.polyline_color_2),
-
-                    )
-
-            }
             Row(
-                modifier = Modifier
-                    .alpha(distanceAlpha)
-                    .padding(start = 15.dp, end = 15.dp, top = 30.dp)
-                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.Start
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    text = if (tripDistance == 0.0) "distance:" else "distance: $tripDistance Km",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                if (tripDistance == 0.0) {
-                    distanceAlpha = 1f
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-            }
-            // Add a button that navigates back to the search page
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(55.dp)
-                            .padding(5.dp)
-                            .alpha(0.9f),
-                        shape = RoundedCornerShape(15.dp),
-                        onClick = {
-                            navController.navigate("searchTrips")
-                        }
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.back),
-                                contentDescription = "location Icon",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        navController.navigate("searchTrips")
                     }
-
-                    Button( // book trip
-                        modifier = Modifier
-                            .weight(3f)
-                            .height(55.dp)
-                            .padding(5.dp)
-                            .alpha(0.9f),
-                        shape = RoundedCornerShape(15.dp),
-                        onClick = {
-                                // here now
-                              //  Log.i("xxxx","booked trip id: ${tripViewModel.selectedTripId.value}")
-                            val tripId= tripViewModel.selectedTripId.value
-                            val database = FirebaseDatabase.getInstance()
-                            val tripsRef = database.getReference("Trips")
-                            val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
-                            passengersIdsRef.push().setValue(passengerId)
-                            navController.navigate("searchTrips")
-                        }
-
-                    ) {
-                        Text(
-                            text = "Book Trip",
-                            fontSize = 22.sp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.back),
+                            contentDescription = "location Icon",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
+                }
+
+                Button( // book trip
+                    modifier = Modifier
+                        .weight(3f)
+                        .height(55.dp)
+                        .padding(5.dp)
+                        .alpha(0.9f),
+                    shape = RoundedCornerShape(15.dp),
+                    onClick = {
+                        // here now
+                        //  Log.i("xxxx","booked trip id: ${tripViewModel.selectedTripId.value}")
+                        val tripId = tripViewModel.selectedTripId.value
+                        val database = FirebaseDatabase.getInstance()
+                        val tripsRef = database.getReference("Trips")
+                        val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                        passengersIdsRef.push().setValue(passengerId)
+                        navController.navigate("searchTrips")
+                    }
+
+                ) {
+                    Text(
+                        text = "Book Trip",
+                        fontSize = 22.sp
+                    )
                 }
             }
         }
     }
+}
 
 
 // not used
