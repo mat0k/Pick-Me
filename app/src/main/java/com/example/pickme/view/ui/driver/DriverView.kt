@@ -821,7 +821,8 @@ fun SetTrips(
                                 "time" to time,
                                 "tripDistance" to tripDistance,
                                 "verified" to isVerified,
-                                "id" to driverId
+                                "id" to driverId,
+                                "availableSeats" to tripSeats
                             )
 
                             // Add trip to the Firebase database using the unique key

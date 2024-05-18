@@ -31,13 +31,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -58,7 +56,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -76,7 +73,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -3927,14 +3923,33 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                         .alpha(0.9f),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        // here now
-                        //  Log.i("xxxx","booked trip id: ${tripViewModel.selectedTripId.value}")
                         val tripId = tripViewModel.selectedTripId.value
                         val database = FirebaseDatabase.getInstance()
                         val tripsRef = database.getReference("Trips")
-                        val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
-                        passengersIdsRef.push().setValue(passengerId)
-                        navController.navigate("searchTrips")
+                        val availableSeatsRef = tripsRef.child(tripId).child("availableSeats")
+
+                        availableSeatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                var availableSeats = dataSnapshot.getValue(Int::class.java) ?: 0
+                                if (availableSeats == 0) {
+                                    Toast.makeText(context, "No available seats", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    // Decrease the number of available seats by 1
+                                    availableSeats -= 1
+
+                                    // Update the number of available seats in the database
+                                    availableSeatsRef.setValue(availableSeats)
+
+                                    val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                                    passengersIdsRef.push().setValue(passengerId)
+                                    navController.navigate("searchTrips")
+                                }
+                            }
+
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                Toast.makeText(context, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        })
                     }
 
                 ) {
