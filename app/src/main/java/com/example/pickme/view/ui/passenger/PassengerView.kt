@@ -1177,7 +1177,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
+    if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -1211,7 +1211,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                 visible = targetMarkerState
             )
 
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) {  // remove false
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -3321,7 +3321,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng && false) { // remove false
+    if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng ) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
@@ -3354,7 +3354,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng && false) { // remove false
+            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng ) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
@@ -3744,7 +3744,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val passengerId = sharedPref.getString("lastUserId", "")
 
-    if (false) {                                                                                   // remove false
+
         passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
             setPolylinePoints1(decodedPolyline)
         }, { distance -> //
@@ -3756,7 +3756,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
             setPolylinePoints2(decodedPolyline)
         }, { distance ->
         })
-    }
+
 
         Box(
             modifier = Modifier
