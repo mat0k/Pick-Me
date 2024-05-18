@@ -143,6 +143,7 @@ import com.example.pickme.data.model.LocalTrip
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
 import com.example.pickme.data.repository.OneSignalNotificationSender
+import com.example.pickme.view.ui.passenger.PickUps
 import com.example.pickme.viewModel.PickUpViewModel
 
 
@@ -206,7 +207,7 @@ class DriverView : ComponentActivity() {
                                     TripsScreen(navController, tripViewModel, pickUpViewModel)
                                 }
                                 composable("home") {
-                                    HomeScreen(navController)
+                                    Startup(navController, pickUpViewModel)
                                 }
                                 composable("profile") {
                                     ProfileScreen(navController, this@DriverView)
@@ -222,9 +223,29 @@ class DriverView : ComponentActivity() {
 }
 
 
+@Composable
+fun Startup(navController: NavHostController, pickUpViewModel: PickUpViewModel
+){
+    val context= LocalContext.current
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            HomeScreen(navController, pickUpViewModel)
+        }
+        composable("pickUpPreview") {
+            PickUpPreview(
+                context,
+                navController,
+                pickUpViewModel
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewModel) {
     val context = LocalContext.current
 
     val showBottomSheet = remember { mutableStateOf(false) }
@@ -256,7 +277,7 @@ fun HomeScreen(navController: NavHostController) {
             items(pickUps) { pickUp ->
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
-                PickUpCard(pickUp, passenger) {
+                PickUpCard(navController, pickUp, passenger, pickUpViewModel) {
                     val sender = OneSignalNotificationSender()
                     val recipientPlayerIds =
                         listOf("RECIPIENT_PLAYER_ID_1") // Player IDs of the recipients
@@ -316,41 +337,74 @@ fun HomeScreen(navController: NavHostController) {
 }
 
 @Composable
-fun PickUpCard(pickUp: PickUp, passenger: Passenger?, onClick: () -> Unit) {
+fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Passenger?, pickUpViewModel:PickUpViewModel , onClick: () -> Unit) {
+    val passengerViewModel= PassengerViewModel()
+    val context= LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable(onClick = onClick), // Moved .clickable to Card
+            .clickable(onClick = onClick),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = pickUp.dateAndTime,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Start: ${pickUp.pickUpTitle}",
-                style = MaterialTheme.typography.bodyMedium
-            ) // Default text style
-            Text(
-                text = "Destination: ${pickUp.targetTitle}",
-                style = MaterialTheme.typography.bodyMedium
-            ) // Default text style
-            Text(
-                text = "Distance: ${pickUp.distance} km",
-                style = MaterialTheme.typography.bodyMedium
-            ) // Default text style
-            Text(
-                text = "Passenger: ${passenger?.name} ${passenger?.surname}",
-                style = MaterialTheme.typography.bodyMedium
-            ) // Default text style
+            Column(
+                modifier = Modifier.weight(4f)
+            ) {
+                Text(
+                    text = pickUp.dateAndTime,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "Start: ${pickUp.pickUpTitle}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Destination: ${pickUp.targetTitle}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Distance: ${pickUp.distance} km",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Passenger: ${passenger?.name} ${passenger?.surname}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                IconButton(
+                    onClick = {
+                        pickUpViewModel.setPrevPickUpTitle(pickUp.pickUpTitle)
+                        pickUpViewModel.setPrevTargetTitle(pickUp.targetTitle)
+                        pickUpViewModel.setPrevPickUPLatLng(pickUp.pickUpLatLng)
+                        pickUpViewModel.setPrevTargetLatLng(pickUp.targetLatLng)
+                        pickUpViewModel.setPrevDistance(pickUp.distance)
+
+                        if (passengerViewModel.isNetworkAvailable(context)) {
+                            navController.navigate("pickUpPreview") //here
+                        } else {
+                            passengerViewModel.ShowWifiProblemDialog(context)
+                        }
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.search_location1),
+                        contentDescription = "Preview"
+                    )
+                }
+            }
         }
     }
 }
+
 
 @Composable
 fun TripsScreen(
@@ -1423,7 +1477,7 @@ fun PickUpPreview(
                             .alpha(0.9f),
                         shape = RoundedCornerShape(15.dp),
                         onClick = {
-                            navController.navigate("setTrips")
+                            navController.popBackStack()
                         }
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

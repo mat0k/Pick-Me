@@ -1697,14 +1697,14 @@ fun PickUpPreview(
     var distanceAlpha by remember {
         mutableStateOf(0.5f)
     }
-    if (false) {
+
         passengerViewModel.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
             setPolylinePoints(decodedPolyline)
         }, { distance ->
             tripDistance = "%.2f".format(distance).toDouble()
             distanceAlpha = 0.9f
         })
-    }
+
 
     val distance = passengerViewModel.calculateDistance(pickUpLatLng, targetLatLng)
     val zoomLevel = when {
