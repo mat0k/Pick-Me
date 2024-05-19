@@ -277,12 +277,7 @@ fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewMode
             items(pickUps) { pickUp ->
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
-                PickUpCard(navController, pickUp, passenger, pickUpViewModel) {
-                    val sender = OneSignalNotificationSender()
-                    val recipientPlayerIds =
-                        listOf("RECIPIENT_PLAYER_ID_1") // Player IDs of the recipients
-                    sender.sendNotification("Test Pickup Accept", recipientPlayerIds)
-                }
+                PickUpCard(navController, pickUp, passenger, pickUpViewModel)
             }
         }
         if (showBottomSheet.value) {
@@ -337,14 +332,13 @@ fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewMode
 }
 
 @Composable
-fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Passenger?, pickUpViewModel:PickUpViewModel , onClick: () -> Unit) {
+fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Passenger?, pickUpViewModel:PickUpViewModel) {
     val passengerViewModel= PassengerViewModel()
     val context= LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier
