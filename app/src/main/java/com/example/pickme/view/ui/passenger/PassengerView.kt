@@ -150,6 +150,7 @@ import com.example.pickme.data.repository.PickUpRepository
 import com.example.pickme.view.ui.driver.DriverView
 import com.example.pickme.view.ui.login.LoginViewModel
 import com.example.pickme.view.ui.login.LoginViewModelFactory
+import com.google.firebase.database.DatabaseReference
 
 import com.google.maps.android.compose.Polyline
 
@@ -4090,6 +4091,42 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                     }
                 }
 
+                fun bookSeat(tripId: String, database: FirebaseDatabase, tripsRef: DatabaseReference, context: Context, navController: NavHostController, passengerId: String) {
+                    val availableSeatsRef = tripsRef.child(tripId).child("availableSeats")
+
+                    availableSeatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            var availableSeats = dataSnapshot.getValue(Int::class.java) ?: 0
+                            if (availableSeats == 0) {
+                                Toast.makeText(context, "No available seats", Toast.LENGTH_SHORT).show()
+                                navController.navigate("searchTrips")
+                            } else {
+                                // Decrease the number of available seats by 1
+                                availableSeats -= 1
+
+                                // Update the number of available seats in the database
+                                availableSeatsRef.setValue(availableSeats)
+
+                                val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+                                passengersIdsRef.push().setValue(passengerId)
+                                navController.navigate("searchTrips")
+                            }
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Toast.makeText(context, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
+                var showDialog by remember { mutableStateOf(false) }
+                var count by remember {
+                    mutableStateOf(0)
+                }
+                val tripId = tripViewModel.selectedTripId.value
+                val database = FirebaseDatabase.getInstance()
+                val tripsRef = database.getReference("Trips")
+                val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
+
                 Button( // book trip
                     modifier = Modifier
                         .weight(3f)
@@ -4098,26 +4135,23 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                         .alpha(0.9f),
                     shape = RoundedCornerShape(15.dp),
                     onClick = {
-                        val tripId = tripViewModel.selectedTripId.value
-                        val database = FirebaseDatabase.getInstance()
-                        val tripsRef = database.getReference("Trips")
-                        val availableSeatsRef = tripsRef.child(tripId).child("availableSeats")
 
-                        availableSeatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        passengersIdsRef.addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                var availableSeats = dataSnapshot.getValue(Int::class.java) ?: 0
-                                if (availableSeats == 0) {
-                                    Toast.makeText(context, "No available seats", Toast.LENGTH_SHORT).show()
+
+                                for (childSnapshot in dataSnapshot.children) {
+                                    if (childSnapshot.getValue(String::class.java) == passengerId) {
+                                        count++
+                                    }
+                                }
+                                if (count > 0) {
+                                    // Show an alert dialog asking the user if they want to add more seats
+                                    showDialog = true
                                 } else {
-                                    // Decrease the number of available seats by 1
-                                    availableSeats -= 1
-
-                                    // Update the number of available seats in the database
-                                    availableSeatsRef.setValue(availableSeats)
-
-                                    val passengersIdsRef = tripsRef.child(tripId).child("passengersIds")
-                                    passengersIdsRef.push().setValue(passengerId)
-                                    navController.navigate("searchTrips")
+                                    // Proceed with the booking process
+                                    if (passengerId != null) {
+                                        bookSeat(tripId, database, tripsRef, context, navController, passengerId)
+                                    }
                                 }
                             }
 
@@ -4125,18 +4159,43 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                                 Toast.makeText(context, "Error: ${databaseError.message}", Toast.LENGTH_SHORT).show()
                             }
                         })
-                    }
 
+                    }
                 ) {
                     Text(
                         text = "Book Trip",
                         fontSize = 22.sp
                     )
                 }
+              
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Booking Confirmation") },
+                        text = { Text("You have already booked $count seats. Do you want to book one more?") },
+                        confirmButton = {
+                            Button(onClick = {
+                                // Proceed with the booking process
+                                if (passengerId != null) {
+                                    bookSeat(tripId, database, tripsRef, context, navController, passengerId)
+                                }
+                                showDialog = false
+                            }) {
+                                Text("Yes")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) {
+                                Text("No")
+                            }
+                        }
+                    )
+                }
             }
         }
     }
 }
+
 
 
 // not used
