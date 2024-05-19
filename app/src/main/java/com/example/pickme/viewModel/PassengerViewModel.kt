@@ -247,7 +247,8 @@ class PassengerViewModel {
 
             // Convert the trip time string to a LocalTime object
             val tripTimeStr = trip["time"] as? String ?: ""
-            val tripTime = LocalTime.parse(tripTimeStr, formatter)
+            val fixedTimeStr = tripTimeStr.replace(" am", " AM").replace(" pm", " PM")
+            val tripTime = LocalTime.parse(fixedTimeStr, formatter)
 
             // Calculate the difference in minutes between the input time and the trip time
             val minutesDiff = ChronoUnit.MINUTES.between(inputTime, tripTime).toInt()

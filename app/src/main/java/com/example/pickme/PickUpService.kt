@@ -15,7 +15,7 @@ class PickUpService : Service() {
     private lateinit var pickUpsReference: DatabaseReference
     private lateinit var pickupsNotificationService: PickupsNotificationService
     private lateinit var homeScreenVM: HomeScreenVM
-    private var previousFilteredPickups: List<PickUp>? = null
+    private var previousPickups: List<PickUp>? = null
 
 
     override fun onCreate() {
@@ -30,11 +30,11 @@ class PickUpService : Service() {
         val pickUpsListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val pickups = dataSnapshot.children.mapNotNull { it.getValue(FirebasePickUp::class.java) }
-                val filteredPickups = homeScreenVM.filterPickUps(this@PickUpService, pickups.map { it.toPickUp() })
-                if (previousFilteredPickups != null && filteredPickups != previousFilteredPickups) {
+//                val filteredPickups = homeScreenVM.filterPickUps(this@PickUpService, pickups.map { it.toPickUp() })
+                if (previousPickups != null && pickups.size > (previousPickups?.size ?: 0)) {
                     pickupsNotificationService.showNotification()
                 }
-                previousFilteredPickups = pickups.map { it.toPickUp() }
+                previousPickups = pickups.map { it.toPickUp() }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -69,7 +69,8 @@ data class FirebasePickUp(
     val distance: Double = 0.0,
     val dateAndTime: String = "",
     val passengerId: String = "",
-    val driverId : String = ""
+    val driverId : String = "",
+    val price: Double? = 1.0
 ) {
     fun toPickUp(): PickUp {
         return PickUp(
@@ -81,7 +82,8 @@ data class FirebasePickUp(
             distance = this.distance,
             dateAndTime = this.dateAndTime,
             passengerId = this.passengerId,
-            driverId = this.driverId
+            driverId = this.driverId,
+            price= this.price,
         )
     }
 }
