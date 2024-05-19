@@ -12,5 +12,6 @@ data class LocalTrip(
     val date: String,
     val time: String,
     val tripDistance: Double,
-    val verified: Boolean
+    val verified: Boolean,
+    val passengerIds: MutableList<String> = mutableListOf(),
 )

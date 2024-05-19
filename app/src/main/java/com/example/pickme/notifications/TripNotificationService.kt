@@ -19,5 +19,21 @@ class TripNotificationService(
         const val CHANNEL_DESCRIPTION = "Trip Notifications"
     }
 
-    private val tripsReference : DatabaseReference = FirebaseDatabase.getInstance().getReference("Trips")
+    fun showNotification() {
+        val activityIntent = Intent(context, DriverView::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, activityIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle("New Passenger Joined")
+            .setContentText("A new passenger has joined your trip")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .addAction(android.R.drawable.ic_menu_view, "View", pendingIntent)
+            .build()
+        notificationManager.notify(1, notification)
+    }
+
 }

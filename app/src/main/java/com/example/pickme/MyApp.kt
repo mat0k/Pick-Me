@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.example.pickme.notifications.PickUpAcceptedService
 import com.example.pickme.notifications.PickupsNotificationService
+import com.example.pickme.notifications.TripNotificationService
 
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
@@ -43,8 +44,18 @@ class MyApp: Application() {
         ).apply {
             description = PickUpAcceptedService.CHANNEL_DESCRIPTION
         }
+
+        val channel3 = NotificationChannel(
+            TripNotificationService.CHANNEL_ID,
+            TripNotificationService.CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = TripNotificationService.CHANNEL_DESCRIPTION
+        }
+
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
         notificationManager.createNotificationChannel(channel2)
+        notificationManager.createNotificationChannel(channel3)
     }
 }

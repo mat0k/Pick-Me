@@ -144,6 +144,8 @@ class AuthRepository {
             "emergencyNumber" to driver.emergencyNumber
         )
         myRef.child(uuid).setValue(driverObject)
+        val ratingRef = database.getReference("rating")
+        ratingRef.child(uuid).setValue("")
         return Result.success(Unit)
     }
 
@@ -177,6 +179,7 @@ class AuthRepository {
             "verified" to driver.verified
         )
         myRef.updateChildren(driverObject).await()
+
         return Result.success(Unit)
     }
 

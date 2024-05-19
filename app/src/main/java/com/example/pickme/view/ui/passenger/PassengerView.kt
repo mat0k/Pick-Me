@@ -113,6 +113,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
+import com.example.pickme.PickUpAcceptedService
+import com.example.pickme.PickUpService
 import com.example.pickme.R
 import com.example.pickme.data.model.DriverData
 import com.example.pickme.data.model.LocalPickUp
@@ -151,6 +153,7 @@ import java.util.Locale
 import com.example.pickme.data.model.UserDatabaseHelper
 import com.example.pickme.data.model.User
 import com.example.pickme.data.repository.PickUpRepository
+import com.example.pickme.notifications.TripNotificationService
 import com.example.pickme.view.ui.driver.DriverView
 import com.example.pickme.view.ui.login.LoginViewModel
 import com.example.pickme.view.ui.login.LoginViewModelFactory
@@ -169,6 +172,10 @@ class PassengerView : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        startService(Intent(this, PickUpAcceptedService::class.java))
+        stopService(Intent(this, PickUpService::class.java))
+        stopService(Intent(this, TripNotificationService::class.java))
         setContent {
             PickMeUpTheme {
                 val items = listOf(
@@ -181,7 +188,7 @@ class PassengerView : ComponentActivity() {
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme .background
                 ) {
                     Scaffold(
                         bottomBar = {

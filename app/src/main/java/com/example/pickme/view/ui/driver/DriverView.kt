@@ -101,7 +101,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.pickme.MainActivity
+import com.example.pickme.PickUpAcceptedService
 import com.example.pickme.R
+import com.example.pickme.TripJoinedService
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalTripDbHelper
 import com.example.pickme.data.model.Passenger
@@ -159,6 +161,8 @@ class DriverView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         startService(Intent(this, PickUpService::class.java))
+        startService(Intent(this, TripJoinedService::class.java))
+        stopService(Intent(this, PickUpAcceptedService::class.java))
         setContent {
             PickMeUpTheme {
                 val items = listOf(
@@ -842,7 +846,7 @@ fun SetTrips(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-
+                            myRef.child(tripKey).child("passengersIds").setValue(listOf<String>())
                             // Save the trip locally
                             val localTrip = driverId?.let {
                                 LocalTrip(
