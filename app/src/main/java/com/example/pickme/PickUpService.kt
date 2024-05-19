@@ -69,7 +69,8 @@ data class FirebasePickUp(
     val distance: Double = 0.0,
     val dateAndTime: String = "",
     val passengerId: String = "",
-    val driverId : String = ""
+    val driverId : String = "",
+    val price: Double? = 1.0
 ) {
     fun toPickUp(): PickUp {
         return PickUp(
@@ -81,7 +82,8 @@ data class FirebasePickUp(
             distance = this.distance,
             dateAndTime = this.dateAndTime,
             passengerId = this.passengerId,
-            driverId = this.driverId
+            driverId = this.driverId,
+            price= this.price,
         )
     }
 }

@@ -18,6 +18,7 @@ class PickUpViewModel : ViewModel() {
 
     val dateAndTime: MutableState<String> = mutableStateOf("")
 
+    val pickUpPrice: MutableState<Double> = mutableStateOf(1.0)
     // data for preview pick up
     val prevPickUpTitle:   MutableState<String> = mutableStateOf("")
     val prevTargetTitle:   MutableState<String> = mutableStateOf("")
@@ -46,6 +47,11 @@ class PickUpViewModel : ViewModel() {
     fun setDateAndTime(dateTime: String) {
         dateAndTime.value = dateTime
     }
+    fun setPickUpPrice(price: Double){
+        pickUpPrice.value= price
+    }
+
+
     fun setPrevPickUpTitle(title: String) {
         prevPickUpTitle.value = title
     }

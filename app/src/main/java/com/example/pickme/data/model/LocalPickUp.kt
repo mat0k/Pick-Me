@@ -12,4 +12,5 @@ data class LocalPickUp(
     val dateAndTime: String,
     val passengerId: String? = null,
     val driverId: String? = null,
+    val price: Double?,
 )

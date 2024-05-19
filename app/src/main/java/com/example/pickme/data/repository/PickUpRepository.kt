@@ -33,7 +33,8 @@ class PickUpRepository {
             "distance" to pickUp.distance,
             "dateAndTime" to pickUp.dateAndTime,
             "passengerId" to passengerId,
-            "driverId" to ""
+            "driverId" to "",
+            "price" to pickUp.price
         )
         myRef.child(pickUpObject["id"] as String).setValue(pickUpObject)
     }
@@ -57,7 +58,8 @@ class PickUpRepository {
             pickUpLatLng = LatLng(pickUpLat, pickUpLng),
             targetLatLng = LatLng(targetLat, targetLng),
             distance = distance,
-            dateAndTime = map["dateAndTime"] as String
+            dateAndTime = map["dateAndTime"] as String,
+            price = map["price"] as Double,
         )
     }
 

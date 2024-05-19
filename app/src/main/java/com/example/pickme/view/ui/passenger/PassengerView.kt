@@ -564,16 +564,18 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         distance = pickUpViewModel.distance.value,
                         dateAndTime = pickUpViewModel.dateAndTime.value,
                         passengerId = id,
+                        price = pickUpViewModel.pickUpPrice.value.toDouble(),
                         driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
                     )                                               // driver id locally
-                    // locally
-                    val dbHelper = LocalPickUpDbHelper(context)
-                    dbHelper.insertLocalPickUp(localPickUp)
-
                     // to firebase
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
                     resetTitles()
+                    // locally
+                    val dbHelper = LocalPickUpDbHelper(context)
+                    dbHelper.insertLocalPickUp(localPickUp)
+                    Log.i("xxxx","price: ${pickUpViewModel.pickUpPrice.value}")
+
                 }) {
                 Text(
                     text = "Confirm pick up",
@@ -1215,6 +1217,28 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
     var isLoading by remember { mutableStateOf(false) }
 
+    var pricePerKm by remember {
+        mutableStateOf(1.0)
+    }
+
+    if(passengerClass.isNetworkAvailable(context)){
+        val database = FirebaseDatabase.getInstance()
+        val priceRef = database.getReference("PricePerKm/price")
+
+
+        priceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                pricePerKm = dataSnapshot.getValue(Double::class.java) ?: 0.0
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                println("Error reading PricePerKm: ${databaseError.message}")
+            }
+        })
+    }else{
+        passengerClass.ShowWifiProblemDialog(context)
+    }
     if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
@@ -1263,10 +1287,12 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             //display pick up details
             Box(
                 modifier = Modifier
+                    .alpha(0.91f)
                     .padding(start = 15.dp, end = 15.dp, top = 15.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
                     .padding(8.dp)
+                    .alpha(0.85f)
             ) {
                 // row for pick up location and cancel button
                 Row(
@@ -1304,11 +1330,11 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             //display target details
             Box(
                 modifier = Modifier
+                    .alpha(0.91f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
                     .padding(8.dp)
-
             ) {
                 // row for target location and cancel button
                 Row(
@@ -1362,14 +1388,32 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     color = Color.Black
                 )
                 if (isLoading && tripDistance == 0.0) {
-                    distanceAlpha = 1f
+                    distanceAlpha = 0.85f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
                 } else if (tripDistance != 0.0) {
-                    distanceAlpha = 1f
+                    distanceAlpha = 0.85f
                 }
             }
+                    // pricing row
+            Row(
+                modifier = Modifier
+                    .alpha(if (tripDistance.toInt() ==0) 0f else 1f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "price: $${"%.2f".format(tripDistance * pricePerKm)}",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+            }
+
         }
         // center marker
         Column(
@@ -1459,7 +1503,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                         }
                     }
                     ref.addValueEventListener(postListener)
-                    Log.d("xxxx", "Listener added to reference")
+                  //  Log.d("xxxx", "Listener added to reference")
                 }
 
             } else {
@@ -1562,18 +1606,23 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 Toast.LENGTH_LONG
                             ).show()
                         } else {
-                            pickUpViewModel.setPickUpTitle(pickUpTitle)
-                            pickUpViewModel.setTargetTitle(targetTitle)
+                            if (tripDistance != 0.0) {
+                                pickUpViewModel.setPickUpTitle(pickUpTitle)
+                                pickUpViewModel.setTargetTitle(targetTitle)
 
-                            pickUpViewModel.setPickUpLatLng(pickUpLatLng)
-                            pickUpViewModel.setTargetLatLng(targetLatLng)
+                                pickUpViewModel.setPickUpLatLng(pickUpLatLng)
+                                pickUpViewModel.setTargetLatLng(targetLatLng)
 
-                            pickUpViewModel.setDistance(tripDistance)
-                            navController.navigate("pickUps")
+                                pickUpViewModel.setDistance(tripDistance)
+                                pickUpViewModel.setPickUpPrice("%.2f".format(tripDistance * pricePerKm).toDouble())
+                                navController.navigate("pickUps")
 
-                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                                .show()  //confirmation
-                            //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
+                                Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                    .show()  //confirmation
+                                //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
+                            }else{
+                                Toast.makeText(context,"Please wait to calculate distance",Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
 
@@ -1726,6 +1775,27 @@ fun PickUpPreview(
         position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
 
+    var pricePerKm by remember {
+        mutableStateOf(1.0)
+    }
+    if(passengerViewModel.isNetworkAvailable(context)){
+        val database = FirebaseDatabase.getInstance()
+        val priceRef = database.getReference("PricePerKm/price")
+
+
+        priceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                pricePerKm = dataSnapshot.getValue(Double::class.java) ?: 0.0
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                println("Error reading PricePerKm: ${databaseError.message}")
+            }
+        })
+    }else{
+        passengerViewModel.ShowWifiProblemDialog(context)
+    }
 
 
     Box(
@@ -1834,7 +1904,7 @@ fun PickUpPreview(
                     color = Color.Gray
                 )
                 if (tripDistance == 0.0) {
-                    distanceAlpha = 1f
+                    distanceAlpha = 0.9f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
@@ -1846,6 +1916,28 @@ fun PickUpPreview(
                     )
                 }
             }
+
+            Row(                // price
+                modifier = Modifier
+                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "price: ",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "$"+"%.2f".format(tripDistance * pricePerKm),
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -3377,6 +3469,30 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
 
     var isLoading by remember { mutableStateOf(false) }
 
+    var pricePerKm by remember {
+        mutableStateOf(1.0)
+    }
+
+    if(passengerClass.isNetworkAvailable(context)){
+        val database = FirebaseDatabase.getInstance()
+        val priceRef = database.getReference("PricePerKm/price")
+
+
+        priceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                pricePerKm = dataSnapshot.getValue(Double::class.java) ?: 0.0
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                println("Error reading PricePerKm: ${databaseError.message}")
+            }
+        })
+    }else{
+        passengerClass.ShowWifiProblemDialog(context)
+    }
+
+
     if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
         isLoading = true  // Start loading
         passengerClass.updatePolyline(pickUpLatLng, targetLatLng, { decodedPolyline ->
@@ -3424,6 +3540,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
             //display Starting details
             Box(
                 modifier = Modifier
+                    .alpha(0.91f)
                     .padding(start = 15.dp, end = 15.dp, top = 15.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -3465,6 +3582,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
             //display target details
             Box(
                 modifier = Modifier
+                    .alpha(0.91f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -3523,15 +3641,32 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                     color = Color.Black
                 )
                 if (isLoading && tripDistance == 0.0) {
-                    distanceAlpha = 1f
+                    distanceAlpha = 0.91f
                     CircularProgressIndicator(
                         modifier = Modifier.size(25.dp)
                     )
                 } else if (tripDistance != 0.0) {
-                    distanceAlpha = 1f
+                    distanceAlpha = 0.91f
                 }
             }
-        }
+            Row(
+                modifier = Modifier
+                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.91f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "price: $${"%.2f".format(tripDistance * pricePerKm)}",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+            }
+
+            }
         // center marker
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -3620,7 +3755,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                         }
                     }
                     ref.addValueEventListener(postListener)
-                    Log.d("xxxx", "Listener added to reference")
+                   // Log.d("xxxx", "Listener added to reference")
                 }
 
             } else {
@@ -3723,20 +3858,21 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                                 Toast.LENGTH_LONG
                             ).show()
                         } else {
-                            tripViewModel.setPickUpTitle(pickUpTitle)
-                            tripViewModel.setTargetTitle(targetTitle)
+                                tripViewModel.setPickUpTitle(pickUpTitle)
+                                tripViewModel.setTargetTitle(targetTitle)
 
-                            tripViewModel.setPickUpLatLng(pickUpLatLng)
-                            tripViewModel.setTargetLatLng(targetLatLng)
-                            Log.i(
-                                "xxxx",
-                                "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
-                            )
-                            tripViewModel.setDistance(tripDistance)
-                            navController.navigate("searchTrips")
+                                tripViewModel.setPickUpLatLng(pickUpLatLng)
+                                tripViewModel.setTargetLatLng(targetLatLng)
+                                Log.i(
+                                    "xxxx",
+                                    "pick up lat lng set to : ${tripViewModel.tripStartLatLng.value}"
+                                )
+                                tripViewModel.setDistance(tripDistance)
+                                navController.navigate("searchTrips")
 
-                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                                .show()  //confirmation
+                                Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
+                                    .show()  //confirmation
+
                         }
                     }
 
@@ -3800,6 +3936,28 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
     val passengerId = sharedPref.getString("lastUserId", "")
 
+    var pricePerKm by remember {
+        mutableStateOf(1.0)
+    }
+
+    if(passengerViewModel.isNetworkAvailable(context)){
+        val database = FirebaseDatabase.getInstance()
+        val priceRef = database.getReference("PricePerKm/price")
+
+
+        priceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                pricePerKm = dataSnapshot.getValue(Double::class.java) ?: 0.0
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                println("Error reading PricePerKm: ${databaseError.message}")
+            }
+        })
+    }else{
+        passengerViewModel.ShowWifiProblemDialog(context)
+    }
 
     passengerViewModel.updatePolyline(startLatLng, destLatLng, { decodedPolyline ->
         setPolylinePoints1(decodedPolyline)
@@ -3862,7 +4020,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 )
 
         }
-        Row(
+        Row(            // distance
             modifier = Modifier
                 .alpha(distanceAlpha)
                 .padding(start = 15.dp, end = 15.dp, top = 30.dp)
@@ -3877,12 +4035,29 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                 color = Color.Black
             )
             if (tripDistance == 0.0) {
-                distanceAlpha = 1f
+                distanceAlpha = 0.91f
                 CircularProgressIndicator(
                     modifier = Modifier.size(25.dp)
                 )
             }
         }
+        Row(            // pricing row
+            modifier = Modifier
+                .alpha(if (tripDistance.toInt() ==0) 0f else 0.91f)
+                .padding(start = 15.dp, end = 15.dp, top = 80.dp)
+                .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = "price: $${"%.2f".format(tripDistance * pricePerKm)}",
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+        }
+
         // Add a button that navigates back to the search page
         Column(
             modifier = Modifier

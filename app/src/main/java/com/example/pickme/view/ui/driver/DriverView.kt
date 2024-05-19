@@ -371,6 +371,9 @@ fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Pass
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
+                    text= "Price: ${pickUp.price} $"
+                )
+                Text(
                     text = "Passenger: ${passenger?.name} ${passenger?.surname}",
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1338,6 +1341,28 @@ fun PickUpPreview(
         position = CameraPosition.fromLatLngZoom(midPoint, zoomLevel)
     }
 
+    var pricePerKm by remember {
+        mutableStateOf(1.0)
+    }
+
+    if(passengerViewModel.isNetworkAvailable(context)){
+        val database = FirebaseDatabase.getInstance()
+        val priceRef = database.getReference("PricePerKm/price")
+
+
+        priceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                pricePerKm = dataSnapshot.getValue(Double::class.java) ?: 0.0
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+                println("Error reading PricePerKm: ${databaseError.message}")
+            }
+        })
+    }else{
+        passengerViewModel.ShowWifiProblemDialog(context)
+    }
 
 
     Box(
@@ -1457,6 +1482,26 @@ fun PickUpPreview(
                         color = Color.Black
                     )
                 }
+            }
+            Row(                // price
+                modifier = Modifier
+                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.9f)
+                    .padding(start = 15.dp, end = 15.dp, top = 5.dp)
+                    .background(color = Color.White, shape = RoundedCornerShape(8.dp))
+                    .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "price: ",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "$"+"%.2f".format(tripDistance * pricePerKm),
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
             }
             Column(
                 modifier = Modifier
