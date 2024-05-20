@@ -3527,7 +3527,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
                 title = targetTitle,
                 visible = targetMarkerState
             )
-            if (mainButtonState == "Confirm pick up" && pickUpLatLng != targetLatLng) {
+            if (mainButtonState == "Confirm Starting" && pickUpLatLng != targetLatLng) {
                 Polyline(
                     points = polylinePoints,
                     color = colorResource(id = R.color.polyline_color_1),
