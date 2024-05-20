@@ -4,10 +4,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
+import com.example.pickme.R
 import com.example.pickme.view.ui.driver.DriverView
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import java.util.Date
 
 class TripNotificationService(
     private val context: Context
@@ -19,20 +20,15 @@ class TripNotificationService(
         const val CHANNEL_DESCRIPTION = "Trip Notifications"
     }
 
-    fun showNotification() {
-        val activityIntent = Intent(context, DriverView::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, activityIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
+    fun showNotification(passengerName: String, time: Long) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("New Passenger Joined")
-            .setContentText("A new passenger has joined your trip")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .addAction(android.R.drawable.ic_menu_view, "View", pendingIntent)
+            .setContentTitle("New Passenger Joined")
+            .setContentText("$passengerName has joined your trip at ${Date(time)}")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .build()
+
         notificationManager.notify(1, notification)
     }
 

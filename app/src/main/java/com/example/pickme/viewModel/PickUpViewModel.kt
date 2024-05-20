@@ -8,6 +8,7 @@ import com.google.android.gms.maps.model.LatLng
 class PickUpViewModel : ViewModel() {
 
     // data for pick up
+    val pickUpId: MutableState<String> = mutableStateOf("")
     val pickUpTitle: MutableState<String> = mutableStateOf("")
     val targetTitle: MutableState<String> = mutableStateOf("")
 
@@ -74,5 +75,9 @@ class PickUpViewModel : ViewModel() {
 
     fun setDialogState(state: Boolean){
         dateDialogState.value= state
+    }
+
+    fun setPickUpId(id: String){
+        pickUpId.value = id
     }
 }

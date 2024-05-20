@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Edit
@@ -69,6 +70,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -142,10 +144,9 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.pickme.data.model.Place
 import com.example.pickme.data.model.LocalTrip
+import com.example.pickme.data.repository.PickUpRepository
 import java.util.Locale
 import com.google.firebase.database.GenericTypeIndicator
-import com.example.pickme.data.repository.OneSignalNotificationSender
-import com.example.pickme.view.ui.passenger.PickUps
 import com.example.pickme.viewModel.PickUpViewModel
 
 
@@ -228,9 +229,10 @@ class DriverView : ComponentActivity() {
 
 
 @Composable
-fun Startup(navController: NavHostController, pickUpViewModel: PickUpViewModel
-){
-    val context= LocalContext.current
+fun Startup(
+    navController: NavHostController, pickUpViewModel: PickUpViewModel
+) {
+    val context = LocalContext.current
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "home") {
@@ -255,49 +257,43 @@ fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewMode
     val showBottomSheet = remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val viewModelFactory = remember { HomeScreenVMFactory(context) }
-    val viewModel = viewModel<HomeScreenVM>(factory = viewModelFactory)
+    val viewModel: HomeScreenVM = viewModel(factory = viewModelFactory)
     val pickUps: List<PickUp> by viewModel.pickUps.observeAsState(initial = emptyList())
+    val filteredPickUps = viewModel.filterPickUps(context, pickUps)
     val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = {
-                Text("Home")
-            },
+            CenterAlignedTopAppBar(
+                title = { Text("Home") },
                 actions = {
-                    IconButton(onClick = {
-                        showBottomSheet.value = true
-                    }) {
+                    IconButton(onClick = { showBottomSheet.value = true }) {
                         Icon(Icons.Filled.FilterAlt, contentDescription = "Filter")
                     }
                 }
             )
         }
-    ) { it ->
+    ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.padding(it),
-        )
-        {
-            items(pickUps) { pickUp ->
+            modifier = Modifier.padding(paddingValues),
+        ) {
+            items(filteredPickUps) { pickUp ->
                 val passenger =
                     viewModel.getPassengerData(pickUp.passengerId).observeAsState().value
                 PickUpCard(navController, pickUp, passenger, pickUpViewModel)
             }
         }
+
         if (showBottomSheet.value) {
             ModalBottomSheet(
                 sheetState = sheetState,
                 onDismissRequest = { showBottomSheet.value = false }
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         "Working Hours: ${
-                            LocalTime.of(
-                                viewModel.workingHoursRange.value.start.toInt(),
-                                0
-                            ).format(formatter)
+                            LocalTime.of(viewModel.workingHoursRange.value.start.toInt(), 0)
+                                .format(formatter)
                         } - ${
                             LocalTime.of(viewModel.workingHoursRange.value.endInclusive.toInt(), 0)
                                 .format(formatter)
@@ -307,7 +303,7 @@ fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewMode
                         value = viewModel.workingHoursRange.value,
                         onValueChange = { range -> viewModel.workingHoursRange.value = range },
                         valueRange = 0f..23f,
-                        steps = 24,
+                        steps = 23,
                         onValueChangeFinished = {
                             viewModel.saveFilters(context)
                         }
@@ -326,19 +322,24 @@ fun HomeScreen(navController: NavHostController, pickUpViewModel: PickUpViewMode
                             viewModel.saveFilters(context)
                         },
                         valueRange = 1f..10f,
-                        steps = 8
+                        steps = 9
                     )
                 }
             }
         }
-
     }
 }
 
 @Composable
-fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Passenger?, pickUpViewModel:PickUpViewModel) {
-    val passengerViewModel= PassengerViewModel()
-    val context= LocalContext.current
+fun PickUpCard(
+    navController: NavHostController,
+    pickUp: PickUp,
+    passenger: Passenger?,
+    pickUpViewModel: PickUpViewModel
+) {
+    val passengerViewModel = PassengerViewModel()
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -369,7 +370,7 @@ fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Pass
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text= "Price: ${pickUp.price} $"
+                    text = "Price: ${pickUp.price} $"
                 )
                 Text(
                     text = "Passenger: ${passenger?.name} ${passenger?.surname}",
@@ -383,6 +384,7 @@ fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Pass
             ) {
                 IconButton(
                     onClick = {
+                        pickUpViewModel.setPickUpId(pickUp.id)
                         pickUpViewModel.setPrevPickUpTitle(pickUp.pickUpTitle)
                         pickUpViewModel.setPrevTargetTitle(pickUp.targetTitle)
                         pickUpViewModel.setPrevPickUPLatLng(pickUp.pickUpLatLng)
@@ -401,6 +403,7 @@ fun PickUpCard(navController: NavHostController, pickUp: PickUp, passenger: Pass
                         contentDescription = "Preview"
                     )
                 }
+
             }
         }
     }
@@ -1295,7 +1298,9 @@ fun PickUpPreview(
     navController: NavHostController,
     pickUpViewModel: PickUpViewModel
 ) {
-
+    val userId = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
+        .getString("lastUserId", null)
+    val repo = PickUpRepository()
     val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
     val targetLatLng = pickUpViewModel.prevTargetLatLng.value
 
@@ -1343,7 +1348,7 @@ fun PickUpPreview(
         mutableStateOf(1.0)
     }
 
-    if(passengerViewModel.isNetworkAvailable(context)){
+    if (passengerViewModel.isNetworkAvailable(context)) {
         val database = FirebaseDatabase.getInstance()
         val priceRef = database.getReference("PricePerKm/price")
 
@@ -1358,7 +1363,7 @@ fun PickUpPreview(
                 println("Error reading PricePerKm: ${databaseError.message}")
             }
         })
-    }else{
+    } else {
         passengerViewModel.ShowWifiProblemDialog(context)
     }
 
@@ -1483,7 +1488,7 @@ fun PickUpPreview(
             }
             Row(                // price
                 modifier = Modifier
-                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.9f)
+                    .alpha(if (tripDistance.toInt() == 0) 0f else 0.9f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -1496,7 +1501,7 @@ fun PickUpPreview(
                     color = Color.Gray
                 )
                 Text(
-                    text = "$"+"%.2f".format(tripDistance * pricePerKm),
+                    text = "$" + "%.2f".format(tripDistance * pricePerKm),
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
@@ -1537,16 +1542,18 @@ fun PickUpPreview(
                             .weight(3f)
                             .height(55.dp)
                             .padding(5.dp)
-                            .alpha(0f),
+                            .alpha(0.9f),
                         shape = RoundedCornerShape(15.dp),
                         onClick = {
-                            //   navController.navigate("setTrips")
+                            userId?.let {
+                                repo.acceptPickUp(pickUpViewModel.pickUpId.value, it)
+                            }
                         }
                     ) {
-                        /* Text(
-                             text = "Order Trip",
+                         Text(
+                             text = "Accept",
                              fontSize = 22.sp
-                         )*/
+                         )
                     }
                 }
             }
@@ -2218,53 +2225,71 @@ fun ProfileScreen(navController: NavHostController, context: Context) {
                     var noComments by remember {
                         mutableStateOf(true)
                     }
-                    LazyColumn {
-                        items(comments.reversed()) { comment ->
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        Color.Gray.copy(alpha = 0.5f),
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                    .padding(10.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Column {
-                                    if (comment["DriverId"] == driverId) {
-                                        noComments = false
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = "${comment["passengerName"]}",
-                                                style = MaterialTheme.typography.bodyMedium
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        if (comments.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No Comments yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        } else {
+                            items(comments.reversed()) { comment ->
+                                if (comment["DriverId"] == driverId) {
+                                    noComments = false
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = RoundedCornerShape(10.dp)
                                             )
+                                            .padding(10.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        Column {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = comment["passengerName"] ?: "",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                                Text(
+                                                    text = comment["commentDate"] ?: "",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    textAlign = TextAlign.End
+                                                )
+                                            }
                                             Text(
-                                                text = "${comment["commentDate"]}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                textAlign = TextAlign.End
+                                                text = comment["comment"] ?: "",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.padding(top = 8.dp)
                                             )
                                         }
-                                        Text(
-                                            text = "${comment["comment"]}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(top = 8.dp)
-                                        )
                                     }
-                                    if (noComments) {
-                                        Text(
-                                            text = "No Comments yet",
-                                            style = MaterialTheme.typography.bodyMedium,
 
-                                            )
-                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            if (noComments) {
+                                item {
+                                    Text(
+                                        text = "No Comments yet",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
-
                     Spacer(modifier = Modifier.height(100.dp))
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

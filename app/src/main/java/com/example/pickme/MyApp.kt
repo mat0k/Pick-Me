@@ -3,7 +3,7 @@ package com.example.pickme
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import com.example.pickme.notifications.PickUpAcceptedService
+import com.example.pickme.notifications.PickUpAcceptedNotificationService
 import com.example.pickme.notifications.PickupsNotificationService
 import com.example.pickme.notifications.TripNotificationService
 
@@ -38,11 +38,11 @@ class MyApp: Application() {
         }
 
         val channel2 = NotificationChannel(
-            PickUpAcceptedService.CHANNEL_ID,
-            PickUpAcceptedService.CHANNEL_NAME,
+            PickUpAcceptedNotificationService.CHANNEL_ID,
+            PickUpAcceptedNotificationService.CHANNEL_NAME,
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = PickUpAcceptedService.CHANNEL_DESCRIPTION
+            description = PickUpAcceptedNotificationService.CHANNEL_DESCRIPTION
         }
 
         val channel3 = NotificationChannel(

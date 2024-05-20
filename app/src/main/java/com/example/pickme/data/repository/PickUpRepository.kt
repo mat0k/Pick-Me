@@ -89,4 +89,10 @@ class PickUpRepository {
 
         return liveData
     }
+
+    fun acceptPickUp(id: String, driverId: String) {
+        val myRef = database.getReference("PickUps")
+        myRef.child(id).child("driverId").setValue(driverId)
+
+    }
 }
