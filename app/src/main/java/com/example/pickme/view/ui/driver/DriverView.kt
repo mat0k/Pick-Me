@@ -102,6 +102,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.pickme.MainActivity
 import com.example.pickme.PickUpAcceptedService
 import com.example.pickme.R
@@ -515,6 +517,9 @@ fun SetTrips(
     var isLoading by remember {
         mutableStateOf(true)
     }
+
+    val passengers by remember { mutableStateOf(mutableListOf<Passenger>()) }
+
     if (passengerViewModel.isNetworkAvailable(context)) {
         enableConfirm = true
         val driverRef = database.getReference("Drivers").child(driverId ?: "")
@@ -997,8 +1002,7 @@ fun SetTrips(
                                 )
                             }
 
-                            val passengers = remember { mutableStateOf(mutableListOf<Passenger>()) }
-                            IconButton(
+                            IconButton(     // here now
                                 onClick = {
                                     val tripId = trip.id
                                     val tripsRef = database.getReference("Trips")
@@ -1039,7 +1043,7 @@ fun SetTrips(
                                                                 dataSnapshot.child("photoUrl")
                                                                     .getValue(String::class.java)
                                                                     ?: ""
-                                                            passengers.value.add(
+                                                            passengers.add(
                                                                 Passenger(
                                                                     name = name,
                                                                     surname = surname,
@@ -1050,7 +1054,7 @@ fun SetTrips(
                                                             )
 
                                                             // Check if all passengers have been retrieved
-                                                            if (passengers.value.size == passengerIds.size) {
+                                                            if (passengers.size == passengerIds.size) {
                                                                 // All passengers have been retrieved, show the bottom sheet
                                                                 isLoading = false
                                                             }
@@ -1116,7 +1120,7 @@ fun SetTrips(
                                                     modifier = Modifier.padding(16.dp)
                                                 )
                                             }
-                                            items(passengers.value) { passenger ->
+                                            items(passengers) { passenger ->
                                                 Card(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
@@ -1134,14 +1138,21 @@ fun SetTrips(
                                                                 .background(Color.Gray),
                                                             contentAlignment = Alignment.Center
                                                         ) {
-                                                            // You can add your image here later
-                                                            AsyncImage(
-                                                                model = passenger.photoUrl, // Use the photoUrl directly
+                                                            val painter = rememberAsyncImagePainter(passenger.photoUrl)
+                                                            Image(
+                                                                painter = painter,
                                                                 contentDescription = "Profile Picture",
                                                                 modifier = Modifier
                                                                     .size(100.dp)
                                                                     .scale(1.2f)
                                                             )
+                                                            if (painter.state is AsyncImagePainter.State.Loading) {
+                                                                CircularProgressIndicator(
+                                                                    modifier = Modifier
+                                                                        .size(48.dp)
+                                                                        .align(Alignment.Center)
+                                                                )
+                                                            }
                                                         }
                                                         Spacer(modifier = Modifier.width(16.dp))
                                                         Column(
