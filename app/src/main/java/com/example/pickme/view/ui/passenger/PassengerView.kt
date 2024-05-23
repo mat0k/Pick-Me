@@ -108,6 +108,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.pickme.MainActivity
 import com.example.pickme.PickUpAcceptedService
 import com.example.pickme.PickUpService
@@ -733,7 +735,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                     ) {
                                         // url of both images to preview:
                                         val photoUrl = driver?.photo
-                                        val carPhotoUrl = driver?.carPhoto
+                                        val carPhotoUrl = driver?.carPhoto  // car photo
                                         // Text(text = "Photo URL: ${driver?.photo}")
                                         //  Text(text = "Car Photo URL: ${driver?.carPhoto}")
 
@@ -755,6 +757,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                             )
                                         }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                        // information
                                         Spacer(modifier = Modifier.height(14.dp))
 
                                         Row(
@@ -781,7 +784,56 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                             style = MaterialTheme.typography.bodyLarge
                                         )
 
-                                        Spacer(modifier = Modifier.height(22.dp))
+                                        Spacer(modifier = Modifier.height(5.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                        // car image
+                                        var showCarDialog by remember { mutableStateOf(false) }
+
+                                        Box(
+                                            modifier = Modifier.size(60.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            IconButton(onClick = { showCarDialog = true }) {
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.car2),
+                                                    contentDescription = "Car Icon",
+                                                    modifier = Modifier.size(100.dp)
+                                                )
+                                            }
+                                        }
+
+                                        if (showCarDialog) {
+                                            AlertDialog(
+                                                onDismissRequest = { showCarDialog = false },
+                                                title = { Text(text = "Car Image") },
+                                                text = {
+                                                    Box(
+                                                        modifier = Modifier.size(200.dp),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        val painter = rememberAsyncImagePainter(carPhotoUrl)
+                                                        Image(
+                                                            painter = painter,
+                                                            contentDescription = "Car Image",
+                                                            modifier = Modifier.size(200.dp)
+                                                        )
+                                                        if (painter.state is AsyncImagePainter.State.Loading) {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier
+                                                                    .size(48.dp)
+                                                                    .align(Alignment.Center)
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                                confirmButton = {
+                                                    TextButton(onClick = { showCarDialog = false }) {
+                                                        Text("Close")
+                                                    }
+                                                }
+                                            )
+                                        }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                         // rate
                                         var rate by remember {
@@ -3003,6 +3055,10 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 style = MaterialTheme.typography.headlineMedium
                             )
                             Text(
+                                text = "Title: ${trip["title"]}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
                                 text = "Starting: ${trip["starting"]}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -3182,7 +3238,56 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             style = MaterialTheme.typography.bodyLarge
                         )
 
-                        Spacer(modifier = Modifier.height(22.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        // car image
+                        var showCarDialog by remember { mutableStateOf(false) }
+
+                        Box(
+                            modifier = Modifier.size(60.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IconButton(onClick = { showCarDialog = true }) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.car2),
+                                    contentDescription = "Car Icon",
+                                    modifier = Modifier.size(100.dp)
+                                )
+                            }
+                        }
+
+                        if (showCarDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showCarDialog = false },
+                                title = { Text(text = "Car Image") },
+                                text = {
+                                    Box(
+                                        modifier = Modifier.size(200.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        val painter = rememberAsyncImagePainter(carPhotoUrl)
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = "Car Image",
+                                            modifier = Modifier.size(200.dp)
+                                        )
+                                        if (painter.state is AsyncImagePainter.State.Loading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .align(Alignment.Center)
+                                            )
+                                        }
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { showCarDialog = false }) {
+                                        Text("Close")
+                                    }
+                                }
+                            )
+                        }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // rate
                         var rate by remember {
@@ -3236,14 +3341,16 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         Text(text = "Comments", style = MaterialTheme.typography.headlineMedium)
                         Spacer(modifier = Modifier.height(2.dp))
                         HorizontalDivider() // Separator
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                        Spacer(modifier = Modifier.height(10.dp))
                         // Fetch comments from Firebase
-                        val comments = remember { mutableStateListOf<Map<String, String>>() }
+                        val comments =
+                            remember { mutableStateListOf<Map<String, String>>() }
                         LaunchedEffect(Unit) {
                             val database = FirebaseDatabase.getInstance()
                             val commentsRef = database.getReference("comments")
-                            commentsRef.addValueEventListener(object : ValueEventListener {
+                            commentsRef.addValueEventListener(object :
+                                ValueEventListener {
                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                                     comments.clear()
                                     dataSnapshot.children.mapNotNullTo(comments) {
@@ -3258,9 +3365,6 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                             })
                         }
                         // Display comments in a LazyColumn
-                        var noComments by remember {
-                            mutableStateOf(true)
-                        }
                         LazyColumn {
                             items(comments.reversed()) { comment ->
                                 Box(
@@ -3273,35 +3377,25 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                         .fillMaxWidth()
                                 ) {
                                     Column {
-                                        if (comment["DriverId"] == driverId) {
-                                            noComments = false
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Text(
-                                                    text = "${comment["passengerName"]}",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                                Text(
-                                                    text = "${comment["commentDate"]}",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    textAlign = TextAlign.End
-                                                )
-                                            }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
                                             Text(
-                                                text = "${comment["comment"]}",
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier.padding(top = 8.dp)
+                                                text = "${comment["passengerName"]}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "${comment["commentDate"]}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                textAlign = TextAlign.End
                                             )
                                         }
-                                        if (noComments) {
-                                            Text(
-                                                text = "No Comments yet",
-                                                style = MaterialTheme.typography.bodyMedium,
-
-                                                )
-                                        }
+                                        Text(
+                                            text = "${comment["comment"]}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(10.dp))
