@@ -861,7 +861,6 @@ fun SetTrips(
                 shape = RoundedCornerShape(15.dp),
                 enabled = enableConfirmation1 && enableConfirmation2 && tripTitle != "" && seats != 0,
                 onClick = {
-
                     if (passengerViewModel.isNetworkAvailable(context) && enableConfirm) {
                         val title = tripTitle
                         val tripSeats = seats
@@ -872,9 +871,6 @@ fun SetTrips(
                         val date = formattedDate
                         val time = formattedTime
                         val tripDistance = tripViewModel.distance.value
-
-
-                        // val driverId = sharedPref.getString("lastUserId", null
 
                         // Generate a unique key for the new trip
                         val tripKey = myRef.push().key
@@ -935,6 +931,8 @@ fun SetTrips(
                             }
                             if (localTrip != null) {
                                 dbHelper.insertTrip(localTrip)
+                                // Add the new trip to the list
+                                trips = trips + localTrip
                             }
                         }
                     } else {

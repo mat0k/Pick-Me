@@ -549,17 +549,15 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            Button(                                     // second confirm
+            Button(
                 modifier = Modifier
                     .size(width = 220.dp, height = 50.dp),
                 shape = RoundedCornerShape(15.dp),
-                enabled =
-                isButtonEnabled1 && isButtonEnabled2,
+                enabled = isButtonEnabled1 && isButtonEnabled2,
                 onClick = {
                     pickUpViewModels.add(pickUpViewModel)
-                    // showDialog.value = true
 
-                    //     ADD PICK UP LOCAL OBJECT TO DATA BASE
+                    // ADD PICK UP LOCAL OBJECT TO DATA BASE
                     val localPickUp = LocalPickUp(
                         id = 0,
                         pickUpTitle = pickUpTitle, targetTitle = targetTitle,
@@ -576,16 +574,21 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         passengerId = id,
                         price = pickUpViewModel.pickUpPrice.value.toDouble(),
                         driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
-                    )                                               // driver id locally
+                    )
+
                     // to firebase
                     val pickUpRepository = PickUpRepository()
                     pickUpRepository.addPickUp(localPickUp, id!!)
-                    resetTitles()
+
                     // locally
                     val dbHelper = LocalPickUpDbHelper(context)
                     dbHelper.insertLocalPickUp(localPickUp)
-                    Log.i("xxxx","price: ${pickUpViewModel.pickUpPrice.value}")
 
+                    // Add the new pick-up to the list
+                    localPickUpList.add(0, localPickUp) // Add to the start of the list to show it at the top
+
+                    resetTitles()
+                    Log.i("xxxx","price: ${pickUpViewModel.pickUpPrice.value}")
                 }) {
                 Text(
                     text = "Confirm pick up",
@@ -609,7 +612,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 .fillMaxSize()
                 .padding(10.dp)
         ) {
-            items(localPickUpList.reversed()) { localPickUp ->
+            items(localPickUpList.reversed()) { localPickUp -> // here now
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
