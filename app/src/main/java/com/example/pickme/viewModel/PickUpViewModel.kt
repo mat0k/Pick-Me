@@ -20,6 +20,7 @@ class PickUpViewModel : ViewModel() {
     val dateAndTime: MutableState<String> = mutableStateOf("")
 
     val pickUpPrice: MutableState<Double> = mutableStateOf(1.0)
+    val prevDriverId : MutableState<String> = mutableStateOf("")
     // data for preview pick up
     val prevPickUpTitle:   MutableState<String> = mutableStateOf("")
     val prevTargetTitle:   MutableState<String> = mutableStateOf("")
@@ -27,7 +28,6 @@ class PickUpViewModel : ViewModel() {
     val prevTargetLatLng:  MutableState<LatLng> = mutableStateOf(LatLng(0.0,0.0))
     val prevDistance :     MutableState<Double> = mutableStateOf(0.0)
     val dateDialogState:    MutableState<Boolean> = mutableStateOf(false)
-
     fun setPickUpTitle(title: String) {
         pickUpTitle.value = title
     }
@@ -79,5 +79,9 @@ class PickUpViewModel : ViewModel() {
 
     fun setPickUpId(id: String){
         pickUpId.value = id
+    }
+
+    fun setPrevDriverId(id: String){
+        prevDriverId.value = id
     }
 }

@@ -41,6 +41,7 @@ class HomeScreenVM(context: Context) : ViewModel() {
     val workingHoursRange = mutableStateOf(0f..23f)
     val radius = mutableFloatStateOf(1f)
     private val currentLocation = mutableStateOf<LatLng?>(null)
+    private val currentId = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE).getString("lastUserId", "")
 
     init {
         val sharedPref = context.getSharedPreferences("driver_filters", Context.MODE_PRIVATE)
@@ -63,7 +64,7 @@ class HomeScreenVM(context: Context) : ViewModel() {
         val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a", Locale.ENGLISH)
         val startWorkingTime = LocalTime.of(workingHoursRange.value.start.toInt(), 0)
         val endWorkingTime = LocalTime.of(workingHoursRange.value.endInclusive.toInt(), 0)
-        return pickUps.filter {
+        val filteredPickUps = pickUps.filter {
             val dateTime = try {
                 LocalDateTime.parse(it.dateAndTime.replace(" am", " AM").replace(" pm", " PM"), formatter)
             } catch (e: DateTimeParseException) {
@@ -78,8 +79,9 @@ class HomeScreenVM(context: Context) : ViewModel() {
                     it.pickUpLatLng
                 )
             } ?: 0.0
-            pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue)
+            pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue) && (it.driverId.isEmpty() || it.driverId == currentId )
         }
+        return filteredPickUps.sortedBy {it.driverId != currentId}
     }
 
     private fun getCurrentLocation(context: Context) {

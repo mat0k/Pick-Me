@@ -54,6 +54,8 @@ class PickUpAcceptedService : Service() {
                             if (driver != null) {
                                 Log.d("PickUpAcceptedService", "Driver found: ${driver.id}")
                                 pickUpAcceptedNotificationService.showNotification(pickUp, driver)
+                                //the above text shows a notification for a specific pickup and driver
+                                //we can update the local pickups here
                             } else {
                                 Log.e("PickUpAcceptedService", "Driver not found for ID: ${pickUp.driverId}")
                             }

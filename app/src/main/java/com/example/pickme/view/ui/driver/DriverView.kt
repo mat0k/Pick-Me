@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
@@ -342,10 +343,19 @@ fun PickUpCard(
     val passengerViewModel = PassengerViewModel()
     val context = LocalContext.current
 
+    var cardModifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+
+    if (pickUp.driverId.isNotEmpty()) {
+        cardModifier = cardModifier.border(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+        modifier = cardModifier
     ) {
         Row(
             modifier = Modifier
@@ -392,7 +402,7 @@ fun PickUpCard(
                         pickUpViewModel.setPrevPickUPLatLng(pickUp.pickUpLatLng)
                         pickUpViewModel.setPrevTargetLatLng(pickUp.targetLatLng)
                         pickUpViewModel.setPrevDistance(pickUp.distance)
-
+                        pickUpViewModel.setPrevDriverId(pickUp.driverId)
                         if (passengerViewModel.isNetworkAvailable(context)) {
                             navController.navigate("pickUpPreview") //here
                         } else {
@@ -405,7 +415,6 @@ fun PickUpCard(
                         contentDescription = "Preview"
                     )
                 }
-
             }
         }
     }
@@ -1138,7 +1147,8 @@ fun SetTrips(
                                                                 .background(Color.Gray),
                                                             contentAlignment = Alignment.Center
                                                         ) {
-                                                            val painter = rememberAsyncImagePainter(passenger.photoUrl)
+                                                            val painter =
+                                                                rememberAsyncImagePainter(passenger.photoUrl)
                                                             Image(
                                                                 painter = painter,
                                                                 contentDescription = "Profile Picture",
@@ -1314,7 +1324,7 @@ fun PickUpPreview(
     val repo = PickUpRepository()
     val pickUpLatLng = pickUpViewModel.prevPickUPLatLng.value
     val targetLatLng = pickUpViewModel.prevTargetLatLng.value
-
+    val isAccepted = pickUpViewModel.prevDriverId.value.isNotEmpty()
     val passengerViewModel = PassengerViewModel()
     val midPoint = passengerViewModel.calculateMidPoint(pickUpLatLng, targetLatLng)
 
@@ -1547,26 +1557,27 @@ fun PickUpPreview(
                             )
                         }
                     }
-
                     Button(
                         modifier = Modifier
                             .weight(3f)
                             .height(55.dp)
                             .padding(5.dp)
-                            .alpha(0.9f),
+                            .alpha(if (!isAccepted) 0.9f else 0f),
                         shape = RoundedCornerShape(15.dp),
                         onClick = {
                             userId?.let {
                                 repo.acceptPickUp(pickUpViewModel.pickUpId.value, it)
                             }
+                            navController.popBackStack()
                         }
                     ) {
-                         Text(
-                             text = "Accept",
-                             fontSize = 22.sp
-                         )
+                        Text(
+                            text = "Accept",
+                            fontSize = 22.sp
+                        )
                     }
                 }
+
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.example.pickme.data.repository
 
+import android.util.Log
 import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.PickUp
 import com.google.android.gms.maps.model.LatLng
@@ -38,6 +39,7 @@ class PickUpRepository {
         )
         myRef.child(pickUpObject["id"] as String).setValue(pickUpObject)
     }
+
     private fun mapToPickUp(map: Map<String, Any>): PickUp {
         val pickUpLatLngMap = map["pickUpLatLng"] as Map<String, Any>
         val targetLatLngMap = map["targetLatLng"] as Map<String, Any>
@@ -60,6 +62,7 @@ class PickUpRepository {
             distance = distance,
             dateAndTime = map["dateAndTime"] as String,
             price = map["price"] as Double,
+            driverId = map["driverId"] as String
         )
     }
 
@@ -76,6 +79,11 @@ class PickUpRepository {
                     if (pickUpMap != null) {
                         val pickUp = mapToPickUp(pickUpMap)
                         pickUps.add(pickUp)
+                        Log.d(
+                            "PickUpRepository",
+                            "PickUp Information: id = ${pickUp.id}, passengerId = ${pickUp.passengerId}, pickUpTitle = ${pickUp.pickUpTitle}, targetTitle = ${pickUp.targetTitle}, pickUpLatLng = ${pickUp.pickUpLatLng}, targetLatLng = ${pickUp.targetLatLng}, distance = ${pickUp.distance}, dateAndTime = ${pickUp.dateAndTime}, price = ${pickUp.price}, driverId = ${pickUp.driverId}"
+                        )
+
                     }
                 }
                 liveData.value = pickUps
