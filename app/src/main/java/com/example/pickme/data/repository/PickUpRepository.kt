@@ -1,7 +1,6 @@
 package com.example.pickme.data.repository
 
 import android.util.Log
-import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.PickUp
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.DataSnapshot
@@ -17,10 +16,11 @@ import androidx.lifecycle.MutableLiveData
 class PickUpRepository {
     private val database: FirebaseDatabase = Firebase.database
 
-    fun addPickUp(pickUp: LocalPickUp, passengerId: String) {
+    fun addPickUp(pickUp: PickUp) : String?{
         val myRef = database.getReference("PickUps")
+        val id = myRef.push().key
         val pickUpObject = mapOf(
-            "id" to myRef.push().key, // Generate unique ID
+            "id" to id, // Generate unique ID
             "pickUpTitle" to pickUp.pickUpTitle,
             "targetTitle" to pickUp.targetTitle,
             "pickUpLatLng" to mapOf(
@@ -33,11 +33,12 @@ class PickUpRepository {
             ),
             "distance" to pickUp.distance,
             "dateAndTime" to pickUp.dateAndTime,
-            "passengerId" to passengerId,
+            "passengerId" to pickUp.passengerId,
             "driverId" to "",
             "price" to pickUp.price
         )
         myRef.child(pickUpObject["id"] as String).setValue(pickUpObject)
+        return id
     }
 
     private fun mapToPickUp(map: Map<String, Any>): PickUp {

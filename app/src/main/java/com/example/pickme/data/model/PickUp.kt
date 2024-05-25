@@ -3,7 +3,7 @@ package com.example.pickme.data.model
 import com.google.android.gms.maps.model.LatLng
 
 data class PickUp(
-    val id: String = "",
+    var id: String = "",
     val pickUpTitle: String = "",
     val targetTitle: String = "",
     val pickUpLatLng: LatLng = LatLng(0.0, 0.0),

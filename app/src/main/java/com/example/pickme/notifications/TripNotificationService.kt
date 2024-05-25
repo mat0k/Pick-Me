@@ -27,6 +27,7 @@ class TripNotificationService(
             .setContentText("$passengerName has joined your trip at ${Date(time)}")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setAutoCancel(true)
             .build()
 
         notificationManager.notify(1, notification)

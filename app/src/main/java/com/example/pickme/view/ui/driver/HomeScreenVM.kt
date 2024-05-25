@@ -64,6 +64,7 @@ class HomeScreenVM(context: Context) : ViewModel() {
         val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy, hh:mm a", Locale.ENGLISH)
         val startWorkingTime = LocalTime.of(workingHoursRange.value.start.toInt(), 0)
         val endWorkingTime = LocalTime.of(workingHoursRange.value.endInclusive.toInt(), 0)
+        val currentDateTime = LocalDateTime.now()
         val filteredPickUps = pickUps.filter {
             val dateTime = try {
                 LocalDateTime.parse(it.dateAndTime.replace(" am", " AM").replace(" pm", " PM"), formatter)
@@ -79,7 +80,7 @@ class HomeScreenVM(context: Context) : ViewModel() {
                     it.pickUpLatLng
                 )
             } ?: 0.0
-            pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue) && (it.driverId.isEmpty() || it.driverId == currentId )
+            dateTime.isAfter(currentDateTime) && pickUpTime in startWorkingTime..endWorkingTime && (distance <= radius.floatValue) && (it.driverId.isEmpty() || it.driverId == currentId )
         }
         return filteredPickUps.sortedBy {it.driverId != currentId}
     }

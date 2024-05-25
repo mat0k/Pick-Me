@@ -115,8 +115,8 @@ import com.example.pickme.PickUpAcceptedService
 import com.example.pickme.PickUpService
 import com.example.pickme.R
 import com.example.pickme.data.model.DriverData
-import com.example.pickme.data.model.LocalPickUp
 import com.example.pickme.data.model.LocalPickUpDbHelper
+import com.example.pickme.data.model.PickUp
 import com.example.pickme.data.model.Place
 import com.example.pickme.ui.passenger.ui.theme.PickMeUpTheme
 import com.example.pickme.viewModel.PassengerViewModel
@@ -267,7 +267,7 @@ fun HomeScreen(
 fun PickUps(context: Context, navController: NavHostController, pickUpViewModel: PickUpViewModel) {
 
     val sharedPref = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
-    val id = sharedPref.getString("lastUserId", "")
+    val currentId = sharedPref.getString("lastUserId", "")
     var pickUpTitle by remember {
         mutableStateOf("Pick Up")
     }
@@ -308,8 +308,8 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
     val showDialog = remember { mutableStateOf(false) }
 
-    val localPickUpList = remember { mutableStateListOf<LocalPickUp>() }
-    val showDeleteConfirm = remember { mutableStateOf<LocalPickUp?>(null) }
+    val localPickUpList = remember { mutableStateListOf<PickUp>() }
+    val showDeleteConfirm = remember { mutableStateOf<PickUp?>(null) }
 
     val passengerViewModel = PassengerViewModel()
 
@@ -556,10 +556,12 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 enabled = isButtonEnabled1 && isButtonEnabled2,
                 onClick = {
                     pickUpViewModels.add(pickUpViewModel)
-
+                    var passengerId = ""
+                    currentId?.let {
+                        currentId -> passengerId = currentId
+                    }
                     // ADD PICK UP LOCAL OBJECT TO DATA BASE
-                    val localPickUp = LocalPickUp(
-                        id = 0,
+                    val localPickUp = PickUp(
                         pickUpTitle = pickUpTitle, targetTitle = targetTitle,
                         pickUpLatLng = LatLng(
                             pickUpViewModel.pickUpLatLng.value.latitude,
@@ -571,15 +573,17 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         ),
                         distance = pickUpViewModel.distance.value,
                         dateAndTime = pickUpViewModel.dateAndTime.value,
-                        passengerId = id,
+                        passengerId = passengerId,
                         price = pickUpViewModel.pickUpPrice.value.toDouble(),
-                        driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2" // change that to actual driver id
+                        driverId = "" // change that to actual driver id
                     )
 
                     // to firebase
                     val pickUpRepository = PickUpRepository()
-                    pickUpRepository.addPickUp(localPickUp, id!!)
-
+                    val newId = pickUpRepository.addPickUp(localPickUp)
+                    newId?.let {
+                        localPickUp.id = it
+                    }
                     // locally
                     val dbHelper = LocalPickUpDbHelper(context)
                     dbHelper.insertLocalPickUp(localPickUp)
@@ -600,7 +604,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
         val databaseHelper = LocalPickUpDbHelper(context)
         LaunchedEffect(Unit) {
-            id?.let { databaseHelper.getAllLocalPickUps(it) }?.let { localPickUpList.addAll(it) }
+            currentId?.let { databaseHelper.getAllLocalPickUps(it) }?.let { localPickUpList.addAll(it) }
         }
         var showPreviewBottomSheet by remember {
             mutableStateOf(false)
@@ -613,6 +617,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                 .padding(10.dp)
         ) {
             items(localPickUpList.reversed()) { localPickUp -> // here now
+                Log.d("driverIds", "id = ${localPickUp.driverId}")
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -703,7 +708,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                         }
                     }
-                    val driverId = "1l6hXRpLbsblhphc42mwfNLYqsP2"      // driver id locally
 
                     if (showPreviewBottomSheet) {          // bottom sheet
                         ModalBottomSheet(
@@ -722,10 +726,10 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
                             viewModel.loadProfileData()
 
-                            if (driverId != "empty") {
+                            if (localPickUp.driverId.isNotEmpty()) {
 
-                                LaunchedEffect(driverId) {
-                                    driver = passengerViewModel.getDriverInfo(driverId)
+                                LaunchedEffect(localPickUp.driverId) {
+                                    driver = passengerViewModel.getDriverInfo(localPickUp.driverId)
                                 }
                                 if (driver != null) {
                                     Column(
@@ -859,7 +863,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         // get the rate from firebase, adding it as fun in view model didn't work
                                         val database = FirebaseDatabase.getInstance()
                                         val ratingRef =
-                                            database.getReference("rating").child(driverId)
+                                            database.getReference("rating").child(localPickUp.driverId)
                                         ratingRef.addValueEventListener(object :
                                             ValueEventListener {
                                             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -1035,7 +1039,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                             FirebaseDatabase.getInstance()
                                                         val ratingRef =
                                                             database.getReference("rating")
-                                                                .child(driverId)
+                                                                .child(localPickUp.driverId)
                                                         val key = ratingRef.push().key
                                                         if (key != null) {
                                                             ratingRef.child(key)
@@ -1079,7 +1083,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                                                                 // Create a new comment object
                                                                 val newComment = mapOf(
-                                                                    "DriverId" to driverId,
+                                                                    "DriverId" to localPickUp.driverId,
                                                                     "passengerName" to (viewModel.name.value + " " + viewModel.surname.value),
                                                                     "comment" to comment,
                                                                     "commentDate" to LocalDate.now()
