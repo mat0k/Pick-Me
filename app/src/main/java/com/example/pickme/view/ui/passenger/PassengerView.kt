@@ -589,7 +589,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                     dbHelper.insertLocalPickUp(localPickUp)
 
                     // Add the new pick-up to the list
-                    localPickUpList.add(0, localPickUp) // Add to the start of the list to show it at the top
+                  //  localPickUpList.add(0, localPickUp) // Add to the start of the list to show it at the top
 
                     resetTitles()
                     Log.i("xxxx","price: ${pickUpViewModel.pickUpPrice.value}")
