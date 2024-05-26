@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
-import com.example.pickme.R
+import com.example.pickme.data.repository.TripsRepository
 import com.example.pickme.view.ui.driver.DriverView
 import java.util.Date
 
@@ -20,17 +20,20 @@ class TripNotificationService(
         const val CHANNEL_DESCRIPTION = "Trip Notifications"
     }
 
-    fun showNotification(passengerName: String, time: Long) {
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("New Passenger Joined")
-            .setContentText("$passengerName has joined your trip at ${Date(time)}")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(1, notification)
+    suspend fun showNotification(tripId: String) {
+        val tripTitle = TripsRepository().getTripTitle(tripId)
+        tripTitle?.let {
+            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle("New passenger joined your trip")
+                .setContentText("Trip: $tripTitle")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setAutoCancel(true)
+                .setContentIntent(PendingIntent.getActivity(context, 0, Intent(context, DriverView::class.java), PendingIntent.FLAG_UPDATE_CURRENT))
+                .build()
+            notificationManager.notify(Date().time.toInt(), notification)
+        }
     }
 
 }

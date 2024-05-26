@@ -3,9 +3,9 @@ package com.example.pickme
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import com.example.pickme.notifications.TripNotificationService
 import com.example.pickme.viewModel.PassengerViewModel
-import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -15,52 +15,53 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+
 class TripJoinedService : Service() {
     private lateinit var ref: DatabaseReference
     private lateinit var tripNotificationService: TripNotificationService
-    private lateinit var passengerViewModel: PassengerViewModel // Add this line
-
+    private lateinit var passengerViewModel: PassengerViewModel
+    private lateinit var currentId: String
     override fun onBind(intent: Intent?): IBinder? {
-        TODO("Not yet implemented")
+        return null // This service doesn't provide binding
     }
 
     override fun onCreate() {
         super.onCreate()
-        ref = Firebase.database.getReference("Trips")
+        ref = com.google.firebase.Firebase.database.getReference("Trips")
         tripNotificationService = TripNotificationService(this)
-        passengerViewModel = PassengerViewModel() // Initialize the ViewModel
+        passengerViewModel = PassengerViewModel()
+        currentId = getSharedPreferences("MyPref", MODE_PRIVATE).getString("lastUserId", "") ?: ""
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val sharedPreferences = getSharedPreferences("MyPref", MODE_PRIVATE)
-        val currentId = sharedPreferences.getString("lastUserId", "")
-        var lastKnownTrips = listOf<FirebaseTrip>()
-        val tripsListener = object : ValueEventListener {
+        val knownTrips = mutableListOf<FirebaseTrip>()
+        Log.d("TripJoinedService", "Service started.")
+        ref.addValueEventListener(object: ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d("TripJoinedService", "DataSnapshot received.")
                 val trips = snapshot.children.mapNotNull { it.getValue(FirebaseTrip::class.java) }
-                val currentUserTrips = trips.filter { it.driverId == currentId }
-                currentUserTrips.forEach { currentTrip ->
-                    val lastKnownTrip = lastKnownTrips.find { it.id == currentTrip.id }
-                    currentTrip.passengerIds.forEach { passengerId ->
-                        if (lastKnownTrip == null || !lastKnownTrip.passengerIds.contains(passengerId)) {
-                            // New passenger joined, get their info and show notification
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val passenger = passengerViewModel.getDriverInfo(passengerId)
-                                val time = currentTrip.startTime
-                                tripNotificationService.showNotification("${passenger.firstName} ${passenger.lastName}", time)
-                            }
-                        }
+                val currentDriverTrips = trips.filter { it.driverId == currentId }
+                Log.d("TripJoinedService", "DataSnapshot received: ${snapshot.childrenCount} children.")
+                val justJoinedTrips = currentDriverTrips.filter {
+                    Log.d("TripJoinedService", "Processing trip: ${it.id}")
+                    it.availableSeats < (knownTrips.find { knownTrip -> knownTrip.id == it.id }?.availableSeats
+                        ?: 0)
+                }
+                CoroutineScope(Dispatchers.IO).launch {
+                    justJoinedTrips.forEach{trip ->
+                        Log.d("TripJoinedService", "Sending Notification: ${trip.id}")
+                        tripNotificationService.showNotification(trip.id)
                     }
                 }
-                lastKnownTrips = currentUserTrips
+                knownTrips.clear()
+                knownTrips.addAll(currentDriverTrips)
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Failed to read value
+                TODO("Not yet implemented")
             }
-        }
-        ref.addValueEventListener(tripsListener)
-        return super.onStartCommand(intent, flags, startId)
+        })
+        return START_STICKY
     }
 }
 
@@ -74,5 +75,6 @@ data class FirebaseTrip(
     val endTime: Long = 0,
     val price: Double = 0.0,
     val distance: Double = 0.0,
-    val status: String = ""
+    val status: String = "",
+    val availableSeats: Int = 0
 )

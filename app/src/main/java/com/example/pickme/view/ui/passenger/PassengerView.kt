@@ -79,6 +79,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -102,6 +103,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -178,11 +180,11 @@ class PassengerView : ComponentActivity() {
         setContent {
             PickMeUpTheme {
                 val items = listOf(
-                    BottomNavigationItem("search", Icons.Filled.Search, Icons.Outlined.Search),
-                    BottomNavigationItem("home", Icons.Filled.Home, Icons.Outlined.Home),
-                    BottomNavigationItem("profile", Icons.Filled.Person, Icons.Outlined.Person)
+                    BottomNavigationItem("Search", Icons.Filled.Search, Icons.Outlined.Search),
+                    BottomNavigationItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
+                    BottomNavigationItem("Profile", Icons.Filled.Person, Icons.Outlined.Person)
                 )
-                var selectedItemIndex by remember { mutableStateOf(items.indexOfFirst { it.title == "home" }) }
+                var selectedItemIndex by remember { mutableStateOf(items.indexOfFirst { it.title == "Home" }) }
                 val navController = rememberNavController()
 
                 Surface(
@@ -610,53 +612,44 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
             mutableStateOf(false)
         }
         val sheetState = rememberModalBottomSheetState()
+        val pickUpRepository = PickUpRepository()
+        val pickUps: LiveData<List<PickUp>> = pickUpRepository.getLivePickUps(currentId?:"")
+        val livePickUpList = pickUps.observeAsState(initial = emptyList())
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(10.dp)
         ) {
-            items(localPickUpList.reversed()) { localPickUp -> // here now
-                Log.d("driverIds", "id = ${localPickUp.driverId}")
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 5.dp),
-
-                    ) {
+            items(livePickUpList.value) { pickUp -> // here now
+                Log.d("driverIds", "id = ${pickUp.driverId}")
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(color = Color.White, shape = RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.dp,
-                                color = Color.Black,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(5.dp),
+                            .padding(8.dp),
                         //  verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = localPickUp.dateAndTime,
+                                text = pickUp.dateAndTime,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                 fontSize = 20.sp,
-                                color = Color.Black,
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Pick up: ${localPickUp.pickUpTitle}",
+                                text = "Pick up: ${pickUp.pickUpTitle}",
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontSize = 14.sp,
-                                color = Color.Black,
+                                fontSize = 14.sp
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Destination: ${localPickUp.targetTitle}",
+                                text = "Destination: ${pickUp.targetTitle}",
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontSize = 14.sp,
-                                color = Color.Black,
+                                fontSize = 14.sp
                             )
                         }
 
@@ -664,11 +657,11 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         Column {
                             IconButton(
                                 onClick = {
-                                    pickUpViewModel.setPrevPickUpTitle(localPickUp.pickUpTitle)
-                                    pickUpViewModel.setPrevTargetTitle(localPickUp.targetTitle)
-                                    pickUpViewModel.setPrevPickUPLatLng(localPickUp.pickUpLatLng)
-                                    pickUpViewModel.setPrevTargetLatLng(localPickUp.targetLatLng)
-                                    pickUpViewModel.setPrevDistance(localPickUp.distance)
+                                    pickUpViewModel.setPrevPickUpTitle(pickUp.pickUpTitle)
+                                    pickUpViewModel.setPrevTargetTitle(pickUp.targetTitle)
+                                    pickUpViewModel.setPrevPickUPLatLng(pickUp.pickUpLatLng)
+                                    pickUpViewModel.setPrevTargetLatLng(pickUp.targetLatLng)
+                                    pickUpViewModel.setPrevDistance(pickUp.distance)
 
                                     if (passengerViewModel.isNetworkAvailable(context)) {
                                         navController.navigate("pickUpPreview") //here
@@ -683,21 +676,23 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                 )
                             }
 
-                            IconButton(
-                                onClick = {
+                            if(pickUp.driverId.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
 
-                                    showPreviewBottomSheet = true
+                                        showPreviewBottomSheet = true
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.preview_icon),
+                                        contentDescription = "preview"
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.preview_icon),
-                                    contentDescription = "preview"
-                                )
                             }
 
 
                             IconButton(
-                                onClick = { showDeleteConfirm.value = localPickUp }
+                                onClick = { showDeleteConfirm.value = pickUp }
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.delete_icon),
@@ -726,10 +721,10 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             val viewModel = viewModel<ProfileViewModel>(factory = viewModelFactory)
                             viewModel.loadProfileData()
 
-                            if (localPickUp.driverId.isNotEmpty()) {
+                            if (pickUp.driverId.isNotEmpty()) {
 
-                                LaunchedEffect(localPickUp.driverId) {
-                                    driver = passengerViewModel.getDriverInfo(localPickUp.driverId)
+                                LaunchedEffect(pickUp.driverId) {
+                                    driver = passengerViewModel.getDriverInfo(pickUp.driverId)
                                 }
                                 if (driver != null) {
                                     Column(
@@ -863,7 +858,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         // get the rate from firebase, adding it as fun in view model didn't work
                                         val database = FirebaseDatabase.getInstance()
                                         val ratingRef =
-                                            database.getReference("rating").child(localPickUp.driverId)
+                                            database.getReference("rating").child(pickUp.driverId)
                                         ratingRef.addValueEventListener(object :
                                             ValueEventListener {
                                             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -1039,7 +1034,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                             FirebaseDatabase.getInstance()
                                                         val ratingRef =
                                                             database.getReference("rating")
-                                                                .child(localPickUp.driverId)
+                                                                .child(pickUp.driverId)
                                                         val key = ratingRef.push().key
                                                         if (key != null) {
                                                             ratingRef.child(key)
@@ -1083,7 +1078,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
 
                                                                 // Create a new comment object
                                                                 val newComment = mapOf(
-                                                                    "DriverId" to localPickUp.driverId,
+                                                                    "DriverId" to pickUp.driverId,
                                                                     "passengerName" to (viewModel.name.value + " " + viewModel.surname.value),
                                                                     "comment" to comment,
                                                                     "commentDate" to LocalDate.now()
@@ -1466,7 +1461,7 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                     // pricing row
             Row(
                 modifier = Modifier
-                    .alpha(if (tripDistance.toInt() ==0) 0f else 1f)
+                    .alpha(if (tripDistance.toInt() == 0) 0f else 1f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -1986,7 +1981,7 @@ fun PickUpPreview(
 
             Row(                // price
                 modifier = Modifier
-                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.9f)
+                    .alpha(if (tripDistance.toInt() == 0) 0f else 0.9f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -3760,7 +3755,7 @@ fun TripMap(navController: NavHostController, tripViewModel: TripViewModel) {
             }
             Row(
                 modifier = Modifier
-                    .alpha(if (tripDistance.toInt() ==0) 0f else 0.91f)
+                    .alpha(if (tripDistance.toInt() == 0) 0f else 0.91f)
                     .padding(start = 15.dp, end = 15.dp, top = 5.dp)
                     .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                     .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -4152,7 +4147,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
         }
         Row(            // pricing row
             modifier = Modifier
-                .alpha(if (tripDistance.toInt() ==0) 0f else 0.91f)
+                .alpha(if (tripDistance.toInt() == 0) 0f else 0.91f)
                 .padding(start = 15.dp, end = 15.dp, top = 80.dp)
                 .background(color = Color.White, shape = RoundedCornerShape(8.dp))
                 .border(width = 0.5.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
@@ -4275,7 +4270,7 @@ fun TripPreview(navController: NavHostController, tripViewModel: TripViewModel) 
                         fontSize = 22.sp
                     )
                 }
-              
+
                 if (showDialog) {
                     AlertDialog(
                         onDismissRequest = { showDialog = false },

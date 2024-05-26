@@ -163,11 +163,11 @@ class DriverView : ComponentActivity() {
         setContent {
             PickMeUpTheme {
                 val items = listOf(
-                    BottomNavigationItem("trips", Icons.Filled.Create, Icons.Outlined.Create),
-                    BottomNavigationItem("home", Icons.Filled.Home, Icons.Outlined.Home),
-                    BottomNavigationItem("profile", Icons.Filled.Person, Icons.Outlined.Person)
+                    BottomNavigationItem("Trips", Icons.Filled.Create, Icons.Outlined.Create),
+                    BottomNavigationItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
+                    BottomNavigationItem("Profile", Icons.Filled.Person, Icons.Outlined.Person)
                 )
-                var selectedItemIndex by remember { mutableIntStateOf(items.indexOfFirst { it.title == "home" }) }
+                var selectedItemIndex by remember { mutableIntStateOf(items.indexOfFirst { it.title == "Home" }) }
                 val navController = rememberNavController()
 
                 Surface(
@@ -881,7 +881,8 @@ fun SetTrips(
                                 "time" to time,
                                 "tripDistance" to tripDistance,
                                 "verified" to isVerified,
-                                "id" to driverId,
+                                "id" to tripKey,
+                                "driverId" to driverId,
                                 "availableSeats" to tripSeats
                             )
 

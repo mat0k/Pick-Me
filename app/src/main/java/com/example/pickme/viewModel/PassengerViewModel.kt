@@ -11,6 +11,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
@@ -246,7 +247,10 @@ class PassengerViewModel {
             val tripSeats = trip["seats"]?.toString()?.toIntOrNull() ?: 1
 
             // Convert the trip time string to a LocalTime object
-            val tripTimeStr = trip["time"] as? String ?: ""
+            var tripTimeStr = trip["time"] as? String ?: ""
+            if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q){
+                tripTimeStr = tripTimeStr.replace("AM", "am").replace("PM", "pm")
+            }
             val tripTime = LocalTime.parse(tripTimeStr, formatter)
 
             // Calculate the difference in minutes between the input time and the trip time
@@ -377,6 +381,7 @@ class PassengerViewModel {
 
 
     suspend fun getDriverInfo(driverId: String,): DriverData {
+        Log.d("PassengerViewModel", "getDriverInfo called")
         val database = FirebaseDatabase.getInstance()
         val myRef = database.getReference("Drivers").child(driverId)
 
@@ -407,8 +412,6 @@ class PassengerViewModel {
             })
         }
     }
-
-
 
 }
 

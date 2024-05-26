@@ -52,7 +52,7 @@ class PickUpRepository {
         val targetLng = (targetLatLngMap["longitude"] as Number).toDouble()
 
         val distance = (map["distance"] as Number).toDouble()
-
+        val price = (map["price"] as Number).toDouble()
         return PickUp(
             id = map["id"] as String,
             passengerId = map["passengerId"] as String,
@@ -62,7 +62,7 @@ class PickUpRepository {
             targetLatLng = LatLng(targetLat, targetLng),
             distance = distance,
             dateAndTime = map["dateAndTime"] as String,
-            price = map["price"] as Double,
+            price = price,
             driverId = map["driverId"] as String
         )
     }
@@ -85,6 +85,35 @@ class PickUpRepository {
                             "PickUp Information: id = ${pickUp.id}, passengerId = ${pickUp.passengerId}, pickUpTitle = ${pickUp.pickUpTitle}, targetTitle = ${pickUp.targetTitle}, pickUpLatLng = ${pickUp.pickUpLatLng}, targetLatLng = ${pickUp.targetLatLng}, distance = ${pickUp.distance}, dateAndTime = ${pickUp.dateAndTime}, price = ${pickUp.price}, driverId = ${pickUp.driverId}"
                         )
 
+                    }
+                }
+                liveData.value = pickUps
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle possible errors.
+            }
+        }
+        myRef.addValueEventListener(postListener)
+
+        return liveData
+    }
+
+    fun getLivePickUps(passengerId: String) : LiveData<List<PickUp>> {
+        val myRef = database.getReference("PickUps")
+        val liveData = MutableLiveData<List<PickUp>>()
+
+        val postListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val pickUps = mutableListOf<PickUp>()
+                for (postSnapshot in dataSnapshot.children) {
+                    val pickUpMap =
+                        postSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
+                    if (pickUpMap != null) {
+                        val pickUp = mapToPickUp(pickUpMap)
+                        if (pickUp.passengerId == passengerId) {
+                            pickUps.add(pickUp)
+                        }
                     }
                 }
                 liveData.value = pickUps
