@@ -376,17 +376,18 @@ class PassengerViewModel {
         return poly
     }
 
-
     suspend fun getDriverInfo(driverId: String,): DriverData {
-        Log.d("PassengerViewModel", "getDriverInfo called")
+        Log.d("PassengerViewModel", "getDriverInfo called with driverId: $driverId")
         val database = FirebaseDatabase.getInstance()
         val myRef = database.getReference("Drivers").child(driverId)
 
         return suspendCoroutine { continuation ->
             myRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    Log.d("PassengerViewModel", "onDataChange called")
                     val driverMap = dataSnapshot.getValue(object : GenericTypeIndicator<Map<String, Any>>() {})
                     if (driverMap != null) {
+                        Log.d("PassengerViewModel", "driverMap is not null: $driverMap")
                         val driver = DriverData(
                             firstName = driverMap["name"] as? String ?: "",
                             lastName = driverMap["surname"] as? String ?: "",
@@ -399,11 +400,13 @@ class PassengerViewModel {
 
                         continuation.resume(driver)
                     } else {
+                        Log.d("PassengerViewModel", "driverMap is null")
                         continuation.resumeWithException(RuntimeException("Driver not found"))
                     }
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
+                    Log.d("PassengerViewModel", "onCancelled called with error: ${databaseError.message}")
                     continuation.resumeWithException(databaseError.toException())
                 }
             })

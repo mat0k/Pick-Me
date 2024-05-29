@@ -104,6 +104,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -2565,7 +2566,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
     }
 
     var driverId by remember {
-        mutableStateOf("empty")
+        mutableStateOf("")
     }
 
     if (tripViewModel.tripDateAndTime.value.isNotEmpty()) {
@@ -3139,7 +3140,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
 
                                 IconButton(onClick = {
 
-                                    driverId = trip["id"] as? String ?: "empty"
+                                    driverId = trip["driverId"] as? String ?: ""
                                     showPreviewBottomSheet = true
                                 }) {
                                     Icon(
@@ -3176,7 +3177,7 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
             viewModel.loadProfileData()
 
 
-            if (driverId != "empty") {
+            if (driverId.isNotEmpty()) {
 
                 LaunchedEffect(driverId) {
                     driver = passengerViewModel.getDriverInfo(driverId)
