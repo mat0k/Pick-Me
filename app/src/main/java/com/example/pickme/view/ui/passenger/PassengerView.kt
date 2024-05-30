@@ -945,13 +945,14 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         LaunchedEffect(Unit) {
                                             val database = FirebaseDatabase.getInstance()
                                             val commentsRef = database.getReference("comments")
-                                            commentsRef.addValueEventListener(object :
-                                                ValueEventListener {
+                                            commentsRef.addValueEventListener(object : ValueEventListener {
                                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                                                     comments.clear()
-                                                    dataSnapshot.children.mapNotNullTo(comments) {
-                                                        it.getValue(object :
-                                                            GenericTypeIndicator<Map<String, String>>() {})
+                                                    dataSnapshot.children.forEach { snapshot ->
+                                                        val comment = snapshot.getValue(object : GenericTypeIndicator<Map<String, String>>() {})
+                                                        if (comment != null && comment["DriverId"] == pickUp.driverId) {
+                                                            comments.add(comment)
+                                                        }
                                                     }
                                                 }
 
@@ -3346,13 +3347,14 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                         LaunchedEffect(Unit) {
                             val database = FirebaseDatabase.getInstance()
                             val commentsRef = database.getReference("comments")
-                            commentsRef.addValueEventListener(object :
-                                ValueEventListener {
+                            commentsRef.addValueEventListener(object : ValueEventListener {
                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                                     comments.clear()
-                                    dataSnapshot.children.mapNotNullTo(comments) {
-                                        it.getValue(object :
-                                            GenericTypeIndicator<Map<String, String>>() {})
+                                    dataSnapshot.children.forEach { snapshot ->
+                                        val comment = snapshot.getValue(object : GenericTypeIndicator<Map<String, String>>() {})
+                                        if (comment != null && comment["DriverId"] == driverId) {
+                                            comments.add(comment)
+                                        }
                                     }
                                 }
 
