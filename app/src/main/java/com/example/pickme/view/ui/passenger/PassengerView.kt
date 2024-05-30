@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -709,7 +710,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                         ModalBottomSheet(
                             modifier = Modifier
                                 .padding(10.dp)
-                                .heightIn(min = 700.dp),
+                                .fillMaxHeight(),
                             onDismissRequest = {
                                 showPreviewBottomSheet = false
                             },
