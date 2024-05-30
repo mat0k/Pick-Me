@@ -991,7 +991,7 @@ fun SetTrips(
                                     pickUpViewModel.setPrevDistance(trip.tripDistance)
 
                                     if (passengerViewModel.isNetworkAvailable(context)) {
-                                        navController.navigate("pickUpPreview") // here now
+                                        navController.navigate("pickUpPreview")
                                     } else {
                                         passengerViewModel.ShowWifiProblemDialog(context)
                                     }
@@ -1003,7 +1003,7 @@ fun SetTrips(
                                 )
                             }
 
-                            IconButton(     // here now
+                            IconButton(
                                 onClick = {
                                     val tripId = trip.id
                                     val tripsRef = database.getReference("Trips")
@@ -1531,6 +1531,7 @@ fun PickUpPreview(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
+                    if(mode==1) {
                     Button(
                         modifier = Modifier
                             .weight(1f)
@@ -1550,7 +1551,6 @@ fun PickUpPreview(
                             )
                         }
                     }
-                    if(mode==1) {
                         Button(
                             modifier = Modifier
                                 .weight(3f)
