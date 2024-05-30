@@ -1675,8 +1675,8 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
                                 pickUpViewModel.setPickUpPrice("%.2f".format(tripDistance * pricePerKm).toDouble())
                                 navController.navigate("pickUps")
 
-                                Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                                    .show()  //confirmation
+                                //Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
+                            // confirmation
                                 //  Log.i("xxxx", "pick up lat lng: $pickUpLatLng target lat lng: $targetLatLng")
                             }else{
                                 Toast.makeText(context,"Please wait to calculate distance",Toast.LENGTH_LONG).show()
@@ -3369,7 +3369,8 @@ fun SearchTrip(navController: NavHostController, tripViewModel: TripViewModel) {
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            Color.Gray.copy(alpha = 0.5f),
+                                            Color.Gray.
+                                            copy(alpha = 0.5f),
                                             shape = RoundedCornerShape(10.dp)
                                         )
                                         .padding(10.dp)

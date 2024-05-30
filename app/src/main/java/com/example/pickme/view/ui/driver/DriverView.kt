@@ -890,11 +890,7 @@ fun SetTrips(
                             // Add trip to the Firebase database using the unique key
                             myRef.child(tripKey).setValue(trip)
                                 .addOnSuccessListener {
-                                    Toast.makeText(
-                                        context,
-                                        "Trip added",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                   // Toast.makeText(context, "Trip added", Toast.LENGTH_SHORT).show()
                                     isButtonClicked2 = false
                                     enableConfirmation2 = false
                                 }
@@ -1989,8 +1985,8 @@ fun MapView(navController: NavHostController, tripViewModel: TripViewModel) {
                             tripViewModel.setDistance(tripDistance)
                             navController.navigate("setTrips")
 
-                            Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT)
-                                .show()  //confirmation
+                         //   Toast.makeText(context, "Confirmation", Toast.LENGTH_SHORT).show()
+                        // confirmation
                         }
                     }
 
