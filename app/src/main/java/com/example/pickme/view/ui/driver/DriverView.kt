@@ -225,7 +225,7 @@ class DriverView : ComponentActivity() {
 
 @Composable
 fun Startup(
-    navController: NavHostController, pickUpViewModel: PickUpViewModel
+    navController: NavHostController, pickUpViewModel: PickUpViewModel,
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
@@ -238,7 +238,8 @@ fun Startup(
             PickUpPreview(
                 context,
                 navController,
-                pickUpViewModel
+                pickUpViewModel,
+                1
             )
         }
     }
@@ -430,7 +431,7 @@ fun TripsScreen(
             MapView(navController, tripViewModel)
         }
         composable("pickUpPreview") {
-            PickUpPreview(context, navController, pickUpViewModel)
+            PickUpPreview(context, navController, pickUpViewModel,2)
         }
     }
 }
@@ -990,7 +991,7 @@ fun SetTrips(
                                     pickUpViewModel.setPrevDistance(trip.tripDistance)
 
                                     if (passengerViewModel.isNetworkAvailable(context)) {
-                                        navController.navigate("pickUpPreview")
+                                        navController.navigate("pickUpPreview") // here now
                                     } else {
                                         passengerViewModel.ShowWifiProblemDialog(context)
                                     }
@@ -1308,7 +1309,8 @@ fun SetTrips(
 fun PickUpPreview(
     context: Context,
     navController: NavHostController,
-    pickUpViewModel: PickUpViewModel
+    pickUpViewModel: PickUpViewModel,
+    mode:Int
 ) {
     val userId = context.getSharedPreferences("MyPref", Context.MODE_PRIVATE)
         .getString("lastUserId", null)
@@ -1548,24 +1550,26 @@ fun PickUpPreview(
                             )
                         }
                     }
-                    Button(
-                        modifier = Modifier
-                            .weight(3f)
-                            .height(55.dp)
-                            .padding(5.dp)
-                            .alpha(if (!isAccepted) 0.9f else 0f),
-                        shape = RoundedCornerShape(15.dp),
-                        onClick = {
-                            userId?.let {
-                                repo.acceptPickUp(pickUpViewModel.pickUpId.value, it)
+                    if(mode==1) {
+                        Button(
+                            modifier = Modifier
+                                .weight(3f)
+                                .height(55.dp)
+                                .padding(5.dp)
+                                .alpha(if (!isAccepted) 0.9f else 0f),
+                            shape = RoundedCornerShape(15.dp),
+                            onClick = {
+                                userId?.let {
+                                    repo.acceptPickUp(pickUpViewModel.pickUpId.value, it)
+                                }
+                                navController.popBackStack()
                             }
-                            navController.popBackStack()
+                        ) {
+                            Text(
+                                text = "Accept",
+                                fontSize = 22.sp
+                            )
                         }
-                    ) {
-                        Text(
-                            text = "Accept",
-                            fontSize = 22.sp
-                        )
                     }
                 }
 
