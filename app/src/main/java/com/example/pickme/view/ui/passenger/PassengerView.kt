@@ -1144,8 +1144,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                             confirmButton = {
                                 TextButton(
                                     onClick = {
-                                        databaseHelper.deleteLocalPickUp(itemToDelete.id)
-                                        localPickUpList.remove(itemToDelete)
+                                        pickUpRepository.deletePickUp(pickUp.id)
                                         showDeleteConfirm.value = null
                                     }
                                 ) {

@@ -133,4 +133,9 @@ class PickUpRepository {
         myRef.child(id).child("driverId").setValue(driverId)
 
     }
+
+    fun deletePickUp(id: String) {
+        val myRef = database.getReference("PickUps")
+        myRef.child(id).removeValue()
+    }
 }
