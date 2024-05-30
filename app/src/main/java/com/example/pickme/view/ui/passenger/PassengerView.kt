@@ -858,6 +858,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                         )
 
                                         // get the rate from firebase, adding it as fun in view model didn't work
+                                        // calculate rate from firebase
                                         val database = FirebaseDatabase.getInstance()
                                         val ratingRef =
                                             database.getReference("rating").child(pickUp.driverId)
