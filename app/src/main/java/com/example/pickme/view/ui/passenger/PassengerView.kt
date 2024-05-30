@@ -105,7 +105,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -596,7 +595,6 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                   //  localPickUpList.add(0, localPickUp) // Add to the start of the list to show it at the top
 
                     resetTitles()
-                    Log.i("xxxx","price: ${pickUpViewModel.pickUpPrice.value}")
                 }) {
                 Text(
                     text = "Confirm pick up",
@@ -1023,7 +1021,7 @@ fun PickUps(context: Context, navController: NavHostController, pickUpViewModel:
                                                         )
 
                                                         Text(
-                                                            text = "Selected rating: ${userRating}",
+                                                            text = "Selected rating: $userRating",
                                                             modifier = Modifier.padding(top = 6.dp)
                                                         )
                                                     }
@@ -1486,7 +1484,6 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
             verticalArrangement = Arrangement.Center,
         ) {
             IconButton(onClick = {
-                //Log.i("xxxx","is loading $isLoading")
             }) {
                 Image(
                     painter = painterResource(id = R.drawable.pin3),
@@ -1544,30 +1541,26 @@ fun MapView(context: Context, navController: NavHostController, pickUpViewModel:
 
                     val postListener = object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            // Log.d("xxxx", "Data change detected")
                             val allPlaces = mutableListOf<Place>()
                             places.clear()
                             for (postSnapshot in dataSnapshot.children) {
                                 val place = postSnapshot.getValue(Place::class.java)
                                 if (place != null) {
                                     allPlaces.add(place)
-                                    //    Log.d("xxxx", "Place added: ${place.title}")
                                 }
                             }
                             // Update the displayed list
                             places.clear()
                             places.addAll(allPlaces)
-                            //   Log.d("xxxx", "Places list updated")
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            Log.d("xxxx", "Database error: ${databaseError.message}")
+                           // Log.d("xxxx", "Database error: ${databaseError.message}")
                             Toast.makeText(context, "Failed to load locations.", Toast.LENGTH_SHORT)
                                 .show()
                         }
                     }
                     ref.addValueEventListener(postListener)
-                  //  Log.d("xxxx", "Listener added to reference")
                 }
 
             } else {
