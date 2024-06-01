@@ -1,6 +1,12 @@
 # Pick Me Up - Revolutionizing Urban Mobility in Lebanon
 
-Pick Me Up is an innovative Android application designed to transform the urban mobility landscape in Lebanon by connecting passengers and independent drivers through a user-friendly mobile platform. This project aims to address the challenges faced by the current transportation market in Lebanon, characterized by a significant number of freelance drivers operating without a structured and transparent system, leading to inefficiencies and reliability issues.
+Pick Me Up is an Android application designed to transform the urban mobility landscape in Lebanon by connecting passengers and independent drivers through a user-friendly mobile platform. This project aims to address the challenges faced by the current transportation market in Lebanon, characterized by a significant number of freelance drivers operating without a structured and transparent system, leading to inefficiencies and reliability issues.
+
+## University Project
+
+Pick Me Up is a university project developed by junior engineering students as part of their learning journey. The project aims to provide hands-on experience in mobile application development while addressing real-world challenges in the transportation industry.
+Please note that as a student project, the codebase may contain areas for improvement and optimization. We acknowledge that there might be potential issues or bugs that we are continuously working on refining.
+
 
 ## Features
 
@@ -16,7 +22,7 @@ Pick Me Up is an innovative Android application designed to transform the urban 
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository: https://github.com/mat0k/Pick-Me
 
 2. Open the project in Android Studio.
 
